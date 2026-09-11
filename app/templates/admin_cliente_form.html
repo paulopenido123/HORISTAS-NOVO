@@ -1,0 +1,145 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ 'Novo cliente' if modo == 'novo' else 'Editar cliente' }} — Lifemax Admin</title><style>
+body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
+.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between}
+.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}
+.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}
+.nav a.active{color:#10AFA9}
+.wrap{max-width:760px;margin:auto;padding:28px 24px}
+.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:24px}
+.voltar{display:inline-block;margin-bottom:14px;color:#62788A;text-decoration:none;font-size:13px;font-weight:600}
+.voltar:hover{color:#0B3A52}
+label{display:block;font-size:12px;font-weight:700;color:#62788A;margin-bottom:6px;text-transform:uppercase;letter-spacing:.02em}
+input,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13.5px;font-family:inherit}
+.campo{margin-bottom:16px}
+.linha{display:grid;gap:14px;margin-bottom:16px}
+.linha.duas{grid-template-columns:1fr 1fr}
+.linha.tres{grid-template-columns:1fr 1fr 1fr}
+.secao{font-size:13px;font-weight:800;color:#0B3A52;text-transform:uppercase;letter-spacing:.03em;margin:22px 0 14px;padding-top:14px;border-top:1px solid #e3ebef}
+.secao:first-of-type{margin-top:0;padding-top:0;border-top:0}
+.acoes{display:flex;gap:10px;margin-top:22px}
+button{padding:12px 22px;border:0;border-radius:8px;background:#10AFA9;color:#fff;font-weight:700;cursor:pointer;font-size:13.5px}
+.btn-alt{padding:12px 22px;border-radius:8px;background:#fff;border:1px solid #d8e3e7;color:#62788A;font-weight:700;font-size:13.5px;text-decoration:none;display:inline-block}
+.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}
+.flash.ok{background:#E3F7EE;color:#0B7B45}
+.flash.erro{background:#FBEAE6;color:#B33}
+.dica{font-size:12px;color:#8AA0A9;margin-top:4px}
+@media(max-width:640px){.linha.duas,.linha.tres{grid-template-columns:1fr}}
+</style></head><body>
+<div class="top"><strong>LIFEMAX ADMIN · CLIENTES</strong><span>Administrador</span></div>
+<div class="nav">
+  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
+  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
+  <a href="{{ url_for('admin.clientes') }}" class="active">Clientes</a>
+  <a href="{{ url_for('admin.horas') }}">Horas</a>
+  <a href="{{ url_for('admin.relatorios') }}">Relatórios</a>
+  <a href="{{ url_for('admin.admin_logout') }}">Sair</a>
+</div>
+<div class="wrap">
+  {% if modo == 'editar' %}
+  <a class="voltar" href="{{ url_for('admin.visualizar_cliente', medico_id=medico.id) }}">← Voltar pra Visualizar</a>
+  {% else %}
+  <a class="voltar" href="{{ url_for('admin.clientes') }}">← Voltar pra Clientes</a>
+  {% endif %}
+
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% for categoria, texto in mensagens %}
+      <div class="flash {{ categoria }}">{{ texto }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="card">
+    <h2 style="margin-top:0">{{ 'Inserir novo cliente' if modo == 'novo' else 'Editar dados de ' + medico.nome }}</h2>
+
+    <form method="post" action="{{ url_for('admin.novo_cliente') if modo == 'novo' else url_for('admin.editar_cliente', medico_id=medico.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="secao">Informações básicas</div>
+      <div class="linha duas">
+        <div class="campo">
+          <label for="nome">Nome completo *</label>
+          <input type="text" id="nome" name="nome" value="{{ medico.nome or '' }}" required>
+        </div>
+        <div class="campo">
+          <label for="telefone">Telefone (login) *</label>
+          <input type="text" id="telefone" name="telefone" value="{{ medico.telefone or '' }}" placeholder="5531999999999" required>
+          <div class="dica">Com DDI+DDD, só números (ex: 5531999999999)</div>
+        </div>
+      </div>
+      <div class="linha duas">
+        <div class="campo">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" value="{{ medico.email or '' }}">
+        </div>
+        <div class="campo">
+          <label for="tipo_vinculo">Tipo de vínculo</label>
+          <select id="tipo_vinculo" name="tipo_vinculo">
+            <option value="avulso" {{ 'selected' if (medico.tipo_vinculo or 'avulso') == 'avulso' else '' }}>Avulso (aluga por hora/turno)</option>
+            <option value="fixo" {{ 'selected' if medico.tipo_vinculo == 'fixo' else '' }}>Fixo (mensalista)</option>
+            <option value="horista" {{ 'selected' if medico.tipo_vinculo == 'horista' else '' }}>Horista</option>
+          </select>
+        </div>
+      </div>
+      <div class="linha duas">
+        <div class="campo">
+          <label for="especialidade">Especialidade</label>
+          <input type="text" id="especialidade" name="especialidade" value="{{ medico.especialidade or '' }}">
+        </div>
+        <div class="campo">
+          <label for="crm">CRM</label>
+          <input type="text" id="crm" name="crm" value="{{ medico.crm or '' }}" placeholder="CRM/MG 000000">
+        </div>
+      </div>
+      <div class="campo">
+        <label for="cpf_cnpj">CPF / CNPJ</label>
+        <input type="text" id="cpf_cnpj" name="cpf_cnpj" value="{{ medico.cpf_cnpj or '' }}" placeholder="000.000.000-00">
+      </div>
+
+      <div class="secao">Endereço</div>
+      <div class="linha duas">
+        <div class="campo">
+          <label for="endereco_cep">CEP</label>
+          <input type="text" id="endereco_cep" name="endereco_cep" value="{{ medico.endereco_cep or '' }}">
+        </div>
+        <div class="campo">
+          <label for="endereco_estado">Estado (UF)</label>
+          <input type="text" id="endereco_estado" name="endereco_estado" value="{{ medico.endereco_estado or '' }}" maxlength="2">
+        </div>
+      </div>
+      <div class="linha tres">
+        <div class="campo">
+          <label for="endereco_rua">Rua/Avenida</label>
+          <input type="text" id="endereco_rua" name="endereco_rua" value="{{ medico.endereco_rua or '' }}">
+        </div>
+        <div class="campo">
+          <label for="endereco_numero">Número</label>
+          <input type="text" id="endereco_numero" name="endereco_numero" value="{{ medico.endereco_numero or '' }}">
+        </div>
+        <div class="campo">
+          <label for="endereco_complemento">Complemento</label>
+          <input type="text" id="endereco_complemento" name="endereco_complemento" value="{{ medico.endereco_complemento or '' }}">
+        </div>
+      </div>
+      <div class="campo">
+        <label for="endereco_bairro">Bairro</label>
+        <input type="text" id="endereco_bairro" name="endereco_bairro" value="{{ medico.endereco_bairro or '' }}">
+      </div>
+      <div class="campo">
+        <label for="endereco_cidade">Cidade</label>
+        <input type="text" id="endereco_cidade" name="endereco_cidade" value="{{ medico.endereco_cidade or '' }}">
+      </div>
+
+      <div class="secao">Outros</div>
+      <div class="campo">
+        <label for="convenios">Convênios aceitos (separados por vírgula)</label>
+        <input type="text" id="convenios" name="convenios" value="{{ (medico.convenios or [])|join(', ') }}" placeholder="ex: Unimed, Bradesco Saúde">
+      </div>
+
+      <div class="acoes">
+        <button type="submit">{{ 'Cadastrar cliente' if modo == 'novo' else 'Salvar alterações' }}</button>
+        <a class="btn-alt" href="{{ url_for('admin.clientes') if modo == 'novo' else url_for('admin.visualizar_cliente', medico_id=medico.id) }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+</body></html>

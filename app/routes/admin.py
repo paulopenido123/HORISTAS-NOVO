@@ -215,7 +215,12 @@ def ajustar_saldo_cliente(medico_id):
     equivalente (preço da hora avulsa) só pra manter o mesmo mecanismo
     interno de saldo que o resto do sistema usa. A carteira de IA continua
     em R$ direto, sem conversão (essa carteira é mesmo medida em dinheiro,
-    não em horas)."""
+    não em horas).
+
+    ⚠️ Em 11/09/2026 o botão "Alterar saldo" saiu da lista de clientes e
+    foi pra dentro da tela "Visualizar" de cada cliente (pedido do Paulo)
+    -- por isso todo redirect aqui agora volta pra
+    admin.visualizar_cliente (não mais admin.clientes)."""
     medico = db.get_medico_by_id(medico_id)
     if not medico:
         flash('Cliente não encontrado.', 'erro')
@@ -224,18 +229,18 @@ def ajustar_saldo_cliente(medico_id):
     carteira = request.form.get('carteira', 'salas')
     if carteira not in ('salas', 'ia'):
         flash('Carteira inválida.', 'erro')
-        return redirect(url_for('admin.clientes'))
+        return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
     try:
         quantidade = float((request.form.get('quantidade') or '0').replace(',', '.'))
     except ValueError:
         unidade = 'horas' if carteira == 'salas' else 'reais'
         flash(f'Quantidade inválida -- use só números ({unidade}, ex: 15 ou -5).', 'erro')
-        return redirect(url_for('admin.clientes'))
+        return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
     if quantidade == 0:
         flash('Informe uma quantidade diferente de zero (positivo credita, negativo debita).', 'erro')
-        return redirect(url_for('admin.clientes'))
+        return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
     descricao = (request.form.get('descricao') or '').strip() or 'Ajuste manual pelo admin'
 
@@ -243,7 +248,7 @@ def ajustar_saldo_cliente(medico_id):
         horas = round(quantidade)  # carteira de horas trabalha sempre em números inteiros de hora
         if horas == 0:
             flash('Informe uma quantidade de horas diferente de zero.', 'erro')
-            return redirect(url_for('admin.clientes'))
+            return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
         valor = round(horas * creditos_db.preco_hora_avulsa(), 2)
         quantidade_horas_param = abs(horas)
     else:
@@ -257,14 +262,127 @@ def ajustar_saldo_cliente(medico_id):
         )
     except Exception as e:
         flash(f'Não foi possível ajustar o saldo: {e}', 'erro')
-        return redirect(url_for('admin.clientes'))
+        return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
     acao = 'creditado' if quantidade > 0 else 'debitado'
     if carteira == 'salas':
         flash(f'Saldo de Salas/Horas de {medico["nome"]} {acao} em {abs(horas)}h.', 'ok')
     else:
         flash(f'Saldo de IA de {medico["nome"]} {acao} em R$ {abs(valor):.2f}.', 'ok')
-    return redirect(url_for('admin.clientes'))
+    return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
+
+
+@admin_bp.route('/clientes/novo', methods=['GET', 'POST'])
+@_admin
+def novo_cliente():
+    """"Inserir novo" -- pedido do Paulo em 11/09/2026: cadastra um cliente
+    (médico) manualmente pelo admin, com os mesmos campos padrão que o
+    sistema já usa em qualquer outro cadastro de médico (ver
+    supabase_client.criar_medico)."""
+    if request.method == 'POST':
+        nome = (request.form.get('nome') or '').strip()
+        telefone = (request.form.get('telefone') or '').strip()
+        if not nome or not telefone:
+            flash('Nome e telefone são obrigatórios.', 'erro')
+            return redirect(url_for('admin.novo_cliente'))
+        if db.get_medico_by_telefone(telefone) is not None:
+            flash('Já existe um cliente cadastrado com esse telefone.', 'erro')
+            return redirect(url_for('admin.novo_cliente'))
+
+        convenios = [c.strip() for c in (request.form.get('convenios') or '').split(',') if c.strip()]
+        medico = db.criar_medico(
+            nome=nome,
+            telefone=telefone,
+            especialidade=(request.form.get('especialidade') or '').strip(),
+            tipo_vinculo=(request.form.get('tipo_vinculo') or 'avulso').strip(),
+            email=(request.form.get('email') or '').strip(),
+            crm=(request.form.get('crm') or '').strip(),
+            cpf_cnpj=(request.form.get('cpf_cnpj') or '').strip(),
+            endereco_cep=(request.form.get('endereco_cep') or '').strip(),
+            endereco_rua=(request.form.get('endereco_rua') or '').strip(),
+            endereco_numero=(request.form.get('endereco_numero') or '').strip(),
+            endereco_complemento=(request.form.get('endereco_complemento') or '').strip(),
+            endereco_bairro=(request.form.get('endereco_bairro') or '').strip(),
+            endereco_cidade=(request.form.get('endereco_cidade') or '').strip(),
+            endereco_estado=(request.form.get('endereco_estado') or '').strip()[:2].upper(),
+            convenios=convenios,
+            autorizado=True,
+        )
+        # Cadastrado manualmente pelo admin (mesma lógica de sempre pra
+        # importações/cadastros feitos por quem já confere os dados antes
+        # -- ver comentário em scripts_migracao/importar_horistas_lifemax.py):
+        # já nasce com termo aceito, não precisa passar pela tela de termo.
+        db.get_client().table('medicos').update({'termo_aceito': True}).eq('id', medico['id']).execute()
+        flash(f'Cliente "{nome}" cadastrado com sucesso.', 'ok')
+        return redirect(url_for('admin.visualizar_cliente', medico_id=medico['id']))
+
+    return render_template('admin_cliente_form.html', medico=None, modo='novo')
+
+
+@admin_bp.route('/clientes/<medico_id>', methods=['GET'])
+@_admin
+def visualizar_cliente(medico_id):
+    """Tela "Visualizar" de um cliente -- pedido do Paulo em 11/09/2026:
+    mostra todos os dados cadastrados (telefone, e-mail etc.) numa tela
+    separada, com os botões "Editar dados" e "Alterar saldo" (esse último
+    tirado da lista de clientes e trazido pra cá) e o histórico de
+    transações + saldo de horas (mesma listagem/formatação usada no
+    "Histórico" do painel do próprio médico -- ver
+    creditos_service.listar_transacoes_medico)."""
+    medico = db.get_medico_by_id(medico_id)
+    if not medico:
+        flash('Cliente não encontrado.', 'erro')
+        return redirect(url_for('admin.clientes'))
+    medico['saldo_horas'] = creditos_db.saldo_em_horas_medico(medico_id)
+    medico['saldo_ia'] = creditos_db.obter_saldo_ia(medico_id)
+    transacoes = creditos_db.listar_transacoes_medico(medico_id, limite=200)
+    return render_template('admin_cliente_visualizar.html', medico=medico, transacoes=transacoes)
+
+
+@admin_bp.route('/clientes/<medico_id>/editar', methods=['GET', 'POST'])
+@_admin
+def editar_cliente(medico_id):
+    """Botão "Editar" dentro da tela "Visualizar" -- pedido do Paulo em
+    11/09/2026."""
+    medico = db.get_medico_by_id(medico_id)
+    if not medico:
+        flash('Cliente não encontrado.', 'erro')
+        return redirect(url_for('admin.clientes'))
+
+    if request.method == 'POST':
+        nome = (request.form.get('nome') or '').strip()
+        telefone = (request.form.get('telefone') or '').strip()
+        if not nome or not telefone:
+            flash('Nome e telefone são obrigatórios.', 'erro')
+            return redirect(url_for('admin.editar_cliente', medico_id=medico_id))
+        outro = db.get_medico_by_telefone(telefone)
+        if outro and outro['id'] != medico_id:
+            flash('Já existe OUTRO cliente cadastrado com esse telefone.', 'erro')
+            return redirect(url_for('admin.editar_cliente', medico_id=medico_id))
+
+        convenios = [c.strip() for c in (request.form.get('convenios') or '').split(',') if c.strip()]
+        db.atualizar_medico(
+            medico_id=medico_id,
+            nome=nome,
+            telefone=telefone,
+            especialidade=(request.form.get('especialidade') or '').strip(),
+            cpf_cnpj=(request.form.get('cpf_cnpj') or '').strip(),
+            email=(request.form.get('email') or '').strip(),
+            crm=(request.form.get('crm') or '').strip(),
+            endereco_cep=(request.form.get('endereco_cep') or '').strip(),
+            endereco_rua=(request.form.get('endereco_rua') or '').strip(),
+            endereco_numero=(request.form.get('endereco_numero') or '').strip(),
+            endereco_complemento=(request.form.get('endereco_complemento') or '').strip(),
+            endereco_bairro=(request.form.get('endereco_bairro') or '').strip(),
+            endereco_cidade=(request.form.get('endereco_cidade') or '').strip(),
+            endereco_estado=(request.form.get('endereco_estado') or '').strip()[:2].upper(),
+            convenios=convenios,
+            tipo_vinculo=(request.form.get('tipo_vinculo') or '').strip() or None,
+        )
+        flash(f'Dados de "{nome}" atualizados.', 'ok')
+        return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
+
+    return render_template('admin_cliente_form.html', medico=medico, modo='editar')
 
 
 @admin_bp.route('/relatorios')

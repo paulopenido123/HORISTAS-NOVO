@@ -50,7 +50,10 @@ details.ajuste summary::-webkit-details-marker{display:none}
   {% endwith %}
 
   <div class="card">
-    <h2 style="margin-top:0">Clientes cadastrados</h2>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+      <h2 style="margin-top:0">Clientes cadastrados</h2>
+      <a class="btn" href="{{ url_for('admin.novo_cliente') }}">+ Inserir novo</a>
+    </div>
     <form class="busca" method="get">
       <input type="text" name="busca" value="{{ busca }}" placeholder="Buscar por nome, telefone ou e-mail...">
       <button type="submit">Buscar</button>
@@ -96,22 +99,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
           <td>{{ m.saldo_horas }}h</td>
           <td>R$ {{ "%.2f"|format(m.saldo_ia) }}</td>
           <td>
-            <details class="ajuste" ontoggle="atualizarUnidadeAjuste(this.querySelector('select[name=carteira]'))">
-              <summary>Alterar saldo</summary>
-              <form class="form-ajuste" method="post" action="{{ url_for('admin.ajustar_saldo_cliente', medico_id=m.id) }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <label>Carteira</label>
-                <select name="carteira" required onchange="atualizarUnidadeAjuste(this)">
-                  <option value="salas">Salas/Horas (medido em horas)</option>
-                  <option value="ia">IA (medido em R$)</option>
-                </select>
-                <label class="lbl-quantidade">Quantas horas? (negativo pra debitar)</label>
-                <input type="number" step="1" name="quantidade" class="input-quantidade" placeholder="ex: 15 ou -5" required>
-                <label>Motivo (opcional)</label>
-                <input type="text" name="descricao" placeholder="ex: crédito de teste">
-                <button type="submit">Confirmar ajuste</button>
-              </form>
-            </details>
+            <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.visualizar_cliente', medico_id=m.id) }}">🔍 Visualizar</a>
             <details class="ajuste">
               <summary>Enviar link de acesso</summary>
               <form class="form-ajuste" method="post" action="{{ url_for('admin.enviar_link_cliente', medico_id=m.id) }}">
@@ -132,25 +120,4 @@ details.ajuste summary::-webkit-details-marker{display:none}
     </table>
   </div>
 </div>
-<script>
-// A carteira de Salas/Horas é medida em HORAS (não em R$) em todo o
-// sistema -- pedido do Paulo em 10/09/2026 -- então esse formulário troca
-// o rótulo/step do campo "quantidade" conforme a carteira escolhida: horas
-// (número inteiro) pra Salas/Horas, R$ (com centavos) pra IA.
-function atualizarUnidadeAjuste(select) {
-  if (!select) return;
-  const form = select.closest('form');
-  const label = form.querySelector('.lbl-quantidade');
-  const input = form.querySelector('.input-quantidade');
-  if (select.value === 'ia') {
-    label.textContent = 'Valor em R$ (negativo pra debitar)';
-    input.step = '0.01';
-    input.placeholder = 'ex: 150 ou -50';
-  } else {
-    label.textContent = 'Quantas horas? (negativo pra debitar)';
-    input.step = '1';
-    input.placeholder = 'ex: 15 ou -5';
-  }
-}
-</script>
 </body></html>

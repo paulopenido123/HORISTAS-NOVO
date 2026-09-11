@@ -536,17 +536,22 @@ def atualizar_medico(medico_id: str, nome: str, telefone: str, especialidade: st
                       endereco_cep: str | None = None, endereco_rua: str | None = None,
                       endereco_numero: str | None = None, endereco_complemento: str | None = None,
                       endereco_bairro: str | None = None, endereco_cidade: str | None = None,
-                      endereco_estado: str | None = None, convenios: list[str] | None = None) -> dict:
+                      endereco_estado: str | None = None, convenios: list[str] | None = None,
+                      tipo_vinculo: str | None = None) -> dict:
     dados = {"nome": nome, "telefone": telefone, "especialidade": especialidade, "cpf_cnpj": cpf_cnpj}
-    # email/crm/empresa_id/endereço/convênios são opcionais e só entram no
-    # update se informados (None = "não mexe nesse campo") -- assim quem
-    # não manda esses campos continua funcionando exatamente igual.
+    # email/crm/empresa_id/endereço/convênios/tipo_vinculo são opcionais e só
+    # entram no update se informados (None = "não mexe nesse campo") -- assim
+    # quem não manda esses campos continua funcionando exatamente igual.
+    # tipo_vinculo acrescentado em 11/09/2026 pra tela "Editar dados" do
+    # cliente no admin (app/routes/admin.py, editar_cliente).
     if email is not None:
         dados["email"] = email
     if crm is not None:
         dados["crm"] = crm
     if empresa_id is not None:
         dados["empresa_id"] = empresa_id
+    if tipo_vinculo is not None:
+        dados["tipo_vinculo"] = tipo_vinculo
     if endereco_cep is not None:
         dados["endereco_cep"] = endereco_cep
     if endereco_rua is not None:

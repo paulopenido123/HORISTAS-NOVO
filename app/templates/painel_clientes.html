@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meus Clientes — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F8F9; --panel:#FFFFFF; --panel-2:#EAF4F3;
+    --line: rgba(14,42,58,0.10); --line-strong: rgba(14,42,58,0.22);
+    --ink:#10222E; --ink-muted:#55707C; --ink-faint:#8AA0A9;
+    --cyan:#0EA5A0; --cyan-soft: rgba(14,165,160,0.12);
+    --coral:#D65C3F; --coral-soft: rgba(214,92,63,0.12);
+    --navy:#0E2A3B; --onnavy-muted:#9FB8C4;
+    --display:'Manrope', sans-serif; --serif:'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--serif); }
+  a { color: inherit; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px;
+           background: var(--navy); position: sticky; top:0; z-index:100; }
+  .brand { font-family: var(--display); font-weight:800; color:#fff; font-size:15px; }
+  header a.sair, header a.voltar { font-size:13px; color: var(--onnavy-muted); text-decoration:none; margin-left:16px; }
+  header a.sair:hover, header a.voltar:hover { color:#fff; }
+  .container { max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  .hero-txt { margin-bottom: 24px; }
+  .hero-txt .eyebrow { font-family: var(--display); font-weight:700; font-size:12px; color: var(--cyan);
+                        text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .hero-txt h1 { font-family: var(--display); font-size: 24px; color: var(--navy); }
+  .hero-txt p { color: var(--ink-muted); margin-top:6px; font-size:14px; line-height:1.55; }
+  .card { background: var(--panel); border:1px solid var(--line-strong); border-radius:10px; padding:24px; margin-bottom:20px; }
+  .card h2 { font-family: var(--display); font-size:15px; color: var(--navy); margin-bottom:14px; }
+  label { display:block; font-family: var(--display); font-weight:700; font-size:12px; color: var(--ink-faint);
+          text-transform:uppercase; letter-spacing:.02em; margin: 14px 0 6px; }
+  label:first-child { margin-top:0; }
+  input[type=text], input[type=email] {
+    width:100%; padding:10px 12px; border-radius:7px; border:1px solid var(--line-strong);
+    font-family: var(--serif); font-size:14px; color: var(--ink); background:#fff;
+  }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+  @media (max-width:600px){ .grid-2 { grid-template-columns:1fr; } }
+  .btn { background: var(--cyan); color:#fff; border:none; padding:11px 20px; border-radius:7px;
+         font-family: var(--display); font-weight:700; font-size:13.5px; cursor:pointer; margin-top:18px; }
+  .btn:disabled { background: var(--line-strong); color: var(--ink-faint); cursor: not-allowed; }
+  #status-msg { font-size:13px; margin-top:10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--ink-faint); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--line); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.02em; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--line); color: var(--ink); }
+  .vazio { color: var(--ink-faint); font-size: 13px; padding: 12px 0; }
+  @media (max-width: 640px) { .container { padding: 22px 16px 60px; } table { font-size: 12px; } .card { overflow-x:auto; } }
+</style>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+<script>
+(function() {
+  const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+  const token = tokenMeta ? tokenMeta.content : null;
+  const fetchOriginal = window.fetch;
+  window.fetch = function(url, opcoes) {
+    opcoes = opcoes || {};
+    const metodo = (opcoes.method || 'GET').toUpperCase();
+    if (token && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(metodo)) {
+      opcoes.headers = Object.assign({}, opcoes.headers, { 'X-CSRFToken': token });
+    }
+    return fetchOriginal(url, opcoes);
+  };
+})();
+</script>
+
+<header>
+  <div class="brand">➕ Meus Clientes</div>
+  <div>
+    <a class="voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar ao painel</a>
+    <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="hero-txt">
+    <div class="eyebrow">ÁREA DO CLIENTE</div>
+    <h1>Incluir dados de cliente</h1>
+    <p>Cadastre um contato rápido (nome, endereço, e-mail e telefone/WhatsApp) para consultar depois.</p>
+  </div>
+
+  <div class="card">
+    <h2>Novo cliente</h2>
+    <form id="form-cliente">
+      <label for="nome">Nome</label>
+      <input type="text" id="nome" name="nome" required>
+
+      <label for="endereco">Endereço</label>
+      <input type="text" id="endereco" name="endereco" placeholder="Rua, número, bairro, cidade">
+
+      <div class="grid-2">
+        <div>
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email">
+        </div>
+        <div>
+          <label for="telefone">Telefone / WhatsApp</label>
+          <input type="text" id="telefone" name="telefone" placeholder="31999999999">
+        </div>
+      </div>
+
+      <button type="submit" class="btn" id="btn-salvar">Salvar cliente</button>
+      <div id="status-msg"></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Clientes cadastrados</h2>
+    <div id="tabela-clientes">
+      {% if clientes %}
+      <table>
+        <thead><tr><th>Nome</th><th>Endereço</th><th>E-mail</th><th>Telefone/WhatsApp</th></tr></thead>
+        <tbody id="corpo-tabela-clientes">
+          {% for c in clientes %}
+          <tr>
+            <td>{{ c.nome }}</td>
+            <td>{{ c.endereco or '—' }}</td>
+            <td>{{ c.email or '—' }}</td>
+            <td>{{ c.telefone or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <div class="vazio" id="vazio-clientes">Nenhum cliente cadastrado ainda.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('form-cliente').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const statusEl = document.getElementById('status-msg');
+  const btnSalvar = document.getElementById('btn-salvar');
+  const form = ev.target;
+  const dados = Object.fromEntries(new FormData(form).entries());
+
+  if (!dados.nome || !dados.nome.trim()) {
+    statusEl.textContent = 'Informe o nome do cliente.';
+    statusEl.style.color = 'var(--coral)';
+    return;
+  }
+
+  statusEl.textContent = 'Salvando...';
+  statusEl.style.color = 'var(--ink-muted)';
+  btnSalvar.disabled = true;
+
+  try {
+    const resp = await fetch('{{ url_for("medico_painel.criar_cliente") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    });
+
+    let resultado;
+    try {
+      resultado = await resp.json();
+    } catch (e) {
+      statusEl.textContent = `Erro ao salvar (código ${resp.status}).`;
+      statusEl.style.color = 'var(--coral)';
+      btnSalvar.disabled = false;
+      return;
+    }
+
+    if (!resp.ok) {
+      statusEl.textContent = resultado.erro || 'Erro ao salvar.';
+      statusEl.style.color = 'var(--coral)';
+      btnSalvar.disabled = false;
+      return;
+    }
+
+    statusEl.textContent = '✅ Cliente cadastrado com sucesso.';
+    statusEl.style.color = 'var(--cyan)';
+    form.reset();
+    btnSalvar.disabled = false;
+
+    const vazioEl = document.getElementById('vazio-clientes');
+    const c = resultado.cliente;
+    const linha = `<tr><td>${c.nome}</td><td>${c.endereco || '—'}</td><td>${c.email || '—'}</td><td>${c.telefone || '—'}</td></tr>`;
+    if (vazioEl) {
+      document.getElementById('tabela-clientes').innerHTML =
+        '<table><thead><tr><th>Nome</th><th>Endereço</th><th>E-mail</th><th>Telefone/WhatsApp</th></tr></thead><tbody id="corpo-tabela-clientes">' + linha + '</tbody></table>';
+    } else {
+      document.getElementById('corpo-tabela-clientes').insertAdjacentHTML('beforeend', linha);
+    }
+  } catch (e) {
+    statusEl.textContent = 'Erro de conexão com o servidor.';
+    statusEl.style.color = 'var(--coral)';
+    btnSalvar.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>

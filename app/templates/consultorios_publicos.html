@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Consultórios — Lifemax</title>
+<style>
+  body{margin:0;font-family:Inter,Arial;background:#F5F8FA;color:#102A43}
+  .top{background:#082A3D;color:#fff;padding:18px 6%;display:flex;justify-content:space-between}
+  .top a{color:#fff;text-decoration:none}
+  .wrap{max-width:1100px;margin:auto;padding:35px 24px}
+  .muted{color:#62788A;font-size:13px;line-height:1.5}
+
+  /* ---------- Carrossel de fotos (1 por vez, rodando sozinho) ---------- */
+  .carrossel{position:relative;background:#0E2A3B;border-radius:16px;overflow:hidden;
+             margin-top:22px;aspect-ratio:16/10;max-height:70vh}
+  .carrossel .slide{position:absolute;inset:0;opacity:0;transition:opacity 0.9s ease;
+                     display:flex;align-items:center;justify-content:center}
+  .carrossel .slide.ativo{opacity:1}
+  .carrossel .slide img{width:100%;height:100%;object-fit:cover}
+  .carrossel-vazio{display:flex;align-items:center;justify-content:center;height:100%;
+                    color:#9FB8C4;font-size:14px}
+  .carrossel-setas{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;
+                    padding:0 14px;pointer-events:none}
+  .carrossel-setas button{pointer-events:auto;background:rgba(8,42,61,0.55);color:#fff;border:none;
+                    width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer;
+                    display:flex;align-items:center;justify-content:center}
+  .carrossel-setas button:hover{background:rgba(8,42,61,0.85)}
+  .carrossel-pontos{display:flex;justify-content:center;gap:7px;margin-top:14px;flex-wrap:wrap}
+  .carrossel-pontos button{width:8px;height:8px;border-radius:50%;border:none;background:#c7d6dc;
+                    cursor:pointer;padding:0}
+  .carrossel-pontos button.ativo{background:#10AFA9;width:22px;border-radius:5px}
+
+  @media(max-width:700px){.carrossel{aspect-ratio:4/5;max-height:none}}
+</style>
+</head>
+<body>
+<div class="top"><strong>LIFEMAX CONSULTÓRIOS</strong><a href="/login">Entrar</a></div>
+<div class="wrap">
+  <h1>Conheça alguns de nossos consultórios</h1>
+  <p class="muted">Escolha a estrutura que combina com seu atendimento e reserve somente o tempo necessário.</p>
+
+  <div class="carrossel" id="carrossel">
+    {% if fotos %}
+      {% for foto in fotos %}
+      <div class="slide {{ 'ativo' if loop.first else '' }}"><img src="{{ foto }}" alt="Foto de um dos consultórios Lifemax" loading="{{ 'eager' if loop.first else 'lazy' }}"></div>
+      {% endfor %}
+      <div class="carrossel-setas">
+        <button type="button" onclick="mudarSlide(-1)" aria-label="Foto anterior">‹</button>
+        <button type="button" onclick="mudarSlide(1)" aria-label="Próxima foto">›</button>
+      </div>
+    {% else %}
+      <div class="carrossel-vazio">Nenhuma foto de consultório cadastrada ainda.</div>
+    {% endif %}
+  </div>
+  {% if fotos and fotos|length > 1 %}
+  <div class="carrossel-pontos" id="carrossel-pontos">
+    {% for foto in fotos %}
+    <button type="button" onclick="irParaSlide({{ loop.index0 }})" aria-label="Ir para foto {{ loop.index }}"></button>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('#carrossel .slide');
+  const pontos = document.querySelectorAll('#carrossel-pontos button');
+  if (slides.length === 0) return;
+  let indiceAtual = 0;
+  let temporizador = null;
+
+  function mostrar(indice) {
+    slides[indiceAtual].classList.remove('ativo');
+    if (pontos[indiceAtual]) pontos[indiceAtual].classList.remove('ativo');
+    indiceAtual = (indice + slides.length) % slides.length;
+    slides[indiceAtual].classList.add('ativo');
+    if (pontos[indiceAtual]) pontos[indiceAtual].classList.add('ativo');
+  }
+
+  function reiniciarAutoplay() {
+    if (temporizador) clearInterval(temporizador);
+    if (slides.length > 1) {
+      temporizador = setInterval(() => mostrar(indiceAtual + 1), 4500);
+    }
+  }
+
+  window.mudarSlide = function(delta) { mostrar(indiceAtual + delta); reiniciarAutoplay(); };
+  window.irParaSlide = function(indice) { mostrar(indice); reiniciarAutoplay(); };
+
+  if (pontos[0]) pontos[0].classList.add('ativo');
+  reiniciarAutoplay();
+})();
+</script>
+</body>
+</html>

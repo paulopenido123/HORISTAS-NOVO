@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entrar — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --line: #DCE6E8; --muted: #55707C; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(160deg, var(--navy), var(--navy-soft));
+    padding: 20px;
+  }
+  .card { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 380px; }
+  h1 { margin: 0 0 4px; font-size: 20px; color: var(--navy); }
+  .login-logo { height: 28px; width: auto; display: block; margin: 0 0 4px; }
+  p.sub { margin: 0 0 24px; font-size: 13px; color: var(--muted); }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+  input {
+    width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--line);
+    font-family: inherit; font-size: 14px; margin-bottom: 16px;
+  }
+  input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+  button {
+    width: 100%; background: var(--navy); color: white; border: none; padding: 12px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  button:hover { opacity: 0.92; }
+  .erro { background: #fbeae6; color: #D65C3F; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  .rodape { text-align: center; margin-top: 18px; font-size: 13px; }
+  .rodape a { color: var(--teal); text-decoration: none; font-weight: 600; }
+
+  .divisor { display: flex; align-items: center; gap: 10px; margin: 20px 0; }
+  .divisor .linha { flex: 1; height: 1px; background: var(--line); }
+  .divisor span { font-size: 12px; color: var(--muted); }
+  .btn-google {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; background: white; color: #3c4043; border: 1px solid var(--line);
+    padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    text-decoration: none; box-sizing: border-box;
+  }
+  .btn-google:hover { background: #f7f9fa; border-color: #c7d0d5; }
+
+  h1, h2, h3, .brand, header h1 { font-family: 'Manrope', sans-serif; }
+
+  @media (max-width: 480px) {
+    body { padding: 16px; }
+    .card { max-width: 100%; padding: 24px 20px; border-radius: 14px; }
+    h1 { font-size: 18px; }
+    .btn-google { padding: 10px; font-size: 13.5px; }
+  }
+</style>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0E2A3B">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lifemax">
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/static/service-worker.js").catch(() => {});
+  });
+}
+</script>
+</head>
+<body>
+  <div class="card">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Lifemax" class="login-logo">
+    <p class="sub">Entre com seu telefone e senha</p>
+
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% for categoria, texto in mensagens %}
+        <div class="erro">{{ texto }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
+
+    <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="telefone">Telefone (com DDD)</label>
+      <input type="text" id="telefone" name="telefone" placeholder="31999999999" required autofocus>
+
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" required>
+
+      <button type="submit">Entrar</button>
+    </form>
+
+    <div class="divisor"><div class="linha"></div><span>ou</span><div class="linha"></div></div>
+
+    <a href="{{ url_for('auth.login_google') }}" class="btn-google">
+      <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.68 9c0-.593.102-1.17.284-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"/>
+        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z"/>
+      </svg>
+      Entrar com Google
+    </a>
+
+    <div class="rodape">
+      Primeiro acesso? <a href="{{ url_for('auth.primeiro_acesso') }}">Criar senha</a>
+    </div>
+    <div class="rodape">
+      <a href="{{ url_for('auth.esqueci_senha') }}">Esqueci minha senha</a>
+    </div>
+  </div>
+</body>
+</html>

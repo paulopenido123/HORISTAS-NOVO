@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contrato Digital — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --line: #DCE6E8; --muted: #55707C; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(160deg, var(--navy), var(--navy-soft));
+    padding: 20px;
+  }
+  .card { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 640px; }
+  h1 { margin: 0 0 4px; font-size: 20px; color: var(--navy); font-family: 'Manrope', sans-serif; }
+  .login-logo { height: 28px; width: auto; display: block; margin: 0 0 4px; }
+  p.sub { margin: 0 0 20px; font-size: 13px; color: var(--muted); }
+  .texto-termo {
+    max-height: 380px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px;
+    padding: 18px 20px; font-size: 12.5px; line-height: 1.6; color: #2b3b44; margin-bottom: 18px;
+    background: #F7FAFB;
+  }
+  .texto-termo p { margin: 0 0 10px; }
+  .texto-termo p:last-child { margin-bottom: 0; }
+  .titulo-contrato {
+    font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13.5px; color: var(--navy);
+    text-align: center; margin-bottom: 10px !important;
+  }
+  .preambulo-destaque {
+    font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; color: var(--navy-soft);
+    text-align: center; margin-bottom: 6px !important;
+  }
+  .secao-titulo {
+    font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; color: var(--navy);
+    margin: 16px 0 6px;
+  }
+  .texto-termo h3.secao-titulo:first-of-type { margin-top: 16px; }
+  .texto-termo ul.bullets { margin: 0 0 10px; padding-left: 20px; }
+  .texto-termo ul.bullets li { margin-bottom: 5px; }
+  label.check {
+    display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--navy);
+    margin-bottom: 18px; cursor: pointer; font-weight: 600;
+  }
+  label.check input { margin-top: 3px; width: auto; }
+  button {
+    width: 100%; background: var(--navy); color: white; border: none; padding: 12px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  button:hover { opacity: 0.92; }
+  .erro { background: #fbeae6; color: #D65C3F; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  @media (max-width: 480px) {
+    body { padding: 16px; }
+    .card { max-width: 100%; padding: 24px 20px; border-radius: 14px; }
+    h1 { font-size: 18px; }
+    .texto-termo { max-height: 320px; }
+  }
+</style>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0E2A3B">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/static/service-worker.js").catch(() => {});
+  });
+}
+</script>
+</head>
+<body>
+  <div class="card">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Lifemax" class="login-logo">
+    <h1>Contrato Digital de Utilização</h1>
+    <p class="sub">Leia o contrato abaixo com atenção e confirme que concorda para continuar.</p>
+
+    {% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
+
+    <div class="texto-termo">
+      <p class="titulo-contrato">{{ titulo }}</p>
+
+      {% for texto in preambulo %}
+        {% if loop.index0 < 2 %}
+          <p class="preambulo-destaque">{{ texto }}</p>
+        {% else %}
+          <p>{{ texto }}</p>
+        {% endif %}
+      {% endfor %}
+
+      {% for titulo_secao, itens in secoes %}
+        <h3 class="secao-titulo">{{ titulo_secao }}</h3>
+        {% for item in itens %}
+          {% if item is mapping %}
+            <ul class="bullets">
+              {% for b in item.bullets %}
+                <li>{{ b }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>{{ item }}</p>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+
+      <h3 class="secao-titulo">Declarações do aceite eletrônico</h3>
+      <p>Ao marcar a caixa abaixo e continuar, você declara que:</p>
+      <ul class="bullets">
+        {% for declaracao in declaracoes %}
+          <li>{{ declaracao }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ next }}">
+      <label class="check">
+        <input type="checkbox" name="aceito" value="sim" required>
+        Li e concordo integralmente com o Contrato Digital acima, incluindo todas as declarações listadas.
+      </label>
+      <button type="submit">Aceitar e continuar</button>
+    </form>
+  </div>
+</body>
+</html>

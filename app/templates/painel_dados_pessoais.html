@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dados Pessoais — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F8F9; --panel:#FFFFFF; --panel-2:#EAF4F3;
+    --line: rgba(14,42,58,0.10); --line-strong: rgba(14,42,58,0.22);
+    --ink:#10222E; --ink-muted:#55707C; --ink-faint:#8AA0A9;
+    --cyan:#0EA5A0; --cyan-soft: rgba(14,165,160,0.12);
+    --coral:#D65C3F; --coral-soft: rgba(214,92,63,0.12);
+    --navy:#0E2A3B; --onnavy-muted:#9FB8C4;
+    --display:'Manrope', sans-serif; --serif:'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--serif); }
+  a { color: inherit; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px;
+           background: var(--navy); position: sticky; top:0; z-index:100; }
+  .brand { font-family: var(--display); font-weight:800; color:#fff; font-size:15px; }
+  header a.sair, header a.voltar { font-size:13px; color: var(--onnavy-muted); text-decoration:none; margin-left:16px; }
+  header a.sair:hover, header a.voltar:hover { color:#fff; }
+  .container { max-width: 760px; margin: 0 auto; padding: 32px 20px 80px; }
+  .hero-txt { margin-bottom: 24px; }
+  .hero-txt .eyebrow { font-family: var(--display); font-weight:700; font-size:12px; color: var(--cyan);
+                        text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .hero-txt h1 { font-family: var(--display); font-size: 24px; color: var(--navy); }
+  .hero-txt p { color: var(--ink-muted); margin-top:6px; font-size:14px; line-height:1.55; }
+  .flash { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; font-family: var(--display); }
+  .flash.sucesso { background: var(--cyan-soft); color: var(--cyan); }
+  .flash.erro { background: var(--coral-soft); color: var(--coral); }
+  .card { background: var(--panel); border:1px solid var(--line-strong); border-radius:10px; padding:24px; margin-bottom:20px; }
+  .card h2 { font-family: var(--display); font-size:15px; color: var(--navy); margin-bottom:4px; }
+  .card .desc { font-size:13px; color: var(--ink-muted); margin-bottom:18px; line-height:1.5; }
+  label { display:block; font-family: var(--display); font-weight:700; font-size:12px; color: var(--ink-faint);
+          text-transform:uppercase; letter-spacing:.02em; margin: 14px 0 6px; }
+  label:first-child { margin-top:0; }
+  input[type=text], input[type=email], input[type=number], textarea {
+    width:100%; padding:10px 12px; border-radius:7px; border:1px solid var(--line-strong);
+    font-family: var(--serif); font-size:14px; color: var(--ink); background:#fff;
+  }
+  input:disabled, textarea:disabled { background: var(--panel-2); color: var(--ink-muted); cursor: not-allowed; }
+  textarea { resize: vertical; min-height: 70px; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
+  @media (max-width:600px){ .grid-2 { grid-template-columns:1fr; } }
+  .barra-acoes { display:flex; gap:10px; justify-content:flex-end; margin-bottom:20px; }
+  .btn { background: var(--cyan); color:#fff; border:none; padding:11px 20px; border-radius:7px;
+         font-family: var(--display); font-weight:700; font-size:13.5px; cursor:pointer; }
+  .btn:disabled { background: var(--line-strong); color: var(--ink-faint); cursor: not-allowed; }
+  .btn-outline { background:transparent; color:var(--ink-muted); border:1px solid var(--line-strong); padding:10px 19px;
+                 border-radius:7px; font-family: var(--display); font-weight:700; font-size:13.5px; cursor:pointer; }
+  .btn-outline.ativo { border-color: var(--cyan); color: var(--cyan); }
+  #status-msg { font-size:13px; margin-top:4px; }
+</style>
+</head>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<body>
+<script>
+(function() {
+  const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+  const token = tokenMeta ? tokenMeta.content : null;
+  const fetchOriginal = window.fetch;
+  window.fetch = function(url, opcoes) {
+    opcoes = opcoes || {};
+    const metodo = (opcoes.method || 'GET').toUpperCase();
+    if (token && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(metodo)) {
+      opcoes.headers = Object.assign({}, opcoes.headers, { 'X-CSRFToken': token });
+    }
+    return fetchOriginal(url, opcoes);
+  };
+})();
+</script>
+
+<header>
+  <div class="brand">✎ Dados Pessoais</div>
+  <div>
+    <a class="voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar ao painel</a>
+    <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="hero-txt">
+    <div class="eyebrow">CADASTRO</div>
+    <h1>Seus dados pessoais e profissionais</h1>
+    <p>Esses são os dados que o sistema usa pra recibos, notas fiscais e informações que a IA
+       responde por WhatsApp. Já vêm preenchidos com o que já estava no seu cadastro — clique em
+       "Editar dados" pra corrigir ou completar qualquer campo.</p>
+  </div>
+
+  <div class="barra-acoes">
+    <button type="button" class="btn-outline" id="btn-editar">✎ Editar dados</button>
+    <button type="button" class="btn" id="btn-salvar" disabled>💾 Salvar</button>
+  </div>
+  <div id="status-msg"></div>
+
+  <form id="form-dados-pessoais">
+    <div class="card">
+      <h2>Dados de contato</h2>
+      <label for="nome">Nome completo</label>
+      <input type="text" id="nome" name="nome" value="{{ medico.nome or '' }}" disabled>
+
+      <div class="grid-2">
+        <div>
+          <label for="telefone">Telefone (login)</label>
+          <input type="text" id="telefone" name="telefone" value="{{ medico.telefone|telefone_sem_ddi if medico.telefone else '' }}" placeholder="31999999999" disabled>
+        </div>
+        <div>
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" value="{{ medico.email or '' }}" disabled>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label for="cpf_cnpj">CPF / CNPJ</label>
+          <input type="text" id="cpf_cnpj" name="cpf_cnpj" value="{{ medico.cpf_cnpj or '' }}" placeholder="000.000.000-00" disabled>
+        </div>
+        <div>
+          <label for="crm">CRM</label>
+          <input type="text" id="crm" name="crm" value="{{ medico.crm or '' }}" placeholder="CRM/MG 000000" disabled>
+        </div>
+      </div>
+
+      <label for="especialidade">Especialidade</label>
+      <input type="text" id="especialidade" name="especialidade" value="{{ medico.especialidade or '' }}" disabled>
+    </div>
+
+    <div class="card">
+      <h2>Endereço</h2>
+      <div class="grid-2">
+        <div>
+          <label for="endereco_cep">CEP</label>
+          <input type="text" id="endereco_cep" name="endereco_cep" value="{{ medico.endereco_cep or '' }}" disabled>
+        </div>
+        <div>
+          <label for="endereco_estado">Estado (UF)</label>
+          <input type="text" id="endereco_estado" name="endereco_estado" value="{{ medico.endereco_estado or '' }}" maxlength="2" disabled>
+        </div>
+      </div>
+      <label for="endereco_rua">Rua/Avenida</label>
+      <input type="text" id="endereco_rua" name="endereco_rua" value="{{ medico.endereco_rua or '' }}" disabled>
+      <div class="grid-2">
+        <div>
+          <label for="endereco_numero">Número</label>
+          <input type="text" id="endereco_numero" name="endereco_numero" value="{{ medico.endereco_numero or '' }}" disabled>
+        </div>
+        <div>
+          <label for="endereco_complemento">Complemento</label>
+          <input type="text" id="endereco_complemento" name="endereco_complemento" value="{{ medico.endereco_complemento or '' }}" disabled>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label for="endereco_bairro">Bairro</label>
+          <input type="text" id="endereco_bairro" name="endereco_bairro" value="{{ medico.endereco_bairro or '' }}" disabled>
+        </div>
+        <div>
+          <label for="endereco_cidade">Cidade</label>
+          <input type="text" id="endereco_cidade" name="endereco_cidade" value="{{ medico.endereco_cidade or '' }}" disabled>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Dados de atendimento</h2>
+      <div class="desc">Isso é o que já vinha da planilha de cadastro — pode corrigir ou completar aqui.</div>
+      <div class="grid-2">
+        <div>
+          <label for="valor_consulta">Valor da consulta (R$)</label>
+          <input type="number" step="0.01" id="valor_consulta" name="valor_consulta" value="{{ medico.valor_consulta or '' }}" disabled>
+        </div>
+        <div>
+          <label for="tempo_consulta">Tempo médio de consulta</label>
+          <input type="text" id="tempo_consulta" name="tempo_consulta" value="{{ medico.tempo_consulta or '' }}" placeholder="ex: 30 minutos" disabled>
+        </div>
+      </div>
+
+      <label for="convenios">Convênios aceitos (separados por vírgula)</label>
+      <input type="text" id="convenios" name="convenios" value="{{ (medico.convenios or [])|join(', ') }}" placeholder="ex: Unimed, Bradesco Saúde" disabled>
+
+      <label for="formas_pagamento">Formas de pagamento aceitas</label>
+      <input type="text" id="formas_pagamento" name="formas_pagamento" value="{{ medico.formas_pagamento or '' }}" placeholder="ex: Pix, cartão, dinheiro" disabled>
+
+      <div class="grid-2">
+        <div>
+          <label for="retorno_particular">Retorno (particular)</label>
+          <input type="text" id="retorno_particular" name="retorno_particular" value="{{ medico.retorno_particular or '' }}" placeholder="ex: Grátis em até 30 dias" disabled>
+        </div>
+        <div>
+          <label for="retorno_convenio">Retorno (convênio)</label>
+          <input type="text" id="retorno_convenio" name="retorno_convenio" value="{{ medico.retorno_convenio or '' }}" disabled>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label for="idade_minima">Idade mínima atendida</label>
+          <input type="text" id="idade_minima" name="idade_minima" value="{{ medico.idade_minima or '' }}" placeholder="ex: Sem restrição" disabled>
+        </div>
+        <div>
+          <label for="politica_cancelamento">Política de cancelamento</label>
+          <input type="text" id="politica_cancelamento" name="politica_cancelamento" value="{{ medico.politica_cancelamento or '' }}" disabled>
+        </div>
+      </div>
+
+      <label for="observacoes_atendimento">Observações gerais</label>
+      <textarea id="observacoes_atendimento" name="observacoes_atendimento" disabled>{{ medico.observacoes_atendimento or '' }}</textarea>
+    </div>
+  </form>
+</div>
+
+<script>
+const camposEditaveis = () => document.querySelectorAll('#form-dados-pessoais input, #form-dados-pessoais textarea');
+const btnEditar = document.getElementById('btn-editar');
+const btnSalvar = document.getElementById('btn-salvar');
+const statusEl = document.getElementById('status-msg');
+let editando = false;
+
+btnEditar.addEventListener('click', () => {
+  editando = !editando;
+  camposEditaveis().forEach(campo => { if (campo.id !== 'nome') campo.disabled = !editando; });
+  btnEditar.textContent = editando ? '✕ Cancelar edição' : '✎ Editar dados';
+  btnEditar.classList.toggle('ativo', editando);
+  btnSalvar.disabled = !editando;
+  statusEl.textContent = '';
+});
+
+btnSalvar.addEventListener('click', async () => {
+  const form = document.getElementById('form-dados-pessoais');
+  const dados = {};
+  new FormData(form).forEach((valor, chave) => {
+    if (chave === 'convenios') {
+      dados[chave] = valor.split(',').map(v => v.trim()).filter(Boolean);
+    } else if (chave === 'valor_consulta') {
+      dados[chave] = valor ? parseFloat(valor) : null;
+    } else {
+      dados[chave] = valor;
+    }
+  });
+
+  statusEl.textContent = 'Salvando...';
+  statusEl.style.color = 'var(--ink-muted)';
+  btnSalvar.disabled = true;
+
+  try {
+    const resp = await fetch('{{ url_for("medico_painel.salvar_dados_pessoais") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    });
+
+    let resultado;
+    try {
+      resultado = await resp.json();
+    } catch (erroDeParse) {
+      // a resposta não veio em JSON (ex: página de erro do servidor) --
+      // mostra o status em vez do genérico "erro de conexão", que
+      // escondia o problema real
+      statusEl.textContent = `Erro ao salvar (código ${resp.status}). Se continuar, avise o suporte técnico.`;
+      statusEl.style.color = 'var(--coral)';
+      btnSalvar.disabled = false;
+      return;
+    }
+
+    if (!resp.ok) {
+      statusEl.textContent = resultado.erro || 'Erro ao salvar.';
+      statusEl.style.color = 'var(--coral)';
+      btnSalvar.disabled = false;
+      return;
+    }
+    statusEl.textContent = '✅ Dados salvos com sucesso.';
+    statusEl.style.color = 'var(--cyan)';
+    editando = false;
+    camposEditaveis().forEach(campo => campo.disabled = true);
+    btnEditar.textContent = '✎ Editar dados';
+    btnEditar.classList.remove('ativo');
+  } catch (e) {
+    statusEl.textContent = 'Erro de conexão com o servidor.';
+    statusEl.style.color = 'var(--coral)';
+    btnSalvar.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Horas — Lifemax Admin</title><style>
+body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
+.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between}
+.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}
+.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}
+.nav a.active{color:#10AFA9}
+.wrap{max-width:1180px;margin:auto;padding:28px 24px}
+.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px}
+.filtro{display:flex;align-items:flex-end;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.filtro label{display:block;font-size:12.5px;font-weight:700;color:#62788A;margin-bottom:6px}
+.filtro input{padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px}
+.filtro button{padding:10px 16px;border:0;border-radius:8px;background:#10AFA9;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:26px}
+.kpi{border-radius:14px;padding:22px;color:#fff}
+.kpi.green{background:linear-gradient(135deg,#1FA35A,#1C8A4C)}
+.kpi.navy{background:linear-gradient(135deg,#0E3A52,#082A3D)}
+.kpi.cinza{background:linear-gradient(135deg,#5C7080,#3F5060)}
+.kpi .rotulo{font-size:14px;font-weight:700;margin-bottom:2px}
+.kpi .sub{font-size:11.5px;opacity:0.85;margin-bottom:10px}
+.kpi .num{font-size:34px;font-weight:800}
+.nota{color:#62788A;font-size:12.5px;margin-top:-14px;margin-bottom:24px}
+.titulo-acumulado{font-size:13.5px;font-weight:800;color:#0B3A52;text-transform:uppercase;letter-spacing:.03em;margin-bottom:14px;padding-top:10px;border-top:1px solid #e3ebef}
+@media(max-width:760px){.kpis{grid-template-columns:1fr}}
+</style></head><body>
+<div class="top"><strong>LIFEMAX ADMIN · HORAS</strong><span>Administrador</span></div>
+<div class="nav">
+  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
+  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
+  <a href="{{ url_for('admin.clientes') }}">Clientes</a>
+  <a href="{{ url_for('admin.horas') }}" class="active">Horas</a>
+  <a href="{{ url_for('admin.relatorios') }}">Relatórios</a>
+  <a href="{{ url_for('admin.admin_logout') }}">Sair</a>
+</div>
+<div class="wrap">
+  <div class="card">
+    <form class="filtro" method="get">
+      <div>
+        <label>Filtre por mês</label>
+        <input type="month" name="mes" value="{{ mes_valor }}">
+      </div>
+      <button type="submit">Aplicar</button>
+    </form>
+
+    <div class="kpis">
+      <div class="kpi green">
+        <div class="rotulo">Horas vendidas</div>
+        <div class="sub">Pacotes comprados em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }}</div>
+        <div class="num">{{ stats.horas_vendidas }}</div>
+      </div>
+      <div class="kpi navy">
+        <div class="rotulo">Horas utilizadas</div>
+        <div class="sub">Reservas feitas em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }}</div>
+        <div class="num">{{ stats.horas_utilizadas }}</div>
+      </div>
+      <div class="kpi green">
+        <div class="rotulo">Horas na praça (mês)</div>
+        <div class="sub">Saldo líquido gerado em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }} (vendidas − utilizadas no mês)</div>
+        <div class="num">{{ stats.horas_na_praca_mes }}</div>
+      </div>
+    </div>
+
+    <p class="nota">"Horas vendidas" e "horas utilizadas" contam só pacotes comprados de verdade (via PIX/cartão) e reservas efetivamente feitas -- ajustes manuais e transferências entre carteiras não entram nessa conta. "Horas na praça (mês)" é vendidas menos utilizadas dentro do mês filtrado.</p>
+
+    <div class="titulo-acumulado">Total acumulado (sem filtro de mês)</div>
+    <div class="kpis">
+      <div class="kpi cinza">
+        <div class="rotulo">Horas vendidas (total)</div>
+        <div class="sub">Todos os pacotes já comprados, desde sempre</div>
+        <div class="num">{{ stats.horas_vendidas_total }}</div>
+      </div>
+      <div class="kpi cinza">
+        <div class="rotulo">Horas utilizadas (total)</div>
+        <div class="sub">Todas as reservas já feitas, desde sempre</div>
+        <div class="num">{{ stats.horas_utilizadas_total }}</div>
+      </div>
+      <div class="kpi cinza">
+        <div class="rotulo">Horas na praça (total)</div>
+        <div class="sub">Somatória do saldo de todos os clientes, agora</div>
+        <div class="num">{{ stats.horas_na_praca_total }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

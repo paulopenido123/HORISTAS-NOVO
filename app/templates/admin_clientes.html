@@ -1,0 +1,156 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Clientes — Lifemax Admin</title><style>
+body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
+.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between}
+.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}
+.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}
+.nav a.active{color:#10AFA9}
+.wrap{max-width:1180px;margin:auto;padding:28px 24px}
+.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px}
+input,select{padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px}
+button,.btn{padding:10px 14px;border:0;border-radius:8px;background:#10AFA9;color:#fff;font-weight:700;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
+.btn.alt{background:#082A3D}
+.busca{display:flex;gap:8px;margin-bottom:18px}
+.busca input{flex:1}
+table{width:100%;border-collapse:collapse}
+th,td{padding:11px;border-bottom:1px solid #e3ebef;text-align:left;font-size:13px;vertical-align:top}
+th{color:#62788A}
+.muted{color:#62788A;font-size:12.5px}
+.tag{display:inline-block;padding:3px 8px;border-radius:6px;background:#EAF6F5;color:#0B7B76;font-size:11.5px;font-weight:700}
+details.ajuste{margin-top:6px}
+details.ajuste summary{cursor:pointer;color:#10AFA9;font-weight:700;font-size:12.5px;list-style:none}
+details.ajuste summary::-webkit-details-marker{display:none}
+.form-ajuste{margin-top:10px;padding:12px;background:#F5F8FA;border-radius:8px;display:flex;flex-direction:column;gap:8px;min-width:220px}
+.form-ajuste label{font-size:12px;font-weight:600;color:#0B3A52}
+.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}
+.flash.ok{background:#E3F7EE;color:#0B7B45}
+.flash.erro{background:#FBEAE6;color:#B33}
+.nome-bloqueado{color:#C0392B}
+.status-tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.status-tag.liberado{background:#E3F7EE;color:#0B7B45}
+.status-tag.bloqueado{background:#FBEAE6;color:#B33}
+.form-autorizacao{margin-top:6px}
+.btn-autorizacao{font-size:12px;padding:6px 10px}
+.btn-autorizacao.liberar{background:#0B7B45}
+.btn-autorizacao.bloquear{background:#B33}
+@media(max-width:700px){table,thead,tbody,th,td,tr{display:block}th{display:none}td{border:none;padding:4px 0}tr{border-bottom:1px solid #e3ebef;padding:12px 0}}
+</style></head><body>
+<div class="top"><strong>LIFEMAX ADMIN · CLIENTES</strong><span>Administrador</span></div>
+<div class="nav">
+  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
+  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
+  <a href="{{ url_for('admin.clientes') }}" class="active">Clientes</a><a href="{{ url_for('admin.horas') }}">Horas</a><a href="{{ url_for('admin.relatorios') }}">Relatórios</a>
+  <a href="{{ url_for('admin.admin_logout') }}">Sair</a>
+</div>
+<div class="wrap">
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% for categoria, texto in mensagens %}
+      <div class="flash {{ categoria }}">{{ texto }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="card">
+    <h2 style="margin-top:0">Clientes cadastrados</h2>
+    <form class="busca" method="get">
+      <input type="text" name="busca" value="{{ busca }}" placeholder="Buscar por nome, telefone ou e-mail...">
+      <button type="submit">Buscar</button>
+      {% if busca %}<a class="btn alt" href="{{ url_for('admin.clientes') }}">Limpar</a>{% endif %}
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Contato</th>
+          <th>Vínculo</th>
+          <th>Acesso</th>
+          <th>Saldo Salas/Horas</th>
+          <th>Saldo IA</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in medicos %}
+        <tr>
+          <td><strong class="{{ 'nome-bloqueado' if not m.autorizado else '' }}">{{ m.nome }}</strong>{% if not m.ativo %}<br><span class="muted">(inativo)</span>{% endif %}</td>
+          <td class="muted">{{ m.telefone or '—' }}{% if m.email %}<br>{{ m.email }}{% endif %}</td>
+          <td><span class="tag">{{ m.tipo_vinculo or 'avulso' }}</span></td>
+          <td>
+            {% if m.autorizado %}
+            <span class="status-tag liberado">Autorizado</span>
+            {% else %}
+            <span class="status-tag bloqueado">Aguardando liberação</span>
+            {% endif %}
+            <form class="form-autorizacao" method="post" action="{{ url_for('admin.autorizacao_cliente', medico_id=m.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="busca" value="{{ busca }}">
+              {% if m.autorizado %}
+              <input type="hidden" name="autorizado" value="0">
+              <button type="submit" class="btn-autorizacao bloquear" onclick="return confirm('Bloquear {{ m.nome }}? Ele não vai conseguir reservar consultório até ser liberado de novo.')">Bloquear acesso</button>
+              {% else %}
+              <input type="hidden" name="autorizado" value="1">
+              <button type="submit" class="btn-autorizacao liberar">Liberar acesso</button>
+              {% endif %}
+            </form>
+          </td>
+          <td>{{ m.saldo_horas }}h</td>
+          <td>R$ {{ "%.2f"|format(m.saldo_ia) }}</td>
+          <td>
+            <details class="ajuste" ontoggle="atualizarUnidadeAjuste(this.querySelector('select[name=carteira]'))">
+              <summary>Alterar saldo</summary>
+              <form class="form-ajuste" method="post" action="{{ url_for('admin.ajustar_saldo_cliente', medico_id=m.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Carteira</label>
+                <select name="carteira" required onchange="atualizarUnidadeAjuste(this)">
+                  <option value="salas">Salas/Horas (medido em horas)</option>
+                  <option value="ia">IA (medido em R$)</option>
+                </select>
+                <label class="lbl-quantidade">Quantas horas? (negativo pra debitar)</label>
+                <input type="number" step="1" name="quantidade" class="input-quantidade" placeholder="ex: 15 ou -5" required>
+                <label>Motivo (opcional)</label>
+                <input type="text" name="descricao" placeholder="ex: crédito de teste">
+                <button type="submit">Confirmar ajuste</button>
+              </form>
+            </details>
+            <details class="ajuste">
+              <summary>Enviar link de acesso</summary>
+              <form class="form-ajuste" method="post" action="{{ url_for('admin.enviar_link_cliente', medico_id=m.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="busca" value="{{ busca }}">
+                <label>E-mail do cliente</label>
+                <input type="email" name="email" value="{{ m.email or '' }}" placeholder="email@exemplo.com" required>
+                <button type="submit">Enviar link por e-mail</button>
+                <span class="muted">Manda um link (válido 48h) pra ele criar uma senha e já entrar direto no painel dele -- sem precisar se cadastrar de novo.</span>
+              </form>
+            </details>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="muted">Nenhum cliente encontrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+// A carteira de Salas/Horas é medida em HORAS (não em R$) em todo o
+// sistema -- pedido do Paulo em 10/09/2026 -- então esse formulário troca
+// o rótulo/step do campo "quantidade" conforme a carteira escolhida: horas
+// (número inteiro) pra Salas/Horas, R$ (com centavos) pra IA.
+function atualizarUnidadeAjuste(select) {
+  if (!select) return;
+  const form = select.closest('form');
+  const label = form.querySelector('.lbl-quantidade');
+  const input = form.querySelector('.input-quantidade');
+  if (select.value === 'ia') {
+    label.textContent = 'Valor em R$ (negativo pra debitar)';
+    input.step = '0.01';
+    input.placeholder = 'ex: 150 ou -50';
+  } else {
+    label.textContent = 'Quantas horas? (negativo pra debitar)';
+    input.step = '1';
+    input.placeholder = 'ex: 15 ou -5';
+  }
+}
+</script>
+</body></html>

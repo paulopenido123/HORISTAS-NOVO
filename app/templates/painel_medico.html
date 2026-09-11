@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu painel — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F8F9; --panel:#FFFFFF; --panel-2:#EAF4F3;
+    --line: rgba(14,42,58,0.10); --line-strong: rgba(14,42,58,0.22);
+    --ink:#10222E; --ink-muted:#55707C; --ink-faint:#8AA0A9;
+    --cyan:#0EA5A0; --cyan-soft: rgba(14,165,160,0.12); --cyan-glow:#3EE2E6;
+    --coral:#D65C3F; --coral-soft: rgba(214,92,63,0.12);
+    --verde:#1F8F5C;
+    --navy:#0E2A3B; --navy-soft:#15425C;
+    --onnavy-ink:#EAF2F5; --onnavy-muted:#9FB8C4;
+    --display:'Manrope', sans-serif; --serif:'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--display); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+
+  /* Faixa de topo (logo + nome + Sair) -- pedido do Paulo em 11/09/2026:
+     antes eram DUAS faixas escuras empilhadas (o <header> sticky em cima
+     do <section class="hero">), agora é uma só: essa linha de topo vive
+     DENTRO do próprio .hero, sem o header separado. */
+  .hero-topo {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 28px 22px; flex-wrap: wrap; gap: 10px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; color: var(--onnavy-ink); }
+  .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan-glow); box-shadow: 0 0 10px var(--cyan-glow); }
+  .brand-logo { height: 66px; width: auto; display: block; }
+  .hero-topo-direita { display: flex; align-items: center; gap: 16px; }
+  .hero-nome { font-weight: 700; font-size: 14px; color: var(--onnavy-ink); }
+  .sair { font-size: 13px; color: var(--onnavy-muted); text-decoration: none; padding: 8px 14px; border-radius: 7px; transition: background 0.15s, color 0.15s; }
+  .sair:hover { color: var(--onnavy-ink); background: rgba(255,255,255,0.08); }
+
+  /* ---------- HERO (Área do cliente) ---------- */
+  .hero { padding: 0 0 40px; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%); }
+  .eyebrow { font-size: 12.5px; font-weight: 700; color: var(--cyan-glow); letter-spacing: 0.04em; margin-bottom: 10px; text-transform: uppercase; }
+  .hero h1 { font-weight: 800; font-size: clamp(26px, 3.6vw, 44px); line-height: 1.12; letter-spacing: -0.01em; color: #fff; }
+  .lead { color: rgba(234,242,245,0.82); font-size: 15.5px; margin-top: 10px; max-width: 520px; line-height: 1.6; }
+
+  /* ---------- Status/kicker/tag/total (padrão "área do cliente") ---------- */
+  .kicker { font-weight: 700; font-size: 12px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 6px; }
+  .tag { display: inline-block; background: var(--cyan-soft); color: var(--cyan); font-size: 12px; font-weight: 700; padding: 7px 16px; border-radius: 20px; }
+  .total { font-weight: 800; font-size: 38px; color: var(--ink); font-family: var(--display); line-height: 1.1; margin: 4px 0 2px; }
+  .muted-cell { font-size: 13px; color: var(--ink-muted); line-height: 1.55; }
+  .aviso-saldo { background: var(--coral-soft); color: var(--coral); padding: 8px 12px; border-radius: 8px; font-size: 12px; margin-top: 10px; }
+
+  .container { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .flash { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 22px; font-family: var(--display); }
+  .flash.sucesso { background: var(--cyan-soft); color: var(--cyan); }
+  .flash.erro { background: var(--coral-soft); color: var(--coral); }
+
+  /* ---------- BOARD / CELL SYSTEM ---------- */
+  .board { background: linear-gradient(165deg, var(--panel) 0%, var(--panel-2) 100%); border: 1px solid var(--line-strong); border-radius: 10px; overflow: hidden; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(14,42,58,0.05); }
+  .board-top { display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink-faint); }
+  .board-top .puck { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  .board-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--line); }
+  @media (max-width: 860px) { .board-grid { grid-template-columns: 1fr; } }
+  .cell { background: var(--panel); padding: 24px; }
+  .cell-label { font-weight: 700; font-size: 12px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 16px; }
+
+  /* Gauge (saldo em horas) */
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 6px 0 4px; }
+  .gauge { width: 128px; height: 128px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative;
+           background: conic-gradient(var(--cyan) 0deg var(--gauge-deg), rgba(14,165,160,0.12) var(--gauge-deg) 360deg); }
+  .gauge::before { content: ''; position: absolute; width: 96px; height: 96px; border-radius: 50%; background: var(--panel); }
+  .gauge-val { position: relative; font-weight: 800; font-size: 20px; color: var(--cyan); }
+  .gauge-unit { position: relative; font-size: 11px; color: var(--ink-muted); margin-top: -2px; }
+  .gauge-caption { font-size: 12.5px; color: var(--ink-muted); margin-top: 14px; }
+
+  .kv { display: flex; justify-content: space-between; font-size: 13.5px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .kv span:first-child { color: var(--ink-muted); }
+  .kv span:last-child { color: var(--ink); font-weight: 600; }
+
+  .btn-cyan { background: var(--cyan); color: #fff; border: none; padding: 11px 18px; border-radius: 7px; font-family: var(--display); font-weight: 700; font-size: 13.5px; cursor: pointer; width: 100%; }
+  .btn-ghost { background: transparent; color: var(--ink-muted); border: 1px solid var(--line-strong); padding: 10px 16px; border-radius: 7px; font-family: var(--display); font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
+  .btn-ghost:hover { color: var(--ink); border-color: var(--cyan); }
+  .btn-coral-outline { background: transparent; color: var(--coral); border: 1px solid var(--coral-soft); padding: 9px 14px; border-radius: 7px; font-family: var(--display); font-weight: 600; font-size: 13px; cursor: pointer; }
+
+  /* Módulos */
+  .grid-modulos { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+  .card-modulo { border: 1px solid var(--line); border-radius: 10px; padding: 16px; background: var(--panel-2); }
+  .card-modulo.modulo-ativo { border-color: var(--cyan); background: linear-gradient(160deg, var(--cyan-soft), var(--panel-2)); }
+  .modulo-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .modulo-icone { font-size: 22px; }
+  .badge-modulo { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 10px; letter-spacing: 0.03em; }
+  .badge-modulo.ativo { background: var(--cyan); color: #fff; }
+  .badge-modulo.beta { background: var(--coral); color: #fff; }
+  .badge-modulo.em_desenvolvimento { background: rgba(14,42,58,0.07); color: var(--ink-faint); }
+  .modulo-numero { font-size: 10px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .card-modulo h3 { font-weight: 700; font-size: 14px; color: var(--ink); margin-bottom: 6px; }
+  .card-modulo p { font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
+  .modulo-link { display: inline-block; margin-top: 10px; font-size: 12.5px; font-weight: 700; color: var(--cyan); text-decoration: none; }
+
+  .painel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(14,42,58,0.05); }
+  .painel h2 { font-weight: 700; font-size: 14.5px; color: var(--ink); margin-bottom: 14px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--ink-faint); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--line); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.02em; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--line); color: var(--ink); }
+  .valor-positivo { color: var(--verde); font-weight: 600; }
+  .valor-negativo { color: var(--coral); font-weight: 600; }
+  .vazio { color: var(--ink-faint); font-size: 13px; padding: 12px 0; }
+
+  /* ---------- Minha agenda (inline no topo do painel) ---------- */
+  .status-tag { display:inline-block; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .status-tag.cancelada { background: var(--coral-soft); color: var(--coral); }
+  .btn-cancelar { background: var(--coral-soft); color: var(--coral); border:1px solid rgba(214,92,63,0.3); border-radius:6px; padding:4px 9px; font-family: var(--display); font-weight:600; font-size:11px; cursor:pointer; }
+  .btn-cancelar:disabled { opacity:0.5; cursor:not-allowed; }
+  .aviso-linha-12h { color: var(--coral); font-size:11px; font-weight:600; margin-top:4px; max-width:180px; }
+  .painel-topo { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+  .painel-topo h2 { margin-bottom:0; }
+  .botoes-agenda { display:flex; gap:8px; flex-wrap:wrap; }
+  .btn-ghost.pequeno { padding:8px 12px; font-size:12.5px; }
+  /* Botões "azul da faixa escura" -- pedido do Paulo em 11/09/2026: mesma
+     cor de fundo do topo da página (var(--navy)), letras brancas -- pros
+     3 botões principais do painel do médico ("Cadastre o seu paciente",
+     "Pacientes cadastrados", "Reservar consultórios"). */
+  .btn-navy { background: var(--navy); color: #fff; border: 1px solid var(--navy); padding: 10px 16px; border-radius: 7px; font-family: var(--display); font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; transition: background 0.15s; }
+  .btn-navy:hover { background: var(--navy-soft); color: #fff; }
+  .btn-navy.grande { padding: 15px 28px; font-size: 15.5px; font-weight: 800; }
+  details.ajuste-paciente { margin-top:6px; }
+  details.ajuste-paciente summary { cursor:pointer; color: var(--cyan); font-weight:700; font-size:12px; list-style:none; }
+  details.ajuste-paciente summary::-webkit-details-marker { display:none; }
+  .form-paciente { margin-top:8px; padding:12px; background: var(--panel-2); border-radius:8px; display:flex; flex-direction:column; gap:6px; min-width:210px; }
+  .opcao-paciente { display:flex; align-items:center; gap:9px; font-size:12.5px; color: var(--ink); cursor:pointer; padding:3px 0; }
+  input[type=radio].marcar-x { appearance:none; -webkit-appearance:none; width:17px; height:17px; min-width:17px; border:1.5px solid var(--line-strong); border-radius:4px; position:relative; cursor:pointer; background:#fff; }
+  input[type=radio].marcar-x:checked { border-color: var(--coral); }
+  input[type=radio].marcar-x:checked::after { content:'✕'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color: var(--coral); }
+  .btn-inserir-paciente { margin-top:4px; background: var(--cyan); color:#fff; border:none; border-radius:7px; padding:8px 14px; font-family: var(--display); font-weight:700; font-size:12.5px; cursor:pointer; align-self:flex-start; }
+  .celula-paciente { font-weight:600; }
+  .celula-paciente.vazia { color: var(--ink-faint); font-weight:400; }
+
+  .precos-info { font-size: 13.5px; color: var(--ink-muted); }
+  .precos-info strong { color: var(--ink); }
+
+  input[type=text], input[type=number], input[type=password], input[type=date], input[type=email], select {
+    width: 100%; padding: 10px 13px; border-radius: 7px; border: 1px solid var(--line-strong);
+    background: #fff; color: var(--ink); font-family: var(--display); font-size: 13.5px;
+  }
+  input::placeholder { color: var(--ink-faint); }
+  #form-paciente label, #form-editar-paciente label { display:flex; flex-direction:column; gap:5px; }
+  #form-paciente .muted-cell, #form-editar-paciente .muted-cell { font-size: 12px; }
+
+  /* Modal de compra */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(14,30,40,0.55); align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+  .modal-overlay.aberto { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--line-strong); border-radius: 12px; padding: 26px; width: 100%; max-width: 360px; text-align: center; box-shadow: 0 20px 60px rgba(14,42,58,0.25); }
+  .modal h3 { font-weight: 700; font-size: 16px; color: var(--ink); margin-bottom: 4px; }
+  .modal p { font-size: 13px; color: var(--ink-muted); margin: 4px 0 16px; }
+  .valores-rapidos { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; justify-content: center; }
+  .valores-rapidos button { background: var(--cyan-soft); color: var(--cyan); border: 1px solid rgba(14,165,160,0.3); border-radius: 7px; padding: 8px 12px; font-size: 13px; cursor: pointer; font-family: var(--display); font-weight: 600; }
+  .modal input { text-align: center; font-size: 16px; margin-bottom: 14px; }
+  .modal .btn-gerar { width: 100%; background: var(--cyan); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: var(--display); font-size: 13.5px; }
+  .modal .btn-fechar { margin-top: 10px; background: none; border: none; color: var(--ink-muted); font-size: 13px; cursor: pointer; font-family: var(--display); }
+  .modal .opcao-link { display: block; width: 100%; margin-top: 10px; background: none; border: none; color: var(--cyan); font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: var(--display); text-align: center; }
+  .qrcode-area img { width: 200px; height: 200px; margin: 0 auto 12px; display: block; border-radius: 8px; }
+  .copia-cola { background: var(--bg); border: 1px solid var(--line); color: var(--ink-muted); padding: 10px; border-radius: 8px; font-size: 11px; word-break: break-all; margin-bottom: 12px; }
+  .status-aguardando { color: var(--ink-muted); font-size: 13px; }
+  .status-pago { color: var(--cyan); font-weight: 700; }
+
+  /* ---- celular ---- */
+  @media (max-width: 640px) {
+    .hero-topo { padding: 14px 16px 16px; flex-wrap: wrap; gap: 8px; row-gap: 4px; }
+    .hero { padding: 0 0 28px; }
+    .container { padding: 22px 16px 60px; }
+    .painel, .cell { padding: 16px; }
+    .board-top { padding: 12px 16px; }
+    table { font-size: 12px; }
+    .painel { overflow-x: auto; }
+    .valores-rapidos { justify-content: flex-start; }
+  }
+</style>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0E2A3B">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lifemax">
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/static/service-worker.js").catch(() => {});
+  });
+}
+</script>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+<script>
+(function() {
+  const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+  const token = tokenMeta ? tokenMeta.content : null;
+  const fetchOriginal = window.fetch;
+  window.fetch = function(url, opcoes) {
+    opcoes = opcoes || {};
+    const metodo = (opcoes.method || 'GET').toUpperCase();
+    if (token && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(metodo)) {
+      opcoes.headers = Object.assign({}, opcoes.headers, { 'X-CSRFToken': token });
+    }
+    return fetchOriginal(url, opcoes);
+  };
+})();
+</script>
+
+<section class="hero">
+  <div class="hero-topo">
+    <div class="brand"><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
+    <div class="hero-topo-direita">
+      <div class="hero-nome">Bem-vindo, {{ medico.nome }}</div>
+      <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
+    </div>
+  </div>
+  <div class="container" style="padding-top:0; padding-bottom:0;">
+    <div class="eyebrow">Área do cliente</div>
+    <h1>Seu painel Lifemax.</h1>
+    <p class="lead">Acompanhe sua contratação, seu saldo de créditos e suas reservas.</p>
+  </div>
+</section>
+
+<div class="container">
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% for categoria, texto in mensagens %}
+      <div class="flash {{ categoria }}">{{ texto }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if not medico.autorizado %}
+  <div class="flash erro">
+    Seu cadastro ainda está aguardando liberação do administrador. Você já pode comprar horas,
+    mas só vai conseguir reservar um consultório depois que seu acesso for autorizado.
+  </div>
+  {% endif %}
+
+  {# "Minha agenda" -- pedido do Paulo em 11/09/2026: fica logo no início
+     do painel (primeiro bloco da tela, antes até do "Status da
+     contratação" e do board de saldos), direto aqui, sem precisar de um
+     botão pra abrir uma tela separada (a rota /painel/agenda que existia
+     antes agora só redireciona pra cá). #}
+  <div class="painel" id="minha-agenda">
+    <div class="painel-topo">
+      <h2>📅 Minha agenda</h2>
+      <div class="botoes-agenda">
+        <button type="button" class="btn-navy" onclick="abrirModalPaciente()">+ Cadastre o seu paciente</button>
+        <a class="btn-navy" href="{{ url_for('medico_painel.pagina_pacientes_cadastrados') }}">Pacientes cadastrados</a>
+      </div>
+    </div>
+    {% if reservas %}
+    <table>
+      <thead><tr><th>Data</th><th>Horário</th><th>Consultório</th><th>Paciente</th><th>Ações</th></tr></thead>
+      <tbody id="corpo-tabela-agenda">
+        {% for r in reservas %}
+        {% set hora_inicio_real = (r.hora_inicio[:5] if r.tipo_reserva == 'hora' else {'manha': '08:00', 'tarde': '13:00', 'noite': '17:00'}.get(r.periodo, '08:00')) %}
+        <tr data-reserva-id="{{ r.id }}" data-data-iso="{{ r.data }}" data-hora-inicio="{{ hora_inicio_real }}">
+          <td>{{ r.data[8:10] }}/{{ r.data[5:7] }}/{{ r.data[0:4] }}</td>
+          <td>
+            {% if r.tipo_reserva == 'hora' %}
+              {{ (r.hora_inicio or '')[:5] }} – {{ (r.hora_fim or '')[:5] }}
+            {% else %}
+              {{ {'manha': 'Manhã (08:00–12:00)', 'tarde': 'Tarde (13:00–17:00)', 'noite': 'Noite (17:00–20:00)'}.get(r.periodo, r.periodo) }}
+            {% endif %}
+          </td>
+          <td>{{ r.consultorios.nome if r.consultorios else '—' }}</td>
+          <td>
+            <span class="celula-paciente {{ '' if r.pacientes else 'vazia' }}">{{ r.pacientes.nome_completo if r.pacientes else 'Nenhum paciente incluído' }}</span>
+            <details class="ajuste-paciente">
+              <summary>Incluir/alterar paciente</summary>
+              <div class="form-paciente">
+                {% if pacientes %}
+                  {% for p in pacientes %}
+                  <label class="opcao-paciente">
+                    <input type="radio" class="marcar-x" name="paciente-{{ r.id }}" value="{{ p.id }}" {% if r.paciente_id == p.id %}checked{% endif %}>
+                    <span>{{ p.nome_completo }}</span>
+                  </label>
+                  {% endfor %}
+                  <button type="button" class="btn-inserir-paciente" onclick="inserirPaciente('{{ r.id }}', this)">Inserir</button>
+                {% else %}
+                  <p class="muted-cell">Você ainda não tem pacientes cadastrados. Use o botão "Cadastre o seu paciente" no topo.</p>
+                {% endif %}
+              </div>
+            </details>
+          </td>
+          <td>
+            {% if r.status == 'cancelada' %}
+              <span class="status-tag cancelada">Cancelada</span>
+            {% else %}
+              <button class="btn-cancelar" onclick="cancelarReserva(this)">Cancelar</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="vazio">Você ainda não fez nenhuma reserva.</div>
+    {% endif %}
+  </div>
+
+  <div class="painel">
+    <div style="display:flex; justify-content:space-between; gap:20px; align-items:end; flex-wrap:wrap;">
+      <div>
+        <div class="kicker">Status da contratação</div>
+        <h2 style="font-size:19px;">Olá, {{ (medico.nome.split(' ')[0].rstrip('.') if medico.nome else 'médico') }}.</h2>
+      </div>
+      <div><span class="tag">{{ 'Ativo' if medico.autorizado else 'Aguardando liberação' }}</span></div>
+    </div>
+  </div>
+
+  {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
+  {# Botão "Reservar consultórios" -- pedido do Paulo em 10/09/2026: subiu
+     pro topo da página, logo abaixo do nome do cliente, em vez de ficar
+     lá embaixo depois da tabela de venda de horas avulsas. Mesma
+     condição de tipo_vinculo de sempre (só médico 'avulso' usa essa
+     tela -- ver comentário mais completo perto da tabela de venda de
+     horas avulsas, mais abaixo nesse arquivo). #}
+  <div class="painel">
+    <h2>Pronto para reservar mais um horário?</h2>
+    <p class="muted-cell" style="margin-bottom:14px;">Escolha a data, o horário e o consultório conforme disponibilidade. O tempo reservado é descontado automaticamente do seu saldo de horas.</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a class="btn-navy grande" href="{{ url_for('turnos.pagina_turnos') }}">🏥 Reservar consultórios</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="board">
+    <div class="board-top"><span class="puck"></span>Visão geral da conta</div>
+    <div class="board-grid">
+      {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
+      <div class="cell">
+        <div class="cell-label">Saldo para reserva de salas</div>
+        <div class="total">{{ saldo_horas }}h</div>
+        <p class="muted-cell">Horas disponíveis pra reservar consultório. Reservar por hora ou por turno desconta direto daqui.</p>
+        <button class="btn-cyan" style="margin-top:16px;" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
+        {% if saldo_horas < horas_minimas %}
+          <div class="aviso-saldo">⚠️ Saldo insuficiente para a reserva mínima de {{ horas_minimas }}h — compre mais horas para reservar.</div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if status_ia %}
+      <div class="cell">
+        <div class="cell-label">Saldo para IA</div>
+        <div class="total">R$ {{ "%.2f"|format(status_ia.saldo) }}</div>
+        <p class="muted-cell">Usado só pela IA (secretária virtual, análise de prontuário, voz, contábil) — nunca pra reserva de sala.</p>
+        <button class="btn-cyan" style="margin-top:16px;" onclick="abrirModalCompra('ia')">+ Comprar créditos de IA</button>
+        {% if status_ia.saldo <= 10 %}
+          <div class="aviso-saldo">Pra utilizar o seu crédito, vá até <a href="{{ url_for('medico_painel.pagina_painel_ia') }}">Painel de IA</a> e ative a utilização.</div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="cell">
+        <div class="cell-label">Meu perfil</div>
+        <p class="muted-cell" style="margin-bottom:14px;">Seus dados de contato, endereço e informações de
+          atendimento (CRM, CPF/CNPJ, valor da consulta, convênios) ficam em uma tela só.</p>
+        <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" class="btn-ghost" style="width:100%;">✎ Editar dados pessoais</a>
+      </div>
+    </div>
+  </div>
+  {# As seções "Agenda" (Google Agenda) e "Ferramentas" (Agenda de Pacientes,
+     Prontuários, Assistente de IA, Contabilidade) foram removidas desta tela
+     porque este pacote (Reserva por Hora) não inclui essas rotas/módulos —
+     eles pertencem ao sistema maior da Lifemax, não a este recorte. Deixá-las
+     aqui quebrava a página inteira (url_for para blueprint inexistente ->
+     erro 500 em TODO acesso a /painel). Se esses módulos forem implantados
+     nesse mesmo projeto no futuro, é só trazer os blueprints deles e
+     reintroduzir os links. A checagem de conflito com o Google Agenda
+     (reserva_service._checar_conflito_google) continua funcionando nos
+     bastidores para quem já tinha conectado pelo sistema maior — só não há
+     tela aqui para conectar/desconectar. #}
+
+  {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
+  {# Aluguel de consultório por hora é só pra médico 'avulso' -- mensalista/
+     turno já tem consultório pela grade, e horista de verdade usa saldo de
+     horas próprio administrado pela recepção (fluxo fora deste pacote) --
+     nenhum dos dois usa essa tela (ver reserva_service.MedicoFixoNaoPodeAlugarError). #}
+  <div class="painel">
+    <h2>Venda de horas avulsas</h2>
+    <table>
+      <thead>
+        <tr><th>Quantidade horas</th><th>Valor hora avulsa</th><th>Total</th><th>Parcelamento</th></tr>
+      </thead>
+      <tbody>
+        {% for p in pacotes_horas %}
+        <tr>
+          <td>{{ p.horas }}h</td>
+          <td>R$ {{ "%.2f"|format(p.valor_hora) }}</td>
+          <td>R$ {{ "%.2f"|format(p.valor_total) }}</td>
+          <td>{% if p.max_parcelas > 1 %}até {{ p.max_parcelas }}x no cartão{% else %}sem parcelamento{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="kv"><span>Mínimo por reserva</span><span>{{ precos.horas_minimas }}h</span></div>
+  </div>
+  {% endif %}
+
+  {% if modulos %}
+  <div class="painel">
+    <h2>Módulos</h2>
+    <div class="grid-modulos">
+      {% for m in modulos %}
+      <div class="card-modulo {{ 'modulo-ativo' if m.status == 'ativo' else '' }}">
+        <div class="modulo-topo">
+          <span class="modulo-icone">{{ m.icone }}</span>
+          <span class="badge-modulo {{ m.status }}">
+            {{ {'ativo': 'Ativo', 'beta': 'Beta', 'em_desenvolvimento': 'Em breve'}.get(m.status, m.status) }}
+          </span>
+        </div>
+        <div class="modulo-numero">Módulo {{ m.numero }}</div>
+        <h3>{{ m.nome }}</h3>
+        <p>{{ m.descricao }}</p>
+        {% if m.status in ('ativo', 'beta') and m.rota %}
+          <a class="modulo-link" href="{{ m.rota }}">Acessar →</a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if status_ia %}
+  <div class="painel">
+    <h2>Assistente de IA</h2>
+    <p class="muted-cell" style="margin-bottom:10px;">
+      Saldo para IA: <strong>R$ {{ "%.2f"|format(status_ia.saldo) }}</strong>
+    </p>
+    <div class="grid-modulos">
+      {% for slug, m in status_ia.modulos.items() %}
+      <div class="card-modulo">
+        <h3>{{ m.rotulo }}</h3>
+        {% if m.ativado_pelo_medico %}
+          <p><strong style="color: var(--cyan);">✓ Ativado</strong> por você em Painel de IA.</p>
+        {% elif m.em_trial %}
+          <p><strong>Teste grátis</strong> — {{ m.dias_restantes }} dia(s) restante(s).</p>
+        {% else %}
+          <p>Não ativado — só o crédito de teste grátis funciona aqui.</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <a href="{{ url_for('medico_painel.pagina_painel_ia') }}" class="btn-ghost" style="margin-top:10px; display:inline-block;">⚙️ Painel de IA</a>
+    <p style="margin-top: 14px; color: var(--ink-muted);">
+      Envios de confirmação grátis restantes: {{ status_ia.tetos_gratis.secretaria_envio_paciente.restantes }} de
+      {{ status_ia.tetos_gratis.secretaria_envio_paciente.limite }}. Análises de prontuário grátis restantes:
+      {{ status_ia.tetos_gratis.prontuario_analise.restantes }} de {{ status_ia.tetos_gratis.prontuario_analise.limite }}.
+    </p>
+
+    {% if extrato_ia %}
+    <table style="margin-top: 14px;">
+      <thead><tr><th>Data</th><th>Módulo</th><th>Descrição</th><th>Custo</th></tr></thead>
+      <tbody>
+        {% for u in extrato_ia %}
+        <tr>
+          <td>{{ u.criado_em[:10] }}</td>
+          <td>{{ {'secretaria': 'Secretaria', 'prontuario': 'Prontuário', 'financeiro': 'Financeiro'}.get(u.modulo_slug, u.modulo_slug) }}</td>
+          <td>{{ u.descricao or '—' }}</td>
+          <td>
+            {% if u.gratuito %}
+              <span style="color: var(--ink-muted);">Grátis</span>
+            {% else %}
+              <span class="valor-negativo">R$ {{ "%.2f"|format(u.custo_cobrado) }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="vazio">Nenhum uso de IA ainda.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="painel">
+    <h2>Minhas notas fiscais</h2>
+    {% if notas_fiscais %}
+    <table>
+      <thead><tr><th>Data</th><th>NF</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for nf in notas_fiscais %}
+        <tr>
+          <td>{{ (nf.nota_fiscal_emitida_em or nf.criado_em)[:10] }}</td>
+          <td>{{ nf.nota_fiscal_numero }}</td>
+          <td>R$ {{ "%.2f"|format(nf.valor) }}</td>
+          <td>{{ 'Enviada' if nf.nota_fiscal_status == 'enviada' else 'Emitida' }}</td>
+          <td><a href="{{ nf.nota_fiscal_url }}" target="_blank" style="color: var(--cyan); font-weight:600; text-decoration:none;">Abrir / Imprimir</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="vazio">Nenhuma nota fiscal emitida ainda.</div>
+    {% endif %}
+  </div>
+
+  <div class="painel">
+    <h2>Histórico</h2>
+    {% if transacoes %}
+    <table>
+      <thead><tr><th>Data</th><th>Carteira</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Saldo após</th></tr></thead>
+      <tbody>
+        {% for t in transacoes %}
+        <tr>
+          <td>{{ t.criado_em[:10] }}</td>
+          <td>{{ 'IA' if (t.carteira or 'salas') == 'ia' else 'Salas/Horas' }}</td>
+          <td>{{ {'compra': 'Recarga', 'consumo': 'Uso', 'ajuste': 'Ajuste'}.get(t.tipo, t.tipo) }}</td>
+          <td>{{ t.descricao or '—' }}</td>
+          {% if (t.carteira or 'salas') == 'salas' %}
+          <td class="{{ 'valor-positivo' if t.horas_exibicao > 0 else 'valor-negativo' }}">
+            {% if t.horas_exibicao == t.horas_exibicao|int %}{{ t.horas_exibicao|int }}h{% else %}{{ '%.1f'|format(t.horas_exibicao) }}h{% endif %}
+          </td>
+          <td>{{ t.saldo_apos_horas }}h</td>
+          {% else %}
+          <td class="{{ 'valor-positivo' if t.valor > 0 else 'valor-negativo' }}">
+            {{ 'R$ %.2f'|format(t.valor) }}
+          </td>
+          <td>R$ {{ "%.2f"|format(t.saldo_apos) }}</td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="vazio">Nenhuma movimentação ainda.</div>
+    {% endif %}
+  </div>
+
+  <div class="painel" style="text-align:center;">
+    <h2 style="margin-bottom:6px;">Contrato Digital</h2>
+    <p style="color:var(--ink-muted); font-size:13px; margin-bottom:16px;">
+      Baixe uma cópia do Contrato Digital de Utilização de Consultórios que você aceitou,
+      com os dados do seu aceite eletrônico, sempre que precisar.
+    </p>
+    <a class="btn-ghost" href="{{ url_for('termos.baixar_contrato') }}">Baixar contrato (PDF)</a>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal-conteudo" style="max-width:480px;">
+
+    {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
+    <div class="passo-modal" id="passo-horas">
+      <h3>Comprar horas</h3>
+      <p style="margin-bottom:16px;">Escolha um pacote fechado — quanto mais horas de uma vez, menor o preço por hora. Esse crédito só serve pra reservar consultório.</p>
+      <div id="lista-pacotes" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
+        {% for p in pacotes_horas %}
+        <label class="opcao-pacote" style="display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--line-strong); border-radius:8px; padding:10px 12px; cursor:pointer; font-size:13px;">
+          <span style="display:flex; align-items:center; gap:8px;">
+            <input type="radio" name="pacote-horas" value="{{ p.horas }}" data-total="{{ p.valor_total }}" data-max-parcelas="{{ p.max_parcelas }}" onchange="selecionarPacote()">
+            <strong>{{ p.horas }}h</strong>
+          </span>
+          <span style="color: var(--ink-muted);">R$ {{ "%.2f"|format(p.valor_hora) }}/h</span>
+          <span style="font-weight:600;">R$ {{ "%.2f"|format(p.valor_total) }}</span>
+          <span style="font-size:11.5px; color: var(--ink-faint);">{% if p.max_parcelas > 1 %}até {{ p.max_parcelas }}x{% else %}à vista{% endif %}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <div id="area-parcelas" style="display:none; margin-bottom:14px;">
+        <label style="font-size:12px; color: var(--ink-muted); display:block; margin-bottom:4px;">Parcelas no cartão (o PIX é sempre à vista)</label>
+        <select id="select-parcelas" style="width:100%; padding:9px 12px; border-radius:7px; border:1px solid var(--line-strong); font-family:var(--display); font-size:13.5px;"></select>
+      </div>
+      <button class="btn-gerar" onclick="irParaConfirmacao('horas')">Continuar</button>
+      <button class="opcao-link" type="button" onclick="abrirTransferencia('ia')">🔁 Prefiro transferir saldo da minha conta de IA</button>
+      <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
+    </div>
+    {% endif %}
+
+    <div class="passo-modal" id="passo-ia" {% if medico.tipo_vinculo not in ('fixo', 'horista') %}hidden{% endif %}>
+      <h3>Comprar créditos para IA</h3>
+      <p style="margin-bottom:16px;">Usado só pelos módulos de assistente de IA (secretária virtual, prontuário, voz) — nunca pra reservar consultório.</p>
+      <div class="valores-rapidos">
+        <button type="button" onclick="definirValorIa(20)">R$ 20</button>
+        <button type="button" onclick="definirValorIa(50)">R$ 50</button>
+        <button type="button" onclick="definirValorIa(100)">R$ 100</button>
+        <button type="button" onclick="definirValorIa(200)">R$ 200</button>
+      </div>
+      <input type="number" id="input-valor-ia" min="10" step="5" placeholder="Valor em R$ pra IA">
+      <p style="font-size:12px; color: var(--ink-muted); margin:10px 0 0; line-height:1.5;">
+        O sistema da Lifemax usa o Chat GPT pra analisar prontuários e exames, marcar consultas
+        pelo WhatsApp Assistant sem precisar de secretária, preencher prontuários por voz
+        economizando tempo, e outros serviços — para liberar o uso, vá até o seu
+        <a href="{{ url_for('medico_painel.pagina_painel_ia') }}">Painel de IA</a> e marque as opções onde você quer utilizar a IA.
+      </p>
+      <button class="btn-gerar" style="margin-top:14px;" onclick="irParaConfirmacao('ia')">Continuar</button>
+      {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
+      <button class="opcao-link" type="button" onclick="abrirTransferencia('salas')">🔁 Prefiro transferir saldo da minha conta de horas</button>
+      {% endif %}
+      <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
+    </div>
+
+    <div class="passo-modal" id="passo-confirmacao" hidden>
+      <h3>Confirme o destino</h3>
+      <p id="resumo-confirmacao" style="font-size:14px; color: var(--ink); line-height:1.6; margin-bottom:18px; text-align:left;"></p>
+      <button class="btn-gerar" onclick="gerarPix()">Confirmar e pagar com PIX</button>
+      <button class="btn-gerar" style="background:transparent; color: var(--ink); border:1px solid var(--line-strong); margin-top:8px;" onclick="gerarCobrancaCartao()">Confirmar e pagar com cartão</button>
+      <button class="opcao-link" type="button" onclick="voltarDaConfirmacao()">← Voltar e revisar</button>
+      <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
+    </div>
+
+    {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
+    <div class="passo-modal" id="passo-transferencia" hidden>
+      <h3>Transferir saldo</h3>
+      <p id="explicacao-transferencia" style="font-size:13px; color: var(--ink-muted); margin-bottom:14px;"></p>
+      <input type="number" id="input-valor-transferencia" min="1" step="1" placeholder="Quantas horas?">
+      <button class="btn-gerar" style="margin-top:14px;" onclick="confirmarTransferencia()">Transferir</button>
+      <button class="opcao-link" type="button" onclick="mostrarPasso(estadoCompra.origemTransferencia === 'ia' ? 'passo-horas' : 'passo-ia')">← Voltar</button>
+      <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay-paciente">
+  <div class="modal" style="max-width:640px; max-height:88vh; overflow-y:auto; text-align:left;">
+    <h3 style="margin-bottom:4px;">Cadastre o seu paciente</h3>
+    <p style="color:var(--ink-muted); font-size:13px; margin-bottom:18px;">Preencha os dados abaixo -- só o nome completo é obrigatório, o resto você pode completar depois em "Pacientes cadastrados".</p>
+    <div id="erro-paciente" class="flash erro" style="display:none;"></div>
+    <form id="form-paciente" style="display:flex; flex-direction:column; gap:14px;">
+      <div>
+        <div class="cell-label" style="margin-bottom:10px;">Informações pessoais</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <label style="grid-column:1/-1;"><span class="muted-cell">Nome completo *</span><input type="text" name="nome_completo" required></label>
+          <label><span class="muted-cell">Nome do pai</span><input type="text" name="nome_pai"></label>
+          <label><span class="muted-cell">Nome da mãe</span><input type="text" name="nome_mae"></label>
+          <label><span class="muted-cell">Data de nascimento</span><input type="date" name="data_nascimento"></label>
+          <label><span class="muted-cell">CPF</span><input type="text" name="cpf"></label>
+          <label><span class="muted-cell">RG</span><input type="text" name="rg"></label>
+          <label><span class="muted-cell">E-mail</span><input type="email" name="email"></label>
+          <label><span class="muted-cell">Sexo</span>
+            <select name="sexo"><option value=""></option><option>Masculino</option><option>Feminino</option></select>
+          </label>
+          <label><span class="muted-cell">Estado civil</span>
+            <select name="estado_civil"><option value=""></option><option>Solteiro</option><option>Casado</option><option>Divorciado</option><option>Viúvo</option><option>União estável</option></select>
+          </label>
+          <label><span class="muted-cell">Cor</span>
+            <select name="cor"><option value=""></option><option>Leucoderma</option><option>Faioderma</option><option>Melanoderma</option></select>
+          </label>
+          <label><span class="muted-cell">Convênio</span><input type="text" name="convenio"></label>
+          <label><span class="muted-cell">Profissão</span><input type="text" name="profissao"></label>
+          <label style="grid-column:1/-1;"><span class="muted-cell">Indicação</span><input type="text" name="indicacao"></label>
+        </div>
+      </div>
+      <div>
+        <div class="cell-label" style="margin-bottom:10px;">Endereço</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <label style="grid-column:1/-1;"><span class="muted-cell">Endereço</span><input type="text" name="endereco"></label>
+          <label><span class="muted-cell">Bairro</span><input type="text" name="bairro"></label>
+          <label><span class="muted-cell">CEP</span><input type="text" name="cep"></label>
+          <label><span class="muted-cell">Cidade</span><input type="text" name="cidade"></label>
+          <label><span class="muted-cell">Estado</span><input type="text" name="estado"></label>
+        </div>
+      </div>
+      <div>
+        <div class="cell-label" style="margin-bottom:10px;">Informações do responsável</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <label style="grid-column:1/-1;"><span class="muted-cell">Nome completo</span><input type="text" name="responsavel_nome"></label>
+          <label><span class="muted-cell">Tipo</span>
+            <select name="responsavel_tipo">
+              <option value=""></option><option>Mãe</option><option>Pai</option><option>Cônjuge</option>
+              <option>Filho</option><option>Filha</option><option>Avô</option><option>Avó</option>
+              <option>Tio</option><option>Tia</option><option>Parceiro</option><option>Outro</option>
+            </select>
+          </label>
+          <label><span class="muted-cell">Telefone</span><input type="text" name="responsavel_telefone"></label>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:6px;">
+        <button type="button" class="btn-gerar" style="width:auto; padding:11px 24px;" onclick="salvarPaciente()">Salvar</button>
+        <button type="button" class="btn-fechar" onclick="fecharModalPaciente()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function abrirModalPaciente(pacienteId) {
+  const form = document.getElementById('form-paciente');
+  form.reset();
+  form.dataset.pacienteId = pacienteId || '';
+  document.getElementById('erro-paciente').style.display = 'none';
+  document.querySelector('#modal-overlay-paciente .modal h3').textContent =
+    pacienteId ? 'Editar dados do paciente' : 'Cadastre o seu paciente';
+  document.getElementById('modal-overlay-paciente').classList.add('aberto');
+}
+function fecharModalPaciente() {
+  document.getElementById('modal-overlay-paciente').classList.remove('aberto');
+}
+async function salvarPaciente() {
+  const form = document.getElementById('form-paciente');
+  const erroEl = document.getElementById('erro-paciente');
+  const pacienteId = form.dataset.pacienteId;
+  const dados = {};
+  new FormData(form).forEach((valor, chave) => { dados[chave] = valor; });
+
+  if (!dados.nome_completo || !dados.nome_completo.trim()) {
+    erroEl.textContent = 'Informe o nome completo do paciente.';
+    erroEl.style.display = 'block';
+    return;
+  }
+
+  const url = pacienteId ? `/api/pacientes/${pacienteId}` : '/api/pacientes';
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    });
+    const resultado = await resp.json();
+    if (!resp.ok) {
+      erroEl.textContent = resultado.erro || 'Não foi possível salvar.';
+      erroEl.style.display = 'block';
+      return;
+    }
+    location.reload();
+  } catch (e) {
+    erroEl.textContent = 'Erro de conexão ao salvar.';
+    erroEl.style.display = 'block';
+  }
+}
+
+async function inserirPaciente(reservaId, botao) {
+  const details = botao.closest('details.ajuste-paciente');
+  const marcado = details.querySelector(`input[name="paciente-${reservaId}"]:checked`);
+  if (!marcado) { alert('Escolha um paciente na lista antes de clicar em Inserir.'); return; }
+
+  botao.disabled = true;
+  botao.textContent = 'Inserindo...';
+  try {
+    const resp = await fetch(`/api/reservas/${reservaId}/paciente`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paciente_id: marcado.value }),
+    });
+    const resultado = await resp.json();
+    if (!resp.ok) {
+      alert(resultado.erro || 'Não foi possível incluir o paciente.');
+      botao.disabled = false;
+      botao.textContent = 'Inserir';
+      return;
+    }
+    const linha = document.querySelector(`tr[data-reserva-id="${reservaId}"]`);
+    const celula = linha.querySelector('.celula-paciente');
+    celula.textContent = resultado.paciente_nome || 'Nenhum paciente incluído';
+    celula.classList.toggle('vazia', !resultado.paciente_nome);
+    details.open = false;
+    botao.disabled = false;
+    botao.textContent = 'Inserir';
+  } catch (e) {
+    alert('Erro de conexão ao incluir o paciente.');
+    botao.disabled = false;
+    botao.textContent = 'Inserir';
+  }
+}
+
+async function cancelarReserva(botao) {
+  const linha = botao.closest('tr');
+  const reservaId = linha.dataset.reservaId;
+  const dataIso = linha.dataset.dataIso;
+  const horaInicio = linha.dataset.horaInicio;
+
+  const inicioDt = new Date(`${dataIso}T${horaInicio}:00`);
+  const diffHoras = (inicioDt.getTime() - Date.now()) / 3600000;
+  const mensagemConfirmacao = diffHoras < 12
+    ? 'O cancelamento com menos de 12 horas não gera reembolso. Ainda assim deseja cancelar essa reserva?'
+    : 'Cancelar essa reserva? As horas serão devolvidas para o seu saldo.';
+  if (!confirm(mensagemConfirmacao)) return;
+
+  botao.disabled = true;
+  botao.textContent = 'Cancelando...';
+
+  try {
+    const resp = await fetch('/api/turnos/cancelar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reserva_id: reservaId }),
+    });
+    const resultado = await resp.json();
+
+    if (!resp.ok) {
+      alert(resultado.erro || 'Erro ao cancelar.');
+      botao.disabled = false;
+      botao.textContent = 'Cancelar';
+      return;
+    }
+
+    const celulaAcao = botao.parentElement;
+    celulaAcao.innerHTML = '<span class="status-tag cancelada">Cancelada</span>';
+    if (!resultado.reembolsado) {
+      const aviso = document.createElement('div');
+      aviso.className = 'aviso-linha-12h';
+      aviso.textContent = 'Cancelado com menos de 12h: sem reembolso.';
+      celulaAcao.appendChild(aviso);
+    }
+  } catch (e) {
+    alert('Erro de conexão ao cancelar.');
+    botao.disabled = false;
+    botao.textContent = 'Cancelar';
+  }
+}
+</script>
+
+<script>
+// Guarda o formulário original do modal assim que a página carrega,
+// ANTES de qualquer clique poder sujar esse conteúdo -- é isso que
+// permite restaurar o modal do zero toda vez que ele reabre.
+const HTML_MODAL_COMPRA_ORIGINAL = document.getElementById('modal-conteudo').innerHTML;
+</script>
+
+<script>
+// Estado do fluxo de compra em várias telas dentro do mesmo modal:
+// horas/ia (escolha + valor) -> confirmação -> pagamento. Guardado aqui
+// (não só em campos escondidos) porque o passo de confirmação precisa
+// mostrar um resumo em texto antes de deixar o médico seguir pro Asaas.
+let estadoCompra = { destino: null, pacoteHoras: null, valorSalas: 0, parcelas: 1, valorIa: 0, origemTransferencia: null };
+
+function mostrarPasso(idPasso) {
+  document.querySelectorAll('#modal-conteudo .passo-modal').forEach(el => { el.hidden = true; });
+  const alvo = document.getElementById(idPasso);
+  if (alvo) alvo.hidden = false;
+}
+
+function _pacoteSelecionadoEl() {
+  return document.querySelector('input[name="pacote-horas"]:checked');
+}
+
+function selecionarPacote() {
+  const el = _pacoteSelecionadoEl();
+  const areaParcelas = document.getElementById('area-parcelas');
+  const selectParcelas = document.getElementById('select-parcelas');
+  if (areaParcelas && selectParcelas) {
+    const maxParcelas = el ? parseInt(el.dataset.maxParcelas, 10) : 1;
+    if (el && maxParcelas > 1) {
+      selectParcelas.innerHTML = Array.from({ length: maxParcelas }, (_, i) => i + 1)
+        .map(n => `<option value="${n}">${n}x${n > 1 ? ' de R$ ' + (parseFloat(el.dataset.total) / n).toFixed(2) : ' (à vista)'}</option>`)
+        .join('');
+      areaParcelas.style.display = 'block';
+    } else {
+      areaParcelas.style.display = 'none';
+      selectParcelas.innerHTML = '';
+    }
+  }
+}
+
+function definirValorIa(v) {
+  document.getElementById('input-valor-ia').value = v;
+}
+</script>
+
+<script>
+function abrirModalCompra(destino) {
+  // restaura o formulario original do zero toda vez que o modal abre --
+  // sem isso, se o médico já tinha usado PIX ou cartão antes, o modal
+  // reabria mostrando o conteúdo "sujo" da última tentativa (ex: só a
+  // tela de status do cartão, sem a opção de PIX)
+  document.getElementById('modal-conteudo').innerHTML = HTML_MODAL_COMPRA_ORIGINAL;
+  estadoCompra = { destino: null, pacoteHoras: null, valorSalas: 0, parcelas: 1, valorIa: 0, origemTransferencia: null };
+  mostrarPasso('passo-' + (destino || 'horas'));
+  document.getElementById('modal-overlay').classList.add('aberto');
+}
+function fecharModal() {
+  document.getElementById('modal-overlay').classList.remove('aberto');
+  pararPolling();
+}
+
+let intervaloPolling = null;
+
+function irParaConfirmacao(destino) {
+  const resumoEl = document.getElementById('resumo-confirmacao');
+  if (destino === 'horas') {
+    const el = _pacoteSelecionadoEl();
+    if (!el) { alert('Escolha um pacote de horas para continuar.'); return; }
+    const parcelasEl = document.getElementById('select-parcelas');
+    estadoCompra.destino = 'horas';
+    estadoCompra.pacoteHoras = parseInt(el.value, 10);
+    estadoCompra.valorSalas = parseFloat(el.dataset.total) || 0;
+    estadoCompra.valorIa = 0;
+    estadoCompra.parcelas = (parcelasEl && parcelasEl.value) ? parseInt(parcelasEl.value, 10) : 1;
+    const parcelaTexto = estadoCompra.parcelas > 1
+      ? `em até ${estadoCompra.parcelas}x no cartão (o PIX é sempre à vista)`
+      : 'à vista';
+    resumoEl.innerHTML = `Você está comprando <strong>${estadoCompra.pacoteHoras}h</strong> por
+      <strong>R$ ${estadoCompra.valorSalas.toFixed(2)}</strong> (${parcelaTexto}), que vão pra sua
+      carteira de <strong>HORAS</strong> — usada só pra reservar consultório.<br><br>
+      Confirma que é esse o saldo que você quer adicionar?`;
+  } else {
+    const valorIa = parseFloat(document.getElementById('input-valor-ia').value) || 0;
+    if (valorIa < 10) { alert('Digite um valor de pelo menos R$ 10,00 pra crédito de IA.'); return; }
+    estadoCompra.destino = 'ia';
+    estadoCompra.pacoteHoras = null;
+    estadoCompra.valorSalas = 0;
+    estadoCompra.parcelas = 1;
+    estadoCompra.valorIa = valorIa;
+    resumoEl.innerHTML = `Você está adicionando <strong>R$ ${valorIa.toFixed(2)}</strong> pra sua
+      carteira de <strong>CRÉDITO DE IA</strong> (assistente de IA, prontuário, voz) — esse saldo
+      nunca é usado pra reservar consultório.<br><br>
+      Confirma que é esse o saldo que você quer adicionar?`;
+  }
+  mostrarPasso('passo-confirmacao');
+}
+
+function voltarDaConfirmacao() {
+  mostrarPasso('passo-' + (estadoCompra.destino || 'horas'));
+}
+
+async function gerarPix() {
+  const modal = document.getElementById('modal-conteudo');
+  modal.innerHTML = '<p>Gerando PIX...</p>';
+
+  try {
+    const resp = await fetch('/api/creditos/comprar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pacote_horas: estadoCompra.pacoteHoras, valor_ia: estadoCompra.valorIa }),
+    });
+    const dados = await resp.json();
+
+    if (!resp.ok) {
+      modal.innerHTML = `<p style="color:var(--coral);">${dados.erro || 'Erro ao gerar PIX.'}</p>
+        <button class="btn-fechar" onclick="fecharModal()">Fechar</button>`;
+      return;
+    }
+
+    modal.innerHTML = `
+      <h3>Escaneie o QR Code</h3>
+      <p>R$ ${dados.valor.toFixed(2)}</p>
+      <div class="qrcode-area">
+        <img src="data:image/png;base64,${dados.qr_code_base64}" alt="QR Code PIX">
+      </div>
+      <div class="copia-cola">${dados.copia_e_cola}</div>
+      <p class="status-aguardando" id="status-pix">Aguardando pagamento...</p>
+      <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+    `;
+
+    iniciarPolling(dados.pagamento_id);
+  } catch (e) {
+    modal.innerHTML = `<p style="color:var(--coral);">Erro de conexão.</p>
+      <button class="btn-fechar" onclick="fecharModal()">Fechar</button>`;
+  }
+}
+
+async function gerarCobrancaCartao() {
+  const modal = document.getElementById('modal-conteudo');
+  modal.innerHTML = '<p>Preparando pagamento com cartão...</p>';
+
+  try {
+    const resp = await fetch('/api/creditos/comprar-cartao', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pacote_horas: estadoCompra.pacoteHoras,
+        valor_ia: estadoCompra.valorIa,
+        parcelas: estadoCompra.parcelas,
+      }),
+    });
+    const dados = await resp.json();
+
+    if (!resp.ok) {
+      modal.innerHTML = `<p style="color:var(--coral);">${dados.erro || 'Erro ao gerar cobrança.'}</p>
+        <button class="btn-fechar" onclick="fecharModal()">Fechar</button>`;
+      return;
+    }
+
+    window.open(dados.invoice_url, '_blank');
+
+    modal.innerHTML = `
+      <h3>Pagamento com cartão</h3>
+      <p>R$ ${dados.valor.toFixed(2)}</p>
+      <p style="font-size:13px; color: var(--ink-muted);">
+        Abrimos uma nova aba para você digitar os dados do cartão numa página
+        segura do Asaas. Se não abriu, <a href="${dados.invoice_url}" target="_blank" style="color:var(--cyan);">clique aqui</a>.
+      </p>
+      <p class="status-aguardando" id="status-pix">Aguardando pagamento...</p>
+      <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+    `;
+
+    iniciarPolling(dados.pagamento_id);
+  } catch (e) {
+    modal.innerHTML = `<p style="color:var(--coral);">Erro de conexão.</p>
+      <button class="btn-fechar" onclick="fecharModal()">Fechar</button>`;
+  }
+}
+
+function abrirTransferencia(origem) {
+  estadoCompra.origemTransferencia = origem;
+  const explicacaoEl = document.getElementById('explicacao-transferencia');
+  const inputEl = document.getElementById('input-valor-transferencia');
+  if (origem === 'ia') {
+    // Saindo da carteira de IA (medida em R$) -- o médico digita um valor em R$.
+    explicacaoEl.textContent = 'Move saldo da sua carteira de IA pra sua carteira de horas (reserva de consultório).';
+    inputEl.step = '0.01';
+    inputEl.placeholder = 'Valor em R$';
+  } else {
+    // Saindo da carteira de Salas/Horas (medida em horas, não em R$) -- o
+    // médico digita quantas horas quer converter, não um valor em dinheiro.
+    explicacaoEl.textContent = 'Move horas da sua carteira de reserva de salas pra crédito de IA (em R$, no valor da hora avulsa).';
+    inputEl.step = '1';
+    inputEl.placeholder = 'Quantas horas?';
+  }
+  inputEl.value = '';
+  mostrarPasso('passo-transferencia');
+}
+
+async function confirmarTransferencia() {
+  const quantidade = parseFloat(document.getElementById('input-valor-transferencia').value) || 0;
+  const origem = estadoCompra.origemTransferencia;
+  if (quantidade <= 0) {
+    alert(origem === 'salas' ? 'Digite uma quantidade de horas válida.' : 'Digite um valor válido para transferir.');
+    return;
+  }
+
+  const modal = document.getElementById('modal-conteudo');
+  modal.innerHTML = '<p>Transferindo...</p>';
+
+  // Saindo de 'salas', manda `horas` (a carteira de horas nunca é
+  // expressa em R$ pro médico); saindo de 'ia', manda `valor` em R$.
+  const corpo = origem === 'salas' ? { origem, horas: quantidade } : { origem, valor: quantidade };
+
+  try {
+    const resp = await fetch('/api/creditos/transferir', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpo),
+    });
+    const dados = await resp.json();
+
+    if (!resp.ok) {
+      modal.innerHTML = `<p style="color:var(--coral);">${dados.erro || 'Erro ao transferir.'}</p>
+        <button class="btn-fechar" onclick="fecharModal()">Fechar</button>`;
+      return;
+    }
+
+    modal.innerHTML = `
+      <h3>Transferência concluída</h3>
+      <p>${dados.resultado}</p>
+      <p style="font-size:13px; color: var(--ink-muted);">Saldo de horas agora: ${dados.saldo_horas}h · Saldo de IA agora: R$ ${dados.saldo_ia.toFixed(2)}</p>
+      <button class="btn-gerar" onclick="location.reload()">Fechar e atualizar</button>
+    `;
+  } catch (e) {
+    modal.innerHTML = `<p style="color:var(--coral);">Erro de conexão.</p>
+      <button class="btn-fechar" onclick="fecharModal()">Fechar</button>`;
+  }
+}
+
+function iniciarPolling(pagamentoId) {
+  intervaloPolling = setInterval(async () => {
+    try {
+      const resp = await fetch(`/api/creditos/status/${pagamentoId}`);
+      const dados = await resp.json();
+      if (dados.status === 'pago') {
+        document.getElementById('status-pix').textContent = '✅ Pagamento confirmado!';
+        document.getElementById('status-pix').className = 'status-pago';
+        pararPolling();
+        setTimeout(() => location.reload(), 1500);
+      }
+    } catch (e) { /* silencioso, tenta de novo no próximo ciclo */ }
+  }, 4000);
+}
+
+function pararPolling() {
+  if (intervaloPolling) clearInterval(intervaloPolling);
+  intervaloPolling = null;
+}
+</script>
+
+</body>
+</html>

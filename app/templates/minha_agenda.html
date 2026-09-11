@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minha Agenda — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F8F9; --panel:#FFFFFF; --panel-2:#EAF4F3;
+    --line: rgba(14,42,58,0.10); --line-strong: rgba(14,42,58,0.22);
+    --ink:#10222E; --ink-muted:#55707C; --ink-faint:#8AA0A9;
+    --cyan:#0EA5A0; --cyan-soft: rgba(14,165,160,0.12);
+    --coral:#D65C3F; --coral-soft: rgba(214,92,63,0.12);
+    --verde:#1F8F5C;
+    --navy:#0E2A3B; --onnavy-muted:#9FB8C4;
+    --display:'Manrope', sans-serif; --serif:'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--serif); }
+  a { color: inherit; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px;
+           background: var(--navy); position: sticky; top:0; z-index:100; }
+  .brand { font-family: var(--display); font-weight:800; color:#fff; font-size:15px; }
+  header a.sair, header a.voltar { font-size:13px; color: var(--onnavy-muted); text-decoration:none; margin-left:16px; }
+  header a.sair:hover, header a.voltar:hover { color:#fff; }
+  .container { max-width: 900px; margin: 0 auto; padding: 32px 20px 80px; }
+  .hero-txt { margin-bottom: 24px; }
+  .hero-txt .eyebrow { font-family: var(--display); font-weight:700; font-size:12px; color: var(--cyan);
+                        text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .hero-txt h1 { font-family: var(--display); font-size: 24px; color: var(--navy); }
+  .hero-txt p { color: var(--ink-muted); margin-top:6px; font-size:14px; line-height:1.55; }
+  .card { background: var(--panel); border:1px solid var(--line-strong); border-radius:10px; padding:24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--ink-faint); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--line); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.02em; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--line); color: var(--ink); }
+  .status-tag { display:inline-block; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .status-tag.cancelada { background: var(--coral-soft); color: var(--coral); }
+  .btn-cancelar { background: var(--coral-soft); color: var(--coral); border:1px solid rgba(214,92,63,0.3); border-radius:7px; padding:7px 14px; font-family: var(--display); font-weight:600; font-size:12.5px; cursor:pointer; }
+  .btn-cancelar:disabled { opacity:0.5; cursor:not-allowed; }
+  .aviso-linha-12h { color: var(--coral); font-size:11px; font-weight:600; margin-top:4px; max-width:180px; }
+  .vazio { color: var(--ink-faint); font-size: 13px; padding: 12px 0; }
+  @media (max-width: 640px) { .container { padding: 22px 16px 60px; } table { font-size: 12px; } .card { overflow-x:auto; padding:16px; } }
+</style>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+<script>
+(function() {
+  const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+  const token = tokenMeta ? tokenMeta.content : null;
+  const fetchOriginal = window.fetch;
+  window.fetch = function(url, opcoes) {
+    opcoes = opcoes || {};
+    const metodo = (opcoes.method || 'GET').toUpperCase();
+    if (token && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(metodo)) {
+      opcoes.headers = Object.assign({}, opcoes.headers, { 'X-CSRFToken': token });
+    }
+    return fetchOriginal(url, opcoes);
+  };
+})();
+</script>
+
+<header>
+  <div class="brand">📅 Minha Agenda</div>
+  <div>
+    <a class="voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar ao painel</a>
+    <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="hero-txt">
+    <div class="eyebrow">ÁREA DO CLIENTE</div>
+    <h1>Suas reservas</h1>
+    <p>Todos os horários que você já reservou, com o consultório de cada um.</p>
+  </div>
+
+  <div class="card">
+    {% if reservas %}
+    <table>
+      <thead><tr><th>Data</th><th>Horário</th><th>Consultório</th><th>Ações</th></tr></thead>
+      <tbody id="corpo-tabela-agenda">
+        {% for r in reservas %}
+        {% set hora_inicio_real = (r.hora_inicio[:5] if r.tipo_reserva == 'hora' else {'manha': '08:00', 'tarde': '13:00', 'noite': '17:00'}.get(r.periodo, '08:00')) %}
+        <tr data-reserva-id="{{ r.id }}" data-data-iso="{{ r.data }}" data-hora-inicio="{{ hora_inicio_real }}">
+          <td>{{ r.data[8:10] }}/{{ r.data[5:7] }}/{{ r.data[0:4] }}</td>
+          <td>
+            {% if r.tipo_reserva == 'hora' %}
+              {{ (r.hora_inicio or '')[:5] }} – {{ (r.hora_fim or '')[:5] }}
+            {% else %}
+              {{ {'manha': 'Manhã (08:00–12:00)', 'tarde': 'Tarde (13:00–17:00)', 'noite': 'Noite (17:00–20:00)'}.get(r.periodo, r.periodo) }}
+            {% endif %}
+          </td>
+          <td>{{ r.consultorios.nome if r.consultorios else '—' }}</td>
+          <td>
+            {% if r.status == 'cancelada' %}
+              <span class="status-tag cancelada">Cancelada</span>
+            {% else %}
+              <button class="btn-cancelar" onclick="cancelarReserva(this)">Cancelar</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="vazio">Você ainda não fez nenhuma reserva.</div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+async function cancelarReserva(botao) {
+  const linha = botao.closest('tr');
+  const reservaId = linha.dataset.reservaId;
+  const dataIso = linha.dataset.dataIso;
+  const horaInicio = linha.dataset.horaInicio;
+
+  // Aviso client-side (o servidor decide de verdade, com o fuso de
+  // Brasília) -- se faltar menos de 12h pro início da reserva, avisa
+  // ANTES de confirmar que o cancelamento não vai gerar reembolso.
+  const inicioDt = new Date(`${dataIso}T${horaInicio}:00`);
+  const diffHoras = (inicioDt.getTime() - Date.now()) / 3600000;
+  const mensagemConfirmacao = diffHoras < 12
+    ? 'O cancelamento com menos de 12 horas não gera reembolso. Ainda assim deseja cancelar essa reserva?'
+    : 'Cancelar essa reserva? As horas serão devolvidas para o seu saldo.';
+  if (!confirm(mensagemConfirmacao)) return;
+
+  botao.disabled = true;
+  botao.textContent = 'Cancelando...';
+
+  try {
+    const resp = await fetch('/api/turnos/cancelar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reserva_id: reservaId }),
+    });
+    const resultado = await resp.json();
+
+    if (!resp.ok) {
+      alert(resultado.erro || 'Erro ao cancelar.');
+      botao.disabled = false;
+      botao.textContent = 'Cancelar';
+      return;
+    }
+
+    const celulaAcao = botao.parentElement;
+    celulaAcao.innerHTML = '<span class="status-tag cancelada">Cancelada</span>';
+    if (!resultado.reembolsado) {
+      const aviso = document.createElement('div');
+      aviso.className = 'aviso-linha-12h';
+      aviso.textContent = 'Cancelado com menos de 12h: sem reembolso.';
+      celulaAcao.appendChild(aviso);
+    }
+  } catch (e) {
+    alert('Erro de conexão ao cancelar.');
+    botao.disabled = false;
+    botao.textContent = 'Cancelar';
+  }
+}
+</script>
+</body>
+</html>

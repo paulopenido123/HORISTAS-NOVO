@@ -1,0 +1,38 @@
+flask==3.0.3
+requests==2.32.3
+python-dotenv==1.0.1
+psycopg2-binary>=2.9.9
+boto3==1.35.36
+gunicorn==23.0.0
+flask-socketio==5.3.6
+google-auth==2.57.0
+google-auth-oauthlib==1.4.1
+google-api-python-client==2.199.0
+flask-limiter==4.1.1
+flask-wtf==1.3.0
+tzdata==2025.2
+
+# Removidas na revisão de produção de 10/09/2026 (confirmado, via grep em
+# todo o app/ e run.py, que nada neste recorte importa esses pacotes --
+# anthropic/openai/google-genai eram do assistente de IA/WhatsApp,
+# apscheduler de jobs agendados, cryptography do módulo de prontuário,
+# reportlab/openpyxl de recibos/planilhas -- nenhum desses módulos faz
+# parte deste pacote de Reserva por Hora): anthropic, openai, google-genai,
+# apscheduler, cryptography, reportlab, openpyxl.
+# Se algum desses módulos for trazido pra este projeto no futuro, é só
+# devolver a linha correspondente aqui.
+#
+# Trocado o pacote "supabase" por "psycopg2-binary" na migração pra Neon
+# de 10/09/2026 (banco Postgres puro, sem o SDK do Supabase por cima) --
+# "boto3" foi adicionado junto porque o Neon Object Storage (que substitui
+# o Supabase Storage, usado pras fotos dos consultórios) fala o protocolo
+# S3, e boto3 é o SDK oficial da AWS pra isso, recomendado na própria
+# documentação do Neon.
+#
+# psycopg2-binary está com ">=" (sem travar numa versão exata) de propósito:
+# em Pythons muito novos (ex: 3.14, lançado há pouco tempo), pode não existir
+# ainda um pacote pré-compilado ("wheel") pra uma versão antiga travada --
+# aí o pip tenta compilar do zero e falha com "pg_config executable not
+# found" (foi o que aconteceu numa instalação real em 10/09/2026). Deixando
+# sem travar, o pip sempre pega a versão mais nova disponível, que já vem
+# pré-compilada pro Python da pessoa.

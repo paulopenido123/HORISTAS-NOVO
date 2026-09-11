@@ -1,0 +1,44 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fotos — Lifemax</title><style>body{font-family:Inter,Arial;background:#F5F8FA;color:#102A43;margin:0}.top{background:#082A3D;color:white;padding:18px 28px}.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}.wrap{max-width:1000px;margin:auto;padding:30px 24px}.card{background:white;border:1px solid #e3ebef;border-radius:14px;padding:22px}.btn,button{background:#10AFA9;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:700;text-decoration:none;cursor:pointer}input{padding:10px;border:1px solid #d8e3e7;border-radius:8px}.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}.photo img{width:100%;height:180px;object-fit:cover;border-radius:10px}.photo form{margin-top:6px}.danger{background:#c95050}.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}.flash.ok{background:#E3F7EE;color:#0B7B45}.flash.erro{background:#FBEAE6;color:#B33}.dica{color:#62788A;font-size:12.5px;margin:6px 0 16px}@media(max-width:700px){.photos{grid-template-columns:1fr}}</style></head><body>
+<div class="top"><strong>LIFEMAX · FOTOS · {{ consultorio.nome }}</strong></div>
+<div class="nav">
+  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
+  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
+  <a href="{{ url_for('admin.clientes') }}">Clientes</a><a href="{{ url_for('admin.horas') }}">Horas</a><a href="{{ url_for('admin.relatorios') }}">Relatórios</a>
+  <a href="{{ url_for('admin.admin_logout') }}">Sair</a>
+</div>
+<div class="wrap">
+  <div class="card">
+    <a href="{{ url_for('admin.consultorios') }}">← Voltar</a>
+    <h2>Adicionar fotos</h2>
+
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% for categoria, texto in mensagens %}
+        <div class="flash {{ categoria }}">{{ texto }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="post" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" multiple required>
+      <button>Enviar foto(s)</button>
+    </form>
+    <p class="dica">Pode selecionar várias fotos de uma vez (segure Ctrl/Cmd ou Shift no seletor de arquivos) -- não precisa repetir o envio uma foto por vez.</p>
+
+    <div class="photos">
+      {% for url in consultorio.fotos or [] %}
+      <div class="photo">
+        <img src="{{ url }}" alt="Foto do consultório">
+        <form method="post" action="{{ url_for('admin.excluir_foto',consultorio_id=consultorio.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="url" value="{{ url }}">
+          <button class="danger">Excluir</button>
+        </form>
+      </div>
+      {% else %}
+      <p>Nenhuma foto cadastrada.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+</body></html>

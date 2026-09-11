@@ -1,0 +1,64 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Consultórios — Lifemax Admin</title><style>body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}.top{background:#082A3D;color:white;padding:18px 28px}.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600}.wrap{max-width:1180px;margin:auto;padding:28px 24px}.grid{display:grid;grid-template-columns:340px 1fr;gap:18px}.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px}input,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #d8e3e7;border-radius:8px;margin:6px 0 12px}button,.btn{padding:10px 14px;border:0;border-radius:8px;background:#10AFA9;color:#fff;font-weight:700;text-decoration:none;font-size:13px}.item{border-bottom:1px solid #e3ebef;padding:15px 0}.row{display:flex;gap:8px;flex-wrap:wrap}.danger{background:#c95050}.muted{color:#62788A;font-size:13px}.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}.flash.ok{background:#E3F7EE;color:#0B7B45}.flash.erro{background:#FBEAE6;color:#B33}.item.inativo{background:#FBEAE6;border-left:4px solid #B33;padding-left:12px;margin-left:-16px}.badge-inativo{display:inline-block;background:#B33;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:5px;margin-bottom:8px}.fotos-preview{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.fotos-preview img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #d8e3e7}.fotos-vazio{color:#8AA0A9;font-size:12.5px;margin-bottom:10px}.andar-info{color:#62788A;font-size:12.5px;margin:-4px 0 10px}</style></head><body>
+<div class="top"><strong>LIFEMAX ADMIN · CONSULTÓRIOS</strong></div>
+<div class="nav">
+  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
+  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
+  <a href="{{ url_for('admin.clientes') }}">Clientes</a><a href="{{ url_for('admin.horas') }}">Horas</a><a href="{{ url_for('admin.relatorios') }}">Relatórios</a>
+</div>
+<div class="wrap">
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% for categoria, texto in mensagens %}
+      <div class="flash {{ categoria }}">{{ texto }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="grid">
+    <div class="card">
+      <h2>Novo consultório</h2>
+      {% if erro %}<p style="color:#b33">{{ erro }}</p>{% endif %}
+      <p class="muted" style="margin-top:-6px">A reserva é sempre cobrada em horas, no mesmo preço pra qualquer consultório -- não tem preço por sala aqui.</p>
+      <p class="muted" style="margin-top:-6px">O andar é calculado sozinho a partir do número da sala (ex: 402 → 4º andar; 1101 → 11º andar) -- não precisa digitar.</p>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="nome" placeholder="Nome / número" required>
+        <textarea name="descricao" placeholder="Descrição"></textarea>
+        <button>Cadastrar</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Consultórios</h2>
+      {% for c in consultorios %}
+      <div class="item{{ ' inativo' if not c.ativo else '' }}">
+        {% if not c.ativo %}<div class="badge-inativo">⚠ INATIVO -- não aparece pro médico reservar</div>{% endif %}
+        {% if c.fotos %}
+        <div class="fotos-preview">
+          {% for url in c.fotos %}<img src="{{ url }}" alt="Foto de {{ c.nome }}">{% endfor %}
+        </div>
+        {% else %}
+        <div class="fotos-vazio">Sem foto cadastrada.</div>
+        {% endif %}
+        <form method="post" action="{{ url_for('admin.editar_consultorio',consultorio_id=c.id) }}" id="form-editar-{{ c.id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input name="nome" value="{{ c.nome }}">
+          <textarea name="descricao">{{ c.descricao or '' }}</textarea>
+          <div class="andar-info">Andar: {{ c.andar or '—' }} (calculado a partir do número)</div>
+          <label class="muted"><input type="checkbox" name="ativo" {% if c.ativo %}checked{% endif %} style="width:auto"> Ativo</label>
+        </form>
+        <form method="post" action="{{ url_for('admin.excluir_consultorio',consultorio_id=c.id) }}" id="form-excluir-{{ c.id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        </form>
+        <div class="row">
+          <button type="submit" form="form-editar-{{ c.id }}">Salvar</button>
+          <a class="btn" href="{{ url_for('admin.fotos_consultorio',consultorio_id=c.id) }}">Fotos</a>
+          <a class="btn" href="{{ url_for('admin.matriz',consultorio_id=c.id) }}">Matriz</a>
+          <button type="submit" form="form-excluir-{{ c.id }}" class="danger" onclick="return confirm('Excluir/desativar este consultório?')">Excluir</button>
+        </div>
+      </div>
+      {% else %}
+      <p class="muted">Nenhum consultório.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+</body></html>

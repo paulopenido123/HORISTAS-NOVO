@@ -1,0 +1,87 @@
+"""
+Semana Padrão (template): define quais HORÁRIOS individuais ficam
+DISPONÍVEIS para reserva, por dia da semana + consultório, repetindo-se
+toda semana indefinidamente — no mesmo formato de grade por hora que o
+Lifemax já usa (não mais por turno inteiro).
+
+Grade de horários fixos usada em todo o sistema (11 horários por dia,
+com intervalo de almoço entre 12h e 13h):
+  Manhã: 08:00, 09:00, 10:00, 11:00
+  Tarde: 13:00, 14:00, 15:00, 16:00
+  Noite: 17:00, 18:00, 19:00
+
+Por padrão, tudo está disponível — só guardamos os BLOQUEIOS (o que o
+admin desmarcou).
+
+Convenção de dia_semana: 0=domingo, 1=segunda, ..., 6=sábado (mesma
+convenção do JavaScript Date.getDay()).
+"""
+from datetime import date
+from app.services.supabase_client import get_client
+
+HORARIOS_DO_DIA = ["08:00", "09:00", "10:00", "11:00",
+                    "13:00", "14:00", "15:00", "16:00",
+                    "17:00", "18:00", "19:00"]
+
+HORARIOS_POR_PERIODO = {
+    "manha": ["08:00", "09:00", "10:00", "11:00"],
+    "tarde": ["13:00", "14:00", "15:00", "16:00"],
+    "noite": ["17:00", "18:00", "19:00"],
+}
+
+
+def dia_semana_de(data_iso: str) -> int:
+    """Converte 'YYYY-MM-DD' para dia_semana no padrão 0=domingo...6=sábado."""
+    d = date.fromisoformat(data_iso)
+    return (d.weekday() + 1) % 7
+
+
+def horas_da_reserva_por_hora(hora_inicio: str, quantidade_horas: int) -> list[str]:
+    """Lista de horários de início (ex: ['09:00','10:00']) que uma reserva de N horas ocupa."""
+    partes = hora_inicio.split(":")
+    inicio_min = int(partes[0]) * 60 + int(partes[1])
+    return [f"{(inicio_min + i * 60) // 60:02d}:{(inicio_min + i * 60) % 60:02d}" for i in range(quantidade_horas)]
+
+
+def listar_bloqueios() -> list[dict]:
+    resp = get_client().table("template_semanal_bloqueios").select("*").execute()
+    return resp.data
+
+
+def esta_bloqueado(bloqueios: list[dict], consultorio_id: str, dia_semana: int, hora_inicio: str) -> bool:
+    return any(
+        b["consultorio_id"] == consultorio_id and b["dia_semana"] == dia_semana and b["hora_inicio"] == hora_inicio
+        for b in bloqueios
+    )
+
+
+def verificar_disponibilidade(consultorio_id: str, data_iso: str, horarios: list[str]) -> bool:
+    """True se TODOS os horários da lista estiverem liberados na semana padrão."""
+    dia = dia_semana_de(data_iso)
+    bloqueios = listar_bloqueios()
+    return all(not esta_bloqueado(bloqueios, consultorio_id, dia, h) for h in horarios)
+
+
+def alternar_bloqueio(consultorio_id: str, dia_semana: int, hora_inicio: str) -> bool:
+    """
+    Alterna o estado (disponível <-> bloqueado) de uma célula da Semana
+    Padrão. Retorna True se ficou BLOQUEADO, False se ficou DISPONÍVEL.
+    """
+    client = get_client()
+    existentes = (
+        client.table("template_semanal_bloqueios")
+        .select("id")
+        .eq("consultorio_id", consultorio_id)
+        .eq("dia_semana", dia_semana)
+        .eq("hora_inicio", hora_inicio)
+        .execute()
+        .data
+    )
+    if existentes:
+        client.table("template_semanal_bloqueios").delete().eq("id", existentes[0]["id"]).execute()
+        return False
+
+    client.table("template_semanal_bloqueios").insert({
+        "consultorio_id": consultorio_id, "dia_semana": dia_semana, "hora_inicio": hora_inicio,
+    }).execute()
+    return True

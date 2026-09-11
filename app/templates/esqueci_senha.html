@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Esqueci minha senha — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --line: #DCE6E8; --muted: #55707C; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(160deg, var(--navy), var(--navy-soft));
+    padding: 20px;
+  }
+  .card { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 380px; }
+  h1 { margin: 0 0 4px; font-size: 20px; color: var(--navy); font-family: 'Manrope', sans-serif; }
+  .login-logo { height: 28px; width: auto; display: block; margin: 0 0 4px; }
+  p.sub { margin: 0 0 24px; font-size: 13px; color: var(--muted); }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+  input {
+    width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--line);
+    font-family: inherit; font-size: 14px; margin-bottom: 16px;
+  }
+  input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+  button {
+    width: 100%; background: var(--navy); color: white; border: none; padding: 12px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  button:hover { opacity: 0.92; }
+  .aviso { background: #EAF4F3; color: #0E6B66; padding: 12px 14px; border-radius: 8px; font-size: 13.5px; margin-bottom: 16px; line-height: 1.5; }
+  .rodape { text-align: center; margin-top: 18px; font-size: 13px; }
+  .rodape a { color: var(--teal); text-decoration: none; font-weight: 600; }
+
+  @media (max-width: 480px) {
+    body { padding: 16px; }
+    .card { max-width: 100%; padding: 24px 20px; border-radius: 14px; }
+    h1 { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Lifemax" class="login-logo">
+    <h1>Esqueci minha senha</h1>
+
+    {% if enviado %}
+      <p class="aviso">
+        Se esse telefone estiver cadastrado e tiver um e-mail vinculado, enviamos um link
+        para redefinir a senha. Confira sua caixa de entrada (e o spam) — o link vale por 30 minutos.
+      </p>
+      <div class="rodape">
+        <a href="{{ rota_login }}">← Voltar para o login</a>
+      </div>
+    {% else %}
+      <p class="sub">Digite o telefone cadastrado. Se houver um e-mail vinculado a essa conta,
+        enviaremos um link para você criar uma nova senha.</p>
+
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="telefone">Telefone (com DDD)</label>
+        <input type="text" id="telefone" name="telefone" placeholder="31999999999" required autofocus>
+
+        <button type="submit">Enviar link por e-mail</button>
+      </form>
+
+      <div class="rodape">
+        <a href="{{ rota_login }}">← Voltar para o login</a>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

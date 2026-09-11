@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grade de Turnos — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --teal-soft: #EAF4F3;
+    --line: #DCE6E8; --muted: #55707C; --coral: #D65C3F; --coral-soft: #fbeae6;
+    --bege: #C8CDD1; --verde: #9BE79A; --rosa: #FFB8C0;
+    /* Cores da grade -- pedido do Paulo em 11/09/2026: voltar a usar
+       exatamente a mesma paleta da Matriz do admin (admin_matriz.html),
+       pra ficar visualmente igual nas duas telas: Livre/Disponível =
+       verde, Reservado por mim = azul (mesmo azul da "Reserva
+       confirmada" da Matriz), Reservado (por outro médico ou pelo
+       administrador) = rosa, Indisponível = cinza. */
+    --azul-confirmado: #22A7C5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #F5F8F9; color: #10222E;
+  }
+  h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+  header {
+    background: var(--navy); color: white; padding: 20px 24px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+  }
+  header h1 { margin: 0; font-size: 20px; font-weight: 700; }
+  header p { margin: 4px 0 0; font-size: 13px; color: #9FB8C4; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  .barra-controles {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+    background: white; border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;
+  }
+  .legenda { display: flex; gap: 16px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot.livre { background: var(--verde); }
+  .dot.meu { background: var(--azul-confirmado); }
+  .dot.outro { background: var(--rosa); }
+  .dot.bege { background: var(--bege); }
+
+  select, button, input {
+    font-family: inherit; font-size: 14px; padding: 8px 12px; border-radius: 7px; border: 1px solid var(--line); background: white;
+  }
+  button.btn-nav { cursor: pointer; background: var(--teal-soft); border-color: var(--teal); color: var(--navy); font-weight: 700; }
+  button.btn-nav:hover { background: #DCEEEC; }
+
+  /* ---- botão "Reservar horas avulsas", agora no alto da página ---- */
+  .painel-horas-avulsas { background:white; border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:20px; }
+  #consultorio-selecionado-label { font-size: 12.5px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+  #consultorio-selecionado-label.vazio { color: var(--muted); font-weight: 500; }
+
+  .cabecalho-calendario {
+    display: flex; align-items: center; justify-content: space-between;
+    background: white; border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; margin-bottom: 12px;
+  }
+  .nav-semana { display: flex; align-items: center; gap: 10px; }
+  .nav-semana.direita { flex-direction: row-reverse; }
+  .nav-semana .rotulo-semana { font-size: 12.5px; font-weight: 700; color: var(--navy); }
+  .btn-seta {
+    cursor: pointer; background: var(--teal-soft); border: 1px solid var(--teal); color: var(--navy);
+    font-weight: 700; font-size: 18px; width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0;
+  }
+  .btn-seta:hover { background: #DCEEEC; }
+  .mes-ano-atual { font-size: 17px; font-weight: 700; color: var(--navy); text-transform: capitalize; text-align: center; flex: 1; }
+
+  /* ---- um bloco de grade por consultório, empilhados, com uma pequena
+     separação entre eles pra não confundir os campos de um com os do
+     outro (pedido do Paulo em 11/09/2026: não existe mais seletor de
+     consultório no alto da página -- a grade mostra TODOS de uma vez) ---- */
+  #lista-consultorios { display: flex; flex-direction: column; gap: 22px; }
+  .bloco-consultorio { background: white; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .bloco-consultorio-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid var(--line); background: #FAFCFC;
+  }
+  .bloco-consultorio-nome { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: var(--navy); }
+  .btn-ver-foto {
+    cursor: pointer; background: var(--teal-soft); border: 1px solid var(--teal); color: var(--navy);
+    font-weight: 700; font-size: 12.5px; padding: 7px 14px; border-radius: 7px;
+  }
+  .btn-ver-foto:hover { background: #DCEEEC; }
+
+  /* ---- grade por horário, igual à da Agenda dos Médicos Fixos:
+     posicionamento por minuto (não uma tabela com células soltas), pra
+     o horista ver exatamente as mesmas proporções de horário que a
+     recepção/secretária vê na agenda dos mensalistas ---- */
+  .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
+  .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia { text-align: center; padding: 10px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia .numero { font-family: 'Manrope', sans-serif; font-size: 15px; }
+  .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; }
+  .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
+  .coluna-horas { position: relative; border-right: 1px solid var(--line); }
+  .coluna-horas .marca-hora { position: absolute; left: 0; right: 0; font-size: 8.5px; color: var(--muted); text-align: right; padding-right: 6px; transform: translateY(-50%); }
+  .coluna-dia {
+    border-right: 1px solid var(--line); position: relative;
+    /* 21.6px = 60min * PX_POR_MIN (0.36) -- precisa bater com o JS senão a
+       linha de fundo desalinha da altura real de cada slot. */
+    background-image: repeating-linear-gradient(to bottom, #f1f4f5 0, #f1f4f5 1px, transparent 1px, transparent 21.6px);
+  }
+  .faixa-bege { position: absolute; left: 0; right: 0; background: var(--bege); pointer-events: none; z-index: 0; }
+  .slot-vago {
+    position: absolute; left: 2px; right: 2px; border-radius: 3px; cursor: pointer;
+    border: 1px dashed #e3e8ea; box-sizing: border-box;
+  }
+  .slot-vago { background: var(--verde); border: 1px solid #8bd889; }
+  .slot-vago.indisponivel { background: var(--bege); border: 1px solid #b9c0c4; cursor: not-allowed; }
+  .slot-vago.indisponivel:hover { border-color: #b9c0c4; background: var(--bege); }
+  .bloco-reserva {
+    position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 0 4px; overflow: hidden;
+    color: white; font-size: 8px; line-height: 1.05; box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    display: flex; align-items: center; gap: 4px; white-space: nowrap;
+  }
+  .bloco-reserva.minha { background: var(--azul-confirmado); cursor: pointer; }
+  .bloco-reserva.minha.selecionada { outline: 2px solid var(--coral); outline-offset: -2px; box-shadow: 0 0 0 3px rgba(214,92,63,0.35); }
+  .bloco-reserva.outro-medico { background: var(--rosa); color: #8e2632; }
+  .bloco-reserva .h { font-weight: 700; }
+  #aviso-12h { display:none; background: var(--coral-soft); color: var(--coral); padding:10px 12px; border-radius:8px; font-size:12.5px; margin-top:10px; font-weight:600; }
+  #info-reserva-selecionada { font-size:12.5px; color: var(--muted); margin-top:10px; }
+
+  #status-msg { font-size: 13px; margin-top: 12px; min-height: 18px; }
+  #status-msg.ok { color: #1F8F5C; }
+  #status-msg.erro { color: var(--coral); }
+
+  /* ---- modal com a foto do consultório -- pedido do Paulo em
+     11/09/2026: a foto não fica mais sempre visível na página
+     principal, só aparece quando o médico clica em "Ver foto" ---- */
+  .modal-overlay-foto { display:none; position:fixed; inset:0; background:rgba(14,30,40,0.6); align-items:center; justify-content:center; z-index:300; padding:16px; }
+  .modal-overlay-foto.aberto { display:flex; }
+  .modal-foto { background:white; border-radius:12px; padding:20px; max-width:520px; width:100%; box-shadow:0 20px 60px rgba(14,42,58,0.3); }
+  .modal-foto-topo { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .modal-foto-fechar { background:none; border:none; font-size:22px; line-height:1; cursor:pointer; color:var(--muted); padding:0; }
+  .foto-consultorio-area { position: relative; width: 100%; height: 280px; border-radius: 8px; overflow: hidden; background: var(--bege); }
+  .foto-consultorio-area img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .foto-consultorio-seta {
+    position: absolute; top: 50%; transform: translateY(-50%); background: rgba(14,42,59,0.55); color: white;
+    border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 17px; line-height: 1;
+  }
+  .foto-consultorio-seta.esquerda { left: 8px; }
+  .foto-consultorio-seta.direita { right: 8px; }
+  .foto-consultorio-seta:hover { background: rgba(14,42,59,0.8); }
+  .foto-consultorio-nome { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 16px; color: var(--navy); margin-top: 12px; }
+  .foto-consultorio-descricao { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .foto-consultorio-vazio {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 0 10px; font-size: 13px; color: var(--muted); font-style: italic;
+  }
+
+  @media (max-width: 760px) {
+    header { padding: 14px 16px; }
+    header h1 { font-size: 17px; }
+    .container { padding: 14px 12px 50px; }
+    .barra-controles { padding: 12px; gap: 10px; }
+    .legenda { flex-wrap: wrap; gap: 8px 14px; }
+    .painel-horas-avulsas > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+    .nav-semana .rotulo-semana { display: none; }
+  }
+</style>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+<script>
+(function() {
+  const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+  const token = tokenMeta ? tokenMeta.content : null;
+  const fetchOriginal = window.fetch;
+  window.fetch = function(url, opcoes) {
+    opcoes = opcoes || {};
+    const metodo = (opcoes.method || 'GET').toUpperCase();
+    if (token && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(metodo)) {
+      opcoes.headers = Object.assign({}, opcoes.headers, { 'X-CSRFToken': token });
+    }
+    return fetchOriginal(url, opcoes);
+  };
+})();
+</script>
+
+<header>
+  <div>
+    <h1>Grade de Turnos — Lifemax</h1>
+    <p>Veja a disponibilidade de todos os consultórios da semana e reserve por hora cheia (mínimo 1h). Fica visível pros demais médicos na hora.</p>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-size:13px; color:#9FB8C4; margin-bottom:6px;">{{ medico.nome if medico else '' }}</div>
+    <a href="{{ url_for('medico_painel.painel') }}" style="color:#9FB8C4; font-size:13px; text-decoration:none;">← Voltar ao painel</a>
+  </div>
+</header>
+
+<div class="container">
+  {% if medico and not medico.autorizado %}
+  <div style="background:var(--coral-soft, #FBEAE6); color:var(--coral, #B33); padding:12px 16px; border-radius:8px; font-size:13px; margin-bottom:18px;">
+    Seu cadastro ainda está aguardando liberação do administrador. Você pode navegar pela grade,
+    mas a reserva só é confirmada depois que seu acesso for autorizado.
+  </div>
+  {% endif %}
+
+  {# "Reservar horas avulsas" subiu pro alto da página -- pedido do Paulo
+     em 11/09/2026, antes ficava embaixo da grade inteira. #}
+  <div class="painel-horas-avulsas">
+    <h3 style="margin:0 0 4px; font-size:15px; color:var(--navy);">Reservar horas avulsas</h3>
+    <p style="margin:0 0 14px; font-size:12.5px; color:var(--muted); line-height:1.5;">
+      Para reservar um consultório, escolha quantas horas deseja e clique no campo em verde na grade
+      abaixo para as horas escolhidas. Para cancelar, siga o mesmo processo: clique no horário
+      reservado por você (cor teal) e depois em "Cancelar".
+    </p>
+    <div id="consultorio-selecionado-label" class="vazio">Nenhum consultório escolhido ainda -- clique num horário verde na grade abaixo.</div>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:10px; align-items:end;">
+      <div>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;">Data</label>
+        <input type="date" id="horas-data" style="width:100%;">
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;">Hora início</label>
+        <select id="horas-inicio" style="width:100%;"></select>
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;">Quantidade de horas</label>
+        <input type="number" id="horas-quantidade" min="1" step="1" value="1" style="width:100%;">
+      </div>
+      <div>
+        <button class="btn-nav" style="width:100%; padding:9px;" onclick="reservarPorHora()">Reservar</button>
+      </div>
+      <div>
+        <button class="btn-nav" id="btn-cancelar-reserva" style="width:100%; padding:9px; background:var(--coral-soft); border-color:var(--coral); color:var(--coral);" disabled onclick="confirmarCancelamento()">Cancelar</button>
+      </div>
+    </div>
+    <div id="status-horas" style="font-size:13px; margin-top:10px;"></div>
+    <div id="info-reserva-selecionada"></div>
+    <div id="aviso-12h">⚠️ O cancelamento com menos de 12 horas não gera reembolso.</div>
+  </div>
+
+  <div class="cabecalho-calendario">
+    <div class="nav-semana">
+      <button class="btn-seta" id="btn-anterior" title="Semana anterior">&larr;</button>
+      <span class="rotulo-semana">Semana anterior</span>
+    </div>
+    <div class="mes-ano-atual" id="mes-ano-atual">—</div>
+    <div class="nav-semana direita">
+      <button class="btn-seta" id="btn-proxima" title="Próxima semana">&rarr;</button>
+      <span class="rotulo-semana">Próxima semana</span>
+    </div>
+  </div>
+
+  <div class="barra-controles">
+    <div class="legenda">
+      <span><span class="dot livre"></span> Livre</span>
+      <span><span class="dot meu"></span> Reservado por mim</span>
+      <span><span class="dot outro"></span> Reservado</span>
+      <span><span class="dot bege"></span> Indisponível</span>
+    </div>
+  </div>
+
+  <div id="lista-consultorios"></div>
+
+  <div id="status-msg"></div>
+</div>
+
+{# Modal com a foto do consultório -- não aparece na página principal,
+   só quando o médico clica em "Ver foto" no alto de cada bloco. #}
+<div class="modal-overlay-foto" id="modal-overlay-foto">
+  <div class="modal-foto">
+    <div class="modal-foto-topo">
+      <div class="foto-consultorio-nome" id="foto-consultorio-nome" style="margin-top:0;"></div>
+      <button type="button" class="modal-foto-fechar" onclick="fecharModalFoto()">✕</button>
+    </div>
+    <div class="foto-consultorio-area">
+      <img id="foto-consultorio-img" src="" alt="Foto do consultório">
+      <div class="foto-consultorio-vazio" id="foto-consultorio-vazio" style="display:none;">Sem foto cadastrada</div>
+      <button type="button" class="foto-consultorio-seta esquerda" id="foto-consultorio-anterior" style="display:none;">‹</button>
+      <button type="button" class="foto-consultorio-seta direita" id="foto-consultorio-proxima" style="display:none;">›</button>
+    </div>
+    <div class="foto-consultorio-descricao" id="foto-consultorio-descricao"></div>
+  </div>
+</div>
+
+<script>
+const MEDICO_ATUAL_ID = {{ (medico.id if medico else '') | tojson }};
+const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+const GRID_INICIO_MIN = 8 * 60;
+const GRID_FIM_MIN = 20 * 60;
+// Reduzido em 70% (era 1.2) -- pedido do Paulo em 10/09/2026: compactar
+// as linhas de horário na vertical. Todo o resto do grid (altura das
+// colunas, posição das marcas de hora, dos blocos de reserva e das
+// faixas indisponíveis) deriva desse valor, então mudar só ele já
+// compacta a tela inteira de forma proporcional.
+const PX_POR_MIN = 0.36;
+
+// Mesma faixa de horário de cada turno usada no backend
+// (app/services/supabase_client.py PERIODOS_HORARIOS) — usada aqui só
+// para saber quais horários um turno-inteiro reservado ocupa.
+const HORARIOS_DO_TURNO = {
+  manha: ['08:00', '09:00', '10:00', '11:00'],
+  tarde: ['13:00', '14:00', '15:00', '16:00'],
+  noite: ['17:00', '18:00', '19:00'],
+};
+
+// Hora de INÍCIO de cada turno (mesma faixa do backend PERIODOS_HORARIOS)
+// -- usada só pra saber a partir de que horário conta o prazo de 12h de
+// cancelamento de uma reserva de turno (que não guarda hora_inicio).
+const INICIO_DO_TURNO = { manha: '08:00', tarde: '13:00', noite: '17:00' };
+
+// Reserva atualmente selecionada na grade para cancelamento (clicando num
+// bloco teal "reservado por mim") -- pedido do Paulo em 10/09/2026.
+let reservaSelecionadaParaCancelar = null;
+
+// Consultório escolhido pra próxima reserva -- pedido do Paulo em
+// 11/09/2026: não existe mais um seletor de consultório no alto da
+// página (a grade mostra TODOS de uma vez, empilhados); é clicando num
+// horário verde de um bloco específico que se escolhe o consultório.
+let consultorioSelecionadoParaReserva = null;
+
+const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+               'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+let dataInicioAtual = hojeISO();
+let gradeAtual = { consultorios: [], reservas: [], reservas_admin: [], bloqueios_template: [] };
+
+function hojeISO() { return new Date().toISOString().slice(0, 10); }
+
+function formatarDataCurta(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return { dia: DIAS_SEMANA[d.getDay()], numero: String(d.getDate()).padStart(2, '0') };
+}
+
+function somarDias(iso, n) {
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function atualizarMesAno(dataInicioIso, dataFimIso) {
+  const inicio = new Date(dataInicioIso + 'T00:00:00');
+  const fim = new Date(dataFimIso + 'T00:00:00');
+  const el = document.getElementById('mes-ano-atual');
+  if (inicio.getMonth() === fim.getMonth() && inicio.getFullYear() === fim.getFullYear()) {
+    el.textContent = `${MESES[inicio.getMonth()]} ${inicio.getFullYear()}`;
+  } else if (inicio.getFullYear() === fim.getFullYear()) {
+    el.textContent = `${MESES[inicio.getMonth()]} / ${MESES[fim.getMonth()]} ${inicio.getFullYear()}`;
+  } else {
+    el.textContent = `${MESES[inicio.getMonth()]} ${inicio.getFullYear()} / ${MESES[fim.getMonth()]} ${fim.getFullYear()}`;
+  }
+}
+
+async function carregarGrade() {
+  const resp = await fetch(`/api/turnos/grade?data_inicio=${dataInicioAtual}&dias=7`);
+  gradeAtual = await resp.json();
+
+  // se o consultório escolhido pra reserva não existe mais na resposta
+  // (raro -- ex: foi desativado nesse meio-tempo), limpa a seleção.
+  const idsAtuais = (gradeAtual.consultorios || []).map(c => c.id);
+  if (consultorioSelecionadoParaReserva && !idsAtuais.includes(consultorioSelecionadoParaReserva)) {
+    consultorioSelecionadoParaReserva = null;
+  }
+
+  renderizarGrade();
+  atualizarLabelConsultorioSelecionado();
+}
+
+// ---------------------------------------------------------------------
+// Foto do consultório -- pedido do Paulo em 11/09/2026: não fica mais
+// sempre visível na página principal, só aparece num modal quando o
+// médico clica em "Ver foto" no alto do bloco daquele consultório. Usa
+// o mesmo campo "fotos" que já vem em /api/turnos/grade (o mesmo que a
+// vitrine pública usa), sem precisar de nenhuma rota nova.
+// ---------------------------------------------------------------------
+let fotosModalAtual = [];
+let indiceFotoModal = 0;
+
+function abrirFotoConsultorio(consultorioId) {
+  const consultorio = (gradeAtual.consultorios || []).find(c => c.id === consultorioId);
+  if (!consultorio) return;
+  fotosModalAtual = consultorio.fotos || [];
+  indiceFotoModal = 0;
+  document.getElementById('foto-consultorio-nome').textContent = consultorio.nome;
+  document.getElementById('foto-consultorio-descricao').textContent = consultorio.descricao || '';
+  atualizarImagemModalFoto();
+  document.getElementById('modal-overlay-foto').classList.add('aberto');
+}
+
+function atualizarImagemModalFoto() {
+  const img = document.getElementById('foto-consultorio-img');
+  const vazio = document.getElementById('foto-consultorio-vazio');
+  const btnAnterior = document.getElementById('foto-consultorio-anterior');
+  const btnProxima = document.getElementById('foto-consultorio-proxima');
+
+  if (fotosModalAtual.length === 0) {
+    img.style.display = 'none';
+    vazio.style.display = 'flex';
+    btnAnterior.style.display = 'none';
+    btnProxima.style.display = 'none';
+    return;
+  }
+
+  vazio.style.display = 'none';
+  img.style.display = 'block';
+  img.src = fotosModalAtual[indiceFotoModal];
+  const mostrarSetas = fotosModalAtual.length > 1;
+  btnAnterior.style.display = mostrarSetas ? 'block' : 'none';
+  btnProxima.style.display = mostrarSetas ? 'block' : 'none';
+}
+
+function trocarFotoModal(direcao) {
+  if (fotosModalAtual.length <= 1) return;
+  indiceFotoModal = (indiceFotoModal + direcao + fotosModalAtual.length) % fotosModalAtual.length;
+  atualizarImagemModalFoto();
+}
+
+function fecharModalFoto() {
+  document.getElementById('modal-overlay-foto').classList.remove('aberto');
+}
+
+document.getElementById('foto-consultorio-anterior').addEventListener('click', () => trocarFotoModal(-1));
+document.getElementById('foto-consultorio-proxima').addEventListener('click', () => trocarFotoModal(1));
+
+// faixas (em minutos) fora do horário reservável -- almoço, fora do
+// expediente, ou bloqueado pelo admin na "Semana Padrão" -- pintadas de
+// bege, igual à agenda dos médicos fixos
+function faixasBegeDoDia(consultorioId, dataIso) {
+  const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
+  const bloqueiosTemplate = gradeAtual.bloqueios_template || [];
+  const bloqueadoNoHorario = (hora) => bloqueiosTemplate.some(b =>
+    b.consultorio_id === consultorioId && b.dia_semana === diaSemana && b.hora_inicio === hora
+  );
+
+  const faixas = [];
+  let inicioFaixaAberta = null;
+  for (let min = GRID_INICIO_MIN; min < GRID_FIM_MIN; min += 60) {
+    const hora = `${String(Math.floor(min / 60)).padStart(2, '0')}:00`;
+    const foraDeHorario = !HORARIOS.includes(hora) || bloqueadoNoHorario(hora);
+    if (foraDeHorario && inicioFaixaAberta === null) inicioFaixaAberta = min;
+    if (!foraDeHorario && inicioFaixaAberta !== null) {
+      faixas.push([inicioFaixaAberta, min]);
+      inicioFaixaAberta = null;
+    }
+  }
+  if (inicioFaixaAberta !== null) faixas.push([inicioFaixaAberta, GRID_FIM_MIN]);
+  return faixas;
+}
+
+// Constrói um bloco de grade (cabeçalho de dias + corpo) por consultório
+// -- pedido do Paulo em 11/09/2026: todos os consultórios aparecem de
+// uma vez, empilhados, em vez de escolher um por vez num seletor.
+function renderizarGrade() {
+  const dias = [];
+  for (let i = 0; i < 7; i++) dias.push(somarDias(dataInicioAtual, i));
+  atualizarMesAno(dias[0], dias[dias.length - 1]);
+
+  const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
+    dias.map(d => {
+      const { dia, numero } = formatarDataCurta(d);
+      return `<div class="col-dia">${dia}<div class="numero">${numero}</div></div>`;
+    }).join('');
+
+  const alturaTotal = (GRID_FIM_MIN - GRID_INICIO_MIN) * PX_POR_MIN;
+
+  let colunaHoras = `<div class="coluna-horas" style="height:${alturaTotal}px;">`;
+  for (let min = GRID_INICIO_MIN; min <= GRID_FIM_MIN; min += 60) {
+    const top = (min - GRID_INICIO_MIN) * PX_POR_MIN;
+    const h = `${String(Math.floor(min / 60)).padStart(2, '0')}:00`;
+    colunaHoras += `<div class="marca-hora" style="top:${top}px;">${h}</div>`;
+  }
+  colunaHoras += `</div>`;
+
+  // ocupação: pra cada consultório+data+hora, quem reservou (medico_id + nome)
+  const ocupacao = {};
+  for (const h of (gradeAtual.reservas_admin || [])) {
+    ocupacao[`${h.consultorio_id}|${h.data}|${h.horario.slice(0,5)}`] = { nome: h.descricao || 'Reservado', medicoId: null, admin: true };
+  }
+  for (const r of (gradeAtual.reservas || [])) {
+    const nomeMedico = (r.medicos && r.medicos.nome) || 'Reservado';
+    let horariosOcupados;
+    let horaInicioReal;
+    if (r.tipo_reserva === 'hora' && r.hora_inicio) {
+      horaInicioReal = r.hora_inicio.slice(0, 5);
+      const idxInicio = HORARIOS.indexOf(horaInicioReal);
+      const qtd = r.quantidade_horas || 1;
+      horariosOcupados = idxInicio >= 0 ? HORARIOS.slice(idxInicio, idxInicio + qtd) : [horaInicioReal];
+    } else {
+      horaInicioReal = INICIO_DO_TURNO[r.periodo] || '08:00';
+      horariosOcupados = HORARIOS_DO_TURNO[r.periodo] || [];
+    }
+    for (const h of horariosOcupados) {
+      ocupacao[`${r.consultorio_id}|${r.data}|${h}`] = {
+        nome: nomeMedico, medicoId: r.medico_id, reservaId: r.id,
+        dataIso: r.data, horaInicio: horaInicioReal,
+      };
+    }
+  }
+
+  const blocosHtml = (gradeAtual.consultorios || []).map(consultorio => {
+    const colunasDias = dias.map(dataIso => {
+      let html = `<div class="coluna-dia" style="height:${alturaTotal}px;">`;
+
+      faixasBegeDoDia(consultorio.id, dataIso).forEach(([inicio, fim]) => {
+        const top = (inicio - GRID_INICIO_MIN) * PX_POR_MIN;
+        const altura = (fim - inicio) * PX_POR_MIN;
+        html += `<div class="faixa-bege" style="top:${top}px; height:${altura}px;"></div>`;
+      });
+
+      HORARIOS.forEach(hora => {
+        const [hh, mm] = hora.split(':').map(Number);
+        const minutos = hh * 60 + mm;
+        if (minutos < GRID_INICIO_MIN || minutos >= GRID_FIM_MIN) return;
+        const top = (minutos - GRID_INICIO_MIN) * PX_POR_MIN;
+        const altura = 60 * PX_POR_MIN;
+        const chave = `${consultorio.id}|${dataIso}|${hora}`;
+        const ocupado = ocupacao[chave];
+        const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
+        const indisponivel = (gradeAtual.bloqueios_template || []).some(b =>
+          b.consultorio_id === consultorio.id && b.dia_semana === diaSemana && b.hora_inicio === hora
+        );
+
+        if (ocupado) {
+          const minha = !ocupado.admin && ocupado.medicoId === MEDICO_ATUAL_ID;
+          const classe = minha ? 'minha' : 'outro-medico';
+          const titulo = ocupado.admin ? 'Reservado pelo administrador' : (minha ? 'Clique para selecionar e cancelar' : 'Reservado por outro profissional');
+          const selecionada = minha && reservaSelecionadaParaCancelar && reservaSelecionadaParaCancelar.id === ocupado.reservaId;
+          const onclickAttr = minha
+            ? ` onclick="selecionarReservaParaCancelar('${ocupado.reservaId}', '${ocupado.dataIso}', '${ocupado.horaInicio}')"`
+            : '';
+          html += `<div class="bloco-reserva ${classe}${selecionada ? ' selecionada' : ''}" style="top:${top}px; height:${altura}px;" title="${titulo}"${onclickAttr}>
+            <div class="h">${hora}</div><div>${ocupado.admin ? 'Reservado' : (minha ? 'Você' : ocupado.nome)}</div>
+          </div>`;
+        } else if (indisponivel) {
+          html += `<div class="slot-vago indisponivel" style="top:${top}px; height:${altura}px;" title="Indisponível"></div>`;
+        } else {
+          html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;"
+            onclick="selecionarHoraNoFormulario('${consultorio.id}', '${dataIso}', '${hora}')"></div>`;
+        }
+      });
+
+      html += `</div>`;
+      return html;
+    }).join('');
+
+    return `<div class="bloco-consultorio">
+      <div class="bloco-consultorio-header">
+        <div class="bloco-consultorio-nome">${consultorio.nome}</div>
+        <button type="button" class="btn-ver-foto" onclick="abrirFotoConsultorio('${consultorio.id}')">📷 Ver foto</button>
+      </div>
+      <div class="grade-cabecalho">${cabecalhoDiasHtml}</div>
+      <div class="grade-scroll-vertical"><div class="grade-corpo">${colunaHoras + colunasDias}</div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('lista-consultorios').innerHTML = blocosHtml ||
+    '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum consultório cadastrado ainda.</div>';
+}
+
+function selecionarHoraNoFormulario(consultorioId, dataIso, hora) {
+  // Clicar num horário livre da grade escolhe o CONSULTÓRIO daquele
+  // bloco e preenche o formulário de "Reservar horas avulsas" (em vez
+  // de reservar na hora) — assim o preço escalonado (1ª, 2ª, 3ª hora)
+  // continua sendo calculado corretamente quando o médico quiser
+  // reservar mais de 1 hora seguida.
+  consultorioSelecionadoParaReserva = consultorioId;
+  document.getElementById('horas-data').value = dataIso;
+  document.getElementById('horas-inicio').value = hora;
+  document.getElementById('horas-quantidade').value = 1;
+  atualizarLabelConsultorioSelecionado();
+  document.getElementById('horas-quantidade').focus();
+  document.querySelector('.painel-horas-avulsas').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function atualizarLabelConsultorioSelecionado() {
+  const el = document.getElementById('consultorio-selecionado-label');
+  const consultorio = (gradeAtual.consultorios || []).find(c => c.id === consultorioSelecionadoParaReserva);
+  if (consultorio) {
+    el.textContent = `Consultório escolhido: ${consultorio.nome}`;
+    el.classList.remove('vazio');
+  } else {
+    el.textContent = 'Nenhum consultório escolhido ainda -- clique num horário verde na grade abaixo.';
+    el.classList.add('vazio');
+  }
+}
+
+function _formatarDataBR(dataIso) {
+  return `${dataIso.slice(8, 10)}/${dataIso.slice(5, 7)}/${dataIso.slice(0, 4)}`;
+}
+
+function selecionarReservaParaCancelar(reservaId, dataIso, horaInicio) {
+  reservaSelecionadaParaCancelar = { id: reservaId, dataIso, horaInicio };
+  atualizarPainelCancelamento();
+  renderizarGrade();
+}
+
+function atualizarPainelCancelamento() {
+  const infoEl = document.getElementById('info-reserva-selecionada');
+  const avisoEl = document.getElementById('aviso-12h');
+  const btnEl = document.getElementById('btn-cancelar-reserva');
+
+  if (!reservaSelecionadaParaCancelar) {
+    infoEl.textContent = '';
+    avisoEl.style.display = 'none';
+    btnEl.disabled = true;
+    return;
+  }
+
+  const { dataIso, horaInicio } = reservaSelecionadaParaCancelar;
+  infoEl.innerHTML = `Selecionado para cancelar: <strong>${_formatarDataBR(dataIso)} às ${horaInicio}</strong>.`;
+  btnEl.disabled = false;
+
+  // Só um aviso client-side (o servidor decide de verdade, com a hora
+  // certa do fuso de Brasília) -- se faltar menos de 12h daqui até o
+  // início da reserva, cancelar não devolve as horas.
+  const inicioDt = new Date(`${dataIso}T${horaInicio}:00`);
+  const diffHoras = (inicioDt.getTime() - Date.now()) / 3600000;
+  avisoEl.style.display = diffHoras < 12 ? 'block' : 'none';
+}
+
+async function confirmarCancelamento() {
+  if (!reservaSelecionadaParaCancelar) return;
+  const statusEl = document.getElementById('status-horas');
+  const btnEl = document.getElementById('btn-cancelar-reserva');
+
+  btnEl.disabled = true;
+  statusEl.textContent = 'Cancelando...';
+  statusEl.style.color = '#55707C';
+
+  try {
+    const resp = await fetch('/api/turnos/cancelar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reserva_id: reservaSelecionadaParaCancelar.id }),
+    });
+    const resultado = await resp.json();
+
+    if (!resp.ok) {
+      statusEl.textContent = resultado.erro || 'Erro ao cancelar.';
+      statusEl.style.color = '#D65C3F';
+      btnEl.disabled = false;
+      return;
+    }
+
+    if (resultado.reembolsado) {
+      statusEl.textContent = `Reserva cancelada. ${resultado.horas_reembolsadas}h devolvida(s). Saldo atual: ${resultado.saldo_horas}h.`;
+      statusEl.style.color = '#1F8F5C';
+    } else {
+      statusEl.textContent = `Reserva cancelada. Como faltavam menos de 12h, não houve reembolso de horas. Saldo atual: ${resultado.saldo_horas}h.`;
+      statusEl.style.color = '#D65C3F';
+    }
+
+    reservaSelecionadaParaCancelar = null;
+    atualizarPainelCancelamento();
+    await carregarGrade();
+  } catch (e) {
+    statusEl.textContent = 'Erro de conexão.';
+    statusEl.style.color = '#D65C3F';
+    btnEl.disabled = false;
+  }
+}
+
+document.getElementById('btn-anterior').addEventListener('click', () => {
+  dataInicioAtual = somarDias(dataInicioAtual, -7);
+  carregarGrade();
+});
+document.getElementById('btn-proxima').addEventListener('click', () => {
+  dataInicioAtual = somarDias(dataInicioAtual, 7);
+  carregarGrade();
+});
+
+carregarGrade();
+carregarPainelHoras();
+
+async function carregarPainelHoras() {
+  document.getElementById('horas-data').value = hojeISO();
+  document.getElementById('horas-inicio').innerHTML =
+    HORARIOS.map(h => `<option value="${h}">${h}</option>`).join('');
+}
+
+async function reservarPorHora() {
+  const statusEl = document.getElementById('status-horas');
+  const data = document.getElementById('horas-data').value;
+  const horaInicio = document.getElementById('horas-inicio').value;
+  const quantidadeHoras = parseInt(document.getElementById('horas-quantidade').value, 10);
+
+  if (!consultorioSelecionadoParaReserva || !data || !horaInicio || !quantidadeHoras) {
+    statusEl.textContent = 'Escolha um consultório clicando num horário verde na grade abaixo e preencha os campos.';
+    statusEl.style.color = '#D65C3F';
+    return;
+  }
+
+  // Aviso client-side -- pedido do Paulo em 11/09/2026: se o médico
+  // escolher por engano uma data/horário que já passou, avisa na hora
+  // em vez de deixar ele esperar a resposta da API (que confere de novo,
+  // com a hora certa do fuso de Brasília, e também bloqueia).
+  const inicioEscolhido = new Date(`${data}T${horaInicio}:00`);
+  if (inicioEscolhido.getTime() < Date.now()) {
+    statusEl.textContent = '⚠️ Esse horário já passou -- escolha uma data/horário futuro.';
+    statusEl.style.color = '#D65C3F';
+    return;
+  }
+
+  statusEl.textContent = 'Reservando...';
+  statusEl.style.color = '#55707C';
+
+  try {
+    const resp = await fetch('/api/turnos/reservar-horas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        consultorio_id: consultorioSelecionadoParaReserva, data,
+        hora_inicio: horaInicio, quantidade_horas: quantidadeHoras,
+      }),
+    });
+    const resultado = await resp.json();
+
+    if (!resp.ok) {
+      statusEl.textContent = resultado.erro || 'Erro ao reservar.';
+      statusEl.style.color = '#D65C3F';
+      return;
+    }
+
+    statusEl.textContent = `Reservado! Saldo atual: ${resultado.saldo_horas}h.`;
+    statusEl.style.color = '#1F8F5C';
+    await carregarGrade();
+  } catch (e) {
+    statusEl.textContent = 'Erro de conexão.';
+    statusEl.style.color = '#D65C3F';
+  }
+}
+</script>
+
+</body>
+</html>

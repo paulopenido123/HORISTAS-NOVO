@@ -1,0 +1,206 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatórios — Lifemax Admin</title><style>
+body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
+.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between}
+.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}
+.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}
+.nav a.active{color:#10AFA9}
+.wrap{max-width:1280px;margin:auto;padding:28px 24px}
+.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px}
+.subtabs{display:flex;gap:10px;margin-bottom:18px}
+.subtabs a{padding:9px 16px;border-radius:8px;background:#EAF4F3;color:#0B3A52;text-decoration:none;font-weight:700;font-size:13.5px}
+.subtabs a.active{background:#10AFA9;color:#fff}
+.filtro{display:flex;align-items:flex-end;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.filtro label{display:block;font-size:11.5px;font-weight:700;color:#62788A;margin-bottom:6px;text-transform:uppercase;letter-spacing:.02em}
+.filtro input,.filtro select{padding:9px 10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px;min-width:140px}
+.filtro button,.filtro a.btn-limpar{padding:9px 16px;border:0;border-radius:8px;background:#10AFA9;color:#fff;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
+.filtro a.btn-limpar{background:#fff;color:#62788A;border:1px solid #d8e3e7}
+.resumo{font-size:13px;color:#62788A;margin-bottom:14px;font-weight:600}
+.resumo strong{color:#102A43}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:#62788A;font-weight:700;padding:9px 8px;border-bottom:2px solid #e3ebef;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid #e3ebef;vertical-align:top}
+tr:hover td{background:#F8FBFB}
+.tag-op{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.tag-op.agendamento{background:#E3F7EE;color:#0B7B45}
+.tag-op.cancelamento{background:#FBEAE6;color:#B33}
+.tag-tipo{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#EAF4F3;color:#0B3A52}
+.vazio{color:#8AA0A9;font-size:13px;padding:20px 0;text-align:center}
+.wrap-tabela{overflow-x:auto}
+.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}
+.flash.ok{background:#E3F7EE;color:#0B7B45}
+.flash.erro{background:#FBEAE6;color:#B33}
+.tag-nf{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.tag-nf.nao_emitida{background:#FBEAE6;color:#B33}
+.tag-nf.emitida,.tag-nf.enviada{background:#E3F7EE;color:#0B7B45}
+.btn-emitir-nf{padding:6px 12px;border:0;border-radius:7px;background:#10AFA9;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer}
+.aviso-nfe{background:#FFF6E5;color:#8a6100;border:1px solid #f3dca3;border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:16px}
+.link-nf{color:#0B3A52;font-weight:700}
+@media(max-width:760px){.filtro{gap:8px}.filtro input,.filtro select{min-width:120px}}
+</style></head><body>
+<div class="top"><strong>LIFEMAX ADMIN · RELATÓRIOS</strong><span>Administrador</span></div>
+<div class="nav">
+  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
+  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
+  <a href="{{ url_for('admin.clientes') }}">Clientes</a>
+  <a href="{{ url_for('admin.horas') }}">Horas</a>
+  <a href="{{ url_for('admin.relatorios') }}" class="active">Relatórios</a>
+  <a href="{{ url_for('admin.admin_logout') }}">Sair</a>
+</div>
+<div class="wrap">
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% for categoria, texto in mensagens %}
+      <div class="flash {{ categoria }}">{{ texto }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="subtabs">
+    <a href="{{ url_for('admin.relatorios', tipo='agendamentos') }}" class="{{ 'active' if tipo == 'agendamentos' else '' }}">Agendamentos</a>
+    <a href="{{ url_for('admin.relatorios', tipo='transacoes') }}" class="{{ 'active' if tipo == 'transacoes' else '' }}">Transações</a>
+    <a href="{{ url_for('admin.relatorios', tipo='nao_faturadas') }}" class="{{ 'active' if tipo == 'nao_faturadas' else '' }}">Transações ainda não faturadas</a>
+    <a href="{{ url_for('admin.relatorios', tipo='faturadas') }}" class="{{ 'active' if tipo == 'faturadas' else '' }}">Transações faturadas</a>
+  </div>
+
+  <div class="card">
+    {% if tipo == 'nao_faturadas' and not nfe_configurado %}
+    <div class="aviso-nfe">⚠️ A emissão automática de Nota Fiscal ainda não está configurada (certificado A1 da Lifemax). O botão "Emitir NF" vai mostrar um aviso até essas credenciais serem preenchidas no sistema.</div>
+    {% endif %}
+    <form class="filtro" method="get">
+      <input type="hidden" name="tipo" value="{{ tipo }}">
+      <div>
+        <label>Período da ocorrência (início)</label>
+        <input type="date" name="data_inicio" value="{{ filtros.data_inicio }}">
+      </div>
+      <div>
+        <label>Período da ocorrência (fim)</label>
+        <input type="date" name="data_fim" value="{{ filtros.data_fim }}">
+      </div>
+
+      {% if tipo == 'agendamentos' %}
+      <div>
+        <label>Consultório</label>
+        <select name="consultorio_id">
+          <option value="">Todos</option>
+          {% for c in consultorios %}
+          <option value="{{ c.id }}" {{ 'selected' if filtros.consultorio_id == c.id else '' }}>{{ c.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div>
+        <label>Operador (médico)</label>
+        <select name="medico_id">
+          <option value="">Todos</option>
+          {% for m in medicos %}
+          <option value="{{ m.id }}" {{ 'selected' if filtros.medico_id == m.id else '' }}>{{ m.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label>Cliente</label>
+        <input type="text" name="cliente" placeholder="Filtre por cliente" value="{{ filtros.cliente }}">
+      </div>
+
+      {% if tipo == 'agendamentos' %}
+      <div>
+        <label>Operação</label>
+        <select name="operacao">
+          <option value="">Todas</option>
+          {% for op in operacoes %}
+          <option value="{{ op }}" {{ 'selected' if filtros.operacao == op else '' }}>{{ op }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div>
+        <label>Ordenar por</label>
+        <select name="ordenar">
+          <option value="desc" {{ 'selected' if filtros.ordenar == 'desc' else '' }}>Ocorrência (mais recente)</option>
+          <option value="asc" {{ 'selected' if filtros.ordenar == 'asc' else '' }}>Ocorrência (mais antiga)</option>
+        </select>
+      </div>
+
+      <button type="submit">Aplicar filtros</button>
+      <a class="btn-limpar" href="{{ url_for('admin.relatorios', tipo=tipo) }}">Limpar filtros</a>
+    </form>
+
+    {% if tipo == 'transacoes' %}
+    <div class="resumo"><strong>{{ linhas|length }}</strong> resultado(s) · <strong>{{ total_horas }}</strong> hora(s) totais (em módulo, soma de compras + consumos + ajustes)</div>
+    {% elif tipo in ('nao_faturadas', 'faturadas') %}
+    <div class="resumo"><strong>{{ linhas|length }}</strong> resultado(s) · <strong>R$ {{ '%.2f'|format(total_valor or 0) }}</strong> em pagamentos {{ 'já faturados' if tipo == 'faturadas' else 'ainda não faturados' }}</div>
+    {% else %}
+    <div class="resumo"><strong>{{ linhas|length }}</strong> resultado(s)</div>
+    {% endif %}
+
+    <div class="wrap-tabela">
+    {% if linhas %}
+      {% if tipo == 'agendamentos' %}
+      <table>
+        <thead><tr><th>Ocorrência</th><th>Operador (user)</th><th>Cliente</th><th>Operação</th><th>Cons.</th><th>Descrição</th></tr></thead>
+        <tbody>
+          {% for l in linhas %}
+          <tr>
+            <td>{{ l.ocorrencia[8:10] }}/{{ {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'}.get(l.ocorrencia[5:7], l.ocorrencia[5:7]) }}/{{ l.ocorrencia[2:4] }} {{ l.ocorrencia[11:16] }}</td>
+            <td>{{ l.operador }}</td>
+            <td>{{ l.cliente }}</td>
+            <td><span class="tag-op {{ 'cancelamento' if l.operacao == 'Cancelamento' else 'agendamento' }}">{{ l.operacao }}</span></td>
+            <td>{{ l.consultorio }}</td>
+            <td>{{ l.descricao }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% elif tipo == 'transacoes' %}
+      <table>
+        <thead><tr><th>Ocorrência</th><th>Operador (user)</th><th>Cliente</th><th>Tipo</th><th>Qtd Horas</th></tr></thead>
+        <tbody>
+          {% for l in linhas %}
+          <tr>
+            <td>{{ l.ocorrencia[8:10] }}/{{ {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'}.get(l.ocorrencia[5:7], l.ocorrencia[5:7]) }}/{{ l.ocorrencia[2:4] }} {{ l.ocorrencia[11:16] }}</td>
+            <td>{{ l.operador }}</td>
+            <td>{{ l.cliente }}</td>
+            <td><span class="tag-tipo">{{ l.tipo }}</span></td>
+            <td>{{ l.qtd_horas }}h</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <table>
+        <thead><tr><th>Ocorrência (pago em)</th><th>Cliente</th><th>Forma</th><th>Valor</th><th>Nota Fiscal</th>{% if tipo == 'nao_faturadas' %}<th>Ação</th>{% endif %}</tr></thead>
+        <tbody>
+          {% for l in linhas %}
+          <tr>
+            <td>{{ l.ocorrencia[8:10] }}/{{ {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'}.get(l.ocorrencia[5:7], l.ocorrencia[5:7]) }}/{{ l.ocorrencia[2:4] }} {{ l.ocorrencia[11:16] }}</td>
+            <td>{{ l.cliente }}</td>
+            <td>{{ l.forma_pagamento }}</td>
+            <td>R$ {{ '%.2f'|format(l.valor or 0) }}</td>
+            <td>
+              <span class="tag-nf {{ l.nota_fiscal_status }}">{{ {'nao_emitida': 'Não emitida', 'emitida': 'Emitida', 'enviada': 'Enviada'}.get(l.nota_fiscal_status, l.nota_fiscal_status) }}</span>
+              {% if l.nota_fiscal_numero %}
+              <div style="margin-top:4px;font-size:12px;">Nº {{ l.nota_fiscal_numero }}{% if l.nota_fiscal_url %} · <a class="link-nf" href="{{ l.nota_fiscal_url }}" target="_blank" rel="noopener">ver nota</a>{% endif %}</div>
+              {% endif %}
+            </td>
+            {% if tipo == 'nao_faturadas' %}
+            <td>
+              <form method="post" action="{{ url_for('admin.emitir_nf_pagamento', pagamento_id=l.id) }}" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-emitir-nf">Emitir NF</button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    {% else %}
+      <div class="vazio">Nenhum resultado para os filtros escolhidos.</div>
+    {% endif %}
+    </div>
+  </div>
+</div>
+</body></html>

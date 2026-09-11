@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de IA — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F8F9; --panel:#FFFFFF; --line: rgba(14,42,58,0.10); --line-strong: rgba(14,42,58,0.22);
+    --ink:#10222E; --ink-muted:#55707C; --cyan:#0EA5A0; --cyan-soft: rgba(14,165,160,0.12);
+    --navy:#0E2A3B; --onnavy-muted:#9FB8C4; --display:'Manrope', sans-serif; --serif:'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin:0; padding:0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--serif); }
+  a { color: inherit; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px;
+           background: var(--navy); position: sticky; top:0; z-index:100; }
+  .brand { font-family: var(--display); font-weight:800; color:#fff; font-size:15px; }
+  header a.sair, header a.voltar { font-size:13px; color: var(--onnavy-muted); text-decoration:none; margin-left:16px; }
+  header a.sair:hover, header a.voltar:hover { color:#fff; }
+  .container { max-width: 720px; margin: 0 auto; padding: 32px 20px 80px; }
+  .hero-txt { margin-bottom: 24px; }
+  .hero-txt .eyebrow { font-family: var(--display); font-weight:700; font-size:12px; color: var(--cyan);
+                        text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .hero-txt h1 { font-family: var(--display); font-size: 22px; color: var(--navy); }
+  .hero-txt p { color: var(--ink-muted); margin-top:6px; font-size:14px; line-height:1.55; }
+  .saldo-card { background: var(--cyan-soft); border-radius:10px; padding:16px 20px; margin-bottom:20px;
+                display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  .saldo-card .valor { font-family: var(--display); font-size:22px; font-weight:800; color: var(--navy); }
+  .modulo-card { background: var(--panel); border:1px solid var(--line-strong); border-radius:10px;
+                 padding:18px 20px; margin-bottom:14px; display:flex; gap:16px; align-items:flex-start; }
+  .modulo-card input[type=checkbox] { width:22px; height:22px; margin-top:2px; accent-color: var(--cyan); cursor:pointer; flex-shrink:0; }
+  .modulo-card .texto h3 { font-family: var(--display); font-size:15px; color: var(--navy); margin-bottom:4px; }
+  .modulo-card .texto p { font-size:13px; color: var(--ink-muted); line-height:1.5; }
+  .status-trial { display:inline-block; margin-top:6px; font-size:12px; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .status-trial.ativo { background: var(--cyan-soft); color: var(--cyan); }
+  .status-trial.expirado { background: rgba(214,92,63,0.12); color: #D65C3F; }
+  #status-msg { font-size:13px; margin-top:10px; min-height:18px; }
+</style>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+<script>
+(function() {
+  const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+  const token = tokenMeta ? tokenMeta.content : null;
+  const fetchOriginal = window.fetch;
+  window.fetch = function(url, opcoes) {
+    opcoes = opcoes || {};
+    const metodo = (opcoes.method || 'GET').toUpperCase();
+    if (token && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(metodo)) {
+      opcoes.headers = Object.assign({}, opcoes.headers, { 'X-CSRFToken': token });
+    }
+    return fetchOriginal(url, opcoes);
+  };
+})();
+</script>
+
+<header>
+  <div class="brand">⚙️ Painel de IA</div>
+  <div>
+    <a class="voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar ao painel</a>
+    <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="hero-txt">
+    <div class="eyebrow">ASSISTENTE DE IA</div>
+    <h1>Escolha onde você quer usar a IA</h1>
+  </div>
+
+  <div class="saldo-card">
+    <div>Saldo para IA</div>
+    <div class="valor">R$ {{ "%.2f"|format(status_ia.saldo) }}</div>
+  </div>
+
+  {% for slug, m in status_ia.modulos.items() %}
+  <div class="modulo-card">
+    <input type="checkbox" id="modulo-{{ slug }}" data-slug="{{ slug }}"
+           {% if m.ativado_pelo_medico %}checked{% endif %} onchange="salvarModulo(this)">
+    <div class="texto">
+      <h3>{{ m.rotulo }}</h3>
+      {% if m.em_trial %}
+        <span class="status-trial ativo">Teste grátis — {{ m.dias_restantes }} dia(s) restante(s)</span>
+      {% elif m.dias_restantes == 0 and m.dias_restantes is not none %}
+        <span class="status-trial expirado">Teste grátis encerrado</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div id="status-msg"></div>
+</div>
+
+<script>
+async function salvarModulo(checkbox) {
+  const statusEl = document.getElementById('status-msg');
+  statusEl.textContent = 'Salvando...';
+  statusEl.style.color = 'var(--ink-muted)';
+  checkbox.disabled = true;
+
+  try {
+    const resp = await fetch('{{ url_for("medico_painel.salvar_modulo_ia") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modulo_slug: checkbox.dataset.slug, ativado: checkbox.checked }),
+    });
+
+    let resultado;
+    try {
+      resultado = await resp.json();
+    } catch (e) {
+      statusEl.textContent = `Erro ao salvar (código ${resp.status}).`;
+      statusEl.style.color = '#D65C3F';
+      checkbox.checked = !checkbox.checked;
+      checkbox.disabled = false;
+      return;
+    }
+
+    if (!resp.ok) {
+      statusEl.textContent = resultado.erro || 'Erro ao salvar.';
+      statusEl.style.color = '#D65C3F';
+      checkbox.checked = !checkbox.checked;
+      checkbox.disabled = false;
+      return;
+    }
+
+    statusEl.textContent = checkbox.checked ? '✅ Módulo ativado.' : 'Módulo desativado.';
+    statusEl.style.color = checkbox.checked ? 'var(--cyan)' : 'var(--ink-muted)';
+  } catch (e) {
+    statusEl.textContent = 'Erro de conexão com o servidor.';
+    statusEl.style.color = '#D65C3F';
+    checkbox.checked = !checkbox.checked;
+  } finally {
+    checkbox.disabled = false;
+  }
+}
+</script>
+
+</body>
+</html>

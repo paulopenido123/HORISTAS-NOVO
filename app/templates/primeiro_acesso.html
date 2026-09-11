@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primeiro acesso — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --line: #DCE6E8; --muted: #55707C; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(160deg, var(--navy), var(--navy-soft));
+    padding: 20px;
+  }
+  .card { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 400px; }
+  h1 { margin: 0 0 4px; font-size: 20px; color: var(--navy); }
+  p.sub { margin: 0 0 24px; font-size: 13px; color: var(--muted); }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+  input {
+    width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--line);
+    font-family: inherit; font-size: 14px; margin-bottom: 16px;
+  }
+  input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+  button {
+    width: 100%; background: var(--navy); color: white; border: none; padding: 12px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 1px 2px rgba(14,42,58,0.15);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+  }
+  button:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(14,42,58,0.2); }
+  .erro { background: #fbeae6; color: #D65C3F; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  .rodape { text-align: center; margin-top: 18px; font-size: 13px; }
+  .rodape a { color: var(--teal); text-decoration: none; font-weight: 600; }
+  .medico-confirmado { background: #eaf7f0; color: #1F8F5C; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  .info-cadastro { background: var(--teal-soft, #EAF4F3); color: #1a5c53; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 16px; line-height: 1.5; }
+
+  h1, h2, h3, .brand, header h1 { font-family: 'Manrope', sans-serif; }
+
+  @media (max-width: 480px) {
+    body { padding: 16px; }
+    .card { max-width: 100%; padding: 24px 20px; border-radius: 14px; }
+    h1 { font-size: 18px; }
+  }
+</style>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0E2A3B">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lifemax">
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/static/service-worker.js").catch(() => {});
+  });
+}
+</script>
+</head>
+<body>
+  <div class="card">
+    {% if etapa == "cadastro" %}
+      <h1>Bem-vindo(a)!</h1>
+      <p class="sub">Não encontramos esse telefone — vamos criar seu cadastro agora</p>
+    {% else %}
+      <h1>Primeiro acesso</h1>
+      <p class="sub">Crie sua senha para acessar seu painel</p>
+    {% endif %}
+
+    {% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
+
+    {% if etapa == "telefone" %}
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="etapa" value="telefone">
+        <label for="telefone">Telefone (com DDI e DDD)</label>
+        <input type="text" id="telefone" name="telefone" placeholder="31999999999" required autofocus>
+        <button type="submit">Continuar</button>
+      </form>
+
+    {% elif etapa == "cadastro" %}
+      <div class="info-cadastro">
+        📋 Depois de criar sua senha, você já pode acessar seu painel. O assistente de
+        WhatsApp é liberado automaticamente assim que o primeiro pagamento for confirmado.
+      </div>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="etapa" value="cadastro">
+        <input type="hidden" name="telefone" value="{{ telefone_digitado }}">
+        <label for="nome">Nome completo</label>
+        <input type="text" id="nome" name="nome" placeholder="Dra. Ana Souza" required autofocus>
+        <label for="especialidade">Especialidade</label>
+        <input type="text" id="especialidade" name="especialidade" placeholder="Dermatologia">
+        <label for="senha">Crie uma senha (mínimo 6 caracteres)</label>
+        <input type="password" id="senha" name="senha" required>
+        <label for="confirmar_senha">Confirme a senha</label>
+        <input type="password" id="confirmar_senha" name="confirmar_senha" required>
+        <button type="submit">Criar cadastro e entrar</button>
+      </form>
+
+    {% else %}
+      {% if medico %}
+        <div class="medico-confirmado">Encontramos seu cadastro: {{ medico.nome }}</div>
+      {% endif %}
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="etapa" value="senha">
+        <input type="hidden" name="telefone" value="{{ telefone_digitado }}">
+        <label for="senha">Crie uma senha (mínimo 6 caracteres)</label>
+        <input type="password" id="senha" name="senha" required autofocus>
+        <label for="confirmar_senha">Confirme a senha</label>
+        <input type="password" id="confirmar_senha" name="confirmar_senha" required>
+        <button type="submit">Criar senha e entrar</button>
+      </form>
+    {% endif %}
+
+    <div class="rodape">
+      Já tem senha? <a href="{{ url_for('auth.login') }}">Fazer login</a>
+    </div>
+  </div>
+</body>
+</html>

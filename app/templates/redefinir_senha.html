@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redefinir senha — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --line: #DCE6E8; --muted: #55707C; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(160deg, var(--navy), var(--navy-soft));
+    padding: 20px;
+  }
+  .card { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 380px; }
+  h1 { margin: 0 0 4px; font-size: 20px; color: var(--navy); font-family: 'Manrope', sans-serif; }
+  .login-logo { height: 28px; width: auto; display: block; margin: 0 0 4px; }
+  p.sub { margin: 0 0 24px; font-size: 13px; color: var(--muted); }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+  input {
+    width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--line);
+    font-family: inherit; font-size: 14px; margin-bottom: 16px;
+  }
+  input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+  button {
+    width: 100%; background: var(--navy); color: white; border: none; padding: 12px;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  button:hover { opacity: 0.92; }
+  .erro { background: #fbeae6; color: #D65C3F; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  .aviso { background: #EAF4F3; color: #0E6B66; padding: 12px 14px; border-radius: 8px; font-size: 13.5px; margin-bottom: 16px; line-height: 1.5; }
+  .rodape { text-align: center; margin-top: 18px; font-size: 13px; }
+  .rodape a { color: var(--teal); text-decoration: none; font-weight: 600; }
+
+  @media (max-width: 480px) {
+    body { padding: 16px; }
+    .card { max-width: 100%; padding: 24px 20px; border-radius: 14px; }
+    h1 { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Lifemax" class="login-logo">
+    <h1>{{ "Criar senha de acesso" if primeiro_acesso else "Redefinir senha" }}</h1>
+
+    {% if erro %}
+      <div class="erro">{{ erro }}</div>
+      <div class="rodape"><a href="{{ rota_login }}">← Voltar para o login</a></div>
+    {% elif sucesso %}
+      <p class="aviso">{{ "Senha criada com sucesso! Já pode entrar com ela." if primeiro_acesso else "Senha redefinida com sucesso! Já pode entrar com a nova senha." }}</p>
+      <div class="rodape"><a href="{{ rota_login }}">Ir para o login →</a></div>
+    {% else %}
+      <p class="sub">{{ "Bem-vindo(a)! Escolha sua senha de acesso (mínimo 6 caracteres) para entrar pela primeira vez." if primeiro_acesso else "Escolha sua nova senha (mínimo 6 caracteres)." }}</p>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="token" value="{{ token }}">
+        <label for="senha">{{ "Sua senha" if primeiro_acesso else "Nova senha" }}</label>
+        <input type="password" id="senha" name="senha" required autofocus>
+
+        <label for="confirmar_senha">{{ "Confirmar senha" if primeiro_acesso else "Confirmar nova senha" }}</label>
+        <input type="password" id="confirmar_senha" name="confirmar_senha" required>
+
+        <button type="submit">{{ "Criar minha senha" if primeiro_acesso else "Salvar nova senha" }}</button>
+      </form>
+    {% endif %}
+  </div>
+</body>
+</html>

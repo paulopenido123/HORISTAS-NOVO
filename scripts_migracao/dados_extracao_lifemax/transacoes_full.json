@@ -1,0 +1,1586 @@
+[
+  {
+    "id": "1773317877587x815007172320034800",
+    "cliente": "Graziela Novais Ferreira Baginski",
+    "horas": 48,
+    "criado_em": 1773317878097,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "12/03/2026 09:17"
+  },
+  {
+    "id": "1773328680098x956419863286382600",
+    "cliente": "Barbara  Pepe",
+    "horas": 2,
+    "criado_em": 1773328680932,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "12/03/2026 12:18"
+  },
+  {
+    "id": "1773346855328x962075263160287200",
+    "cliente": "Gabriela  Rigueira",
+    "horas": 12,
+    "criado_em": 1773346856534,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "12/03/2026 17:20"
+  },
+  {
+    "id": "1773403299327x820818364515483600",
+    "cliente": "Debora Martins brito",
+    "horas": 2,
+    "criado_em": 1773403300615,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "13/03/2026 09:01"
+  },
+  {
+    "id": "1773409943634x694403442607128600",
+    "cliente": "celeste diniz ribeiro ribeiro",
+    "horas": 6,
+    "criado_em": 1773409947866,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "13/03/2026 10:52"
+  },
+  {
+    "id": "1773410208448x658966157496942600",
+    "cliente": "Wanessa Fernanda  Barroso",
+    "horas": 5,
+    "criado_em": 1773410209485,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "13/03/2026 10:56"
+  },
+  {
+    "id": "1773413436324x932476259568189400",
+    "cliente": "Ingrid  Ferraciolli",
+    "horas": 6,
+    "criado_em": 1773413441035,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "13/03/2026 11:50"
+  },
+  {
+    "id": "1773414729884x963304558258815000",
+    "cliente": "Marcela  Coelho Silva Ribeiro",
+    "horas": 20,
+    "criado_em": 1773414731875,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "13/03/2026 12:12"
+  },
+  {
+    "id": "1773424465005x900512287609061400",
+    "cliente": "Sofia  Gomes Braga",
+    "horas": 6,
+    "criado_em": 1773424467046,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "13/03/2026 14:54"
+  },
+  {
+    "id": "1773431936567x489170640534503400",
+    "cliente": "Carolayne Rocha",
+    "horas": 15,
+    "criado_em": 1773431938213,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "13/03/2026 16:58"
+  },
+  {
+    "id": "1773499538220x822013138365579300",
+    "cliente": "Ana Luiza  Vieira Bernardi Campos",
+    "horas": 6,
+    "criado_em": 1773499539404,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "14/03/2026 11:45"
+  },
+  {
+    "id": "1773757636922x689605084445933600",
+    "cliente": "Isabella  Lopes Lusvarghi",
+    "horas": 6,
+    "criado_em": 1773757643560,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "17/03/2026 11:27"
+  },
+  {
+    "id": "1773780546314x640452271138668500",
+    "cliente": "Ingrid  Ferraciolli",
+    "horas": -1,
+    "criado_em": 1773780547890,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "17/03/2026 17:49"
+  },
+  {
+    "id": "1773842032416x683846766507065300",
+    "cliente": "Ingrid  Ferraciolli",
+    "horas": 6,
+    "criado_em": 1773842033019,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "18/03/2026 10:53"
+  },
+  {
+    "id": "1773947117141x298908947395117060",
+    "cliente": "Barbara  Pepe",
+    "horas": 6,
+    "criado_em": 1773947117678,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "19/03/2026 16:05"
+  },
+  {
+    "id": "1774274040358x549539612376170500",
+    "cliente": "Aline Reis Tavares",
+    "horas": 2,
+    "criado_em": 1774274042986,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "23/03/2026 10:54"
+  },
+  {
+    "id": "1774274535098x593646206723817500",
+    "cliente": "Aline Reis Tavares",
+    "horas": 1,
+    "criado_em": 1774274535266,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "23/03/2026 11:02"
+  },
+  {
+    "id": "1774303398703x759366132643135500",
+    "cliente": "Elsje Caldeira",
+    "horas": 6,
+    "criado_em": 1774303401797,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "23/03/2026 19:03"
+  },
+  {
+    "id": "1774361434264x988534284576358400",
+    "cliente": "Gabriela  Rigueira",
+    "horas": 12,
+    "criado_em": 1774361435858,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "24/03/2026 11:10"
+  },
+  {
+    "id": "1774466522877x489635787182440450",
+    "cliente": "lais lopes",
+    "horas": 6,
+    "criado_em": 1774466524749,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "25/03/2026 16:22"
+  },
+  {
+    "id": "1774636346246x831126220557254700",
+    "cliente": "Gustavo Gomes Grateki",
+    "horas": 24,
+    "criado_em": 1774636347846,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "27/03/2026 15:32"
+  },
+  {
+    "id": "1774867785556x398104667850014700",
+    "cliente": "Vinícius Zuin de Abreu",
+    "horas": 12,
+    "criado_em": 1774867788214,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "30/03/2026 07:49"
+  },
+  {
+    "id": "1774869234879x164887762522865660",
+    "cliente": "Barbara  Pepe",
+    "horas": 1,
+    "criado_em": 1774869237389,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "30/03/2026 08:13"
+  },
+  {
+    "id": "1774869365473x867855759560147000",
+    "cliente": "Amanda Polignano Polignano",
+    "horas": 6,
+    "criado_em": 1774869368027,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "30/03/2026 08:16"
+  },
+  {
+    "id": "1774869377872x161397176760008700",
+    "cliente": "Amanda Polignano Polignano",
+    "horas": -2,
+    "criado_em": 1774869380404,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "30/03/2026 08:16"
+  },
+  {
+    "id": "1774877141708x417656726896246800",
+    "cliente": "Sarah Andrade Campos Christo",
+    "horas": 11,
+    "criado_em": 1774877136915,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "30/03/2026 10:25"
+  },
+  {
+    "id": "1774887862785x437070651926773800",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 3,
+    "criado_em": 1774887858310,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "30/03/2026 13:24"
+  },
+  {
+    "id": "1774898959795x190997407354322940",
+    "cliente": "Fabricio Oliveira Ribeiro",
+    "horas": 1,
+    "criado_em": 1774898955815,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "30/03/2026 16:29"
+  },
+  {
+    "id": "1774907042016x260533081872007170",
+    "cliente": "Mariana  Cunha lelis",
+    "horas": 4,
+    "criado_em": 1774907038274,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "30/03/2026 18:43"
+  },
+  {
+    "id": "1774950353887x559374097661558800",
+    "cliente": "celeste diniz ribeiro ribeiro",
+    "horas": 6,
+    "criado_em": 1774950354821,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "31/03/2026 06:45"
+  },
+  {
+    "id": "1774966458551x364097940860436500",
+    "cliente": "Lilian Monteiro",
+    "horas": 24,
+    "criado_em": 1774966457167,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "31/03/2026 11:14"
+  },
+  {
+    "id": "1774977102518x516749076716847100",
+    "cliente": "Fabricio Oliveira Ribeiro",
+    "horas": 6,
+    "criado_em": 1774977102906,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "31/03/2026 14:11"
+  },
+  {
+    "id": "1775051425895x150461427011551230",
+    "cliente": "Laura de Freitas Xavier",
+    "horas": 1,
+    "criado_em": 1775051421884,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "01/04/2026 10:50"
+  },
+  {
+    "id": "1775053225183x145859131770667000",
+    "cliente": "Aline Reis Tavares",
+    "horas": 48,
+    "criado_em": 1775053225864,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "01/04/2026 11:20"
+  },
+  {
+    "id": "1775056011345x621342639131459600",
+    "cliente": "Bárbara Carvalho de Miranda",
+    "horas": 24,
+    "criado_em": 1775056007115,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "01/04/2026 12:06"
+  },
+  {
+    "id": "1775071128573x521708360564736000",
+    "cliente": "Lilian Monteiro",
+    "horas": 2,
+    "criado_em": 1775071124954,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "01/04/2026 16:18"
+  },
+  {
+    "id": "1775133344621x804601123767058400",
+    "cliente": "Lilian Monteiro",
+    "horas": 1,
+    "criado_em": 1775133341934,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "02/04/2026 09:35"
+  },
+  {
+    "id": "1775133376806x102976093162045440",
+    "cliente": "Lilian Monteiro",
+    "horas": 1,
+    "criado_em": 1775133373119,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "02/04/2026 09:36"
+  },
+  {
+    "id": "1775492964792x517397042391679000",
+    "cliente": "Lilian Monteiro",
+    "horas": -24,
+    "criado_em": 1775492960478,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "06/04/2026 13:29"
+  },
+  {
+    "id": "1775499463931x138483890738692100",
+    "cliente": "Isabella  Lopes Lusvarghi",
+    "horas": 1,
+    "criado_em": 1775499464347,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "06/04/2026 15:17"
+  },
+  {
+    "id": "1775562058631x260224906217127940",
+    "cliente": "Gabriela  Rigueira",
+    "horas": 12,
+    "criado_em": 1775562054117,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "07/04/2026 08:40"
+  },
+  {
+    "id": "1775564594218x777942238161010700",
+    "cliente": "Gabriela  Rigueira",
+    "horas": 2,
+    "criado_em": 1775564589598,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "07/04/2026 09:23"
+  },
+  {
+    "id": "1775589953164x878121912159699000",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 3,
+    "criado_em": 1775589949292,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "07/04/2026 16:25"
+  },
+  {
+    "id": "1775653689370x836731114753359900",
+    "cliente": "Ana Luiza  Vieira Bernardi Campos",
+    "horas": 6,
+    "criado_em": 1775653686126,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "08/04/2026 10:08"
+  },
+  {
+    "id": "1775659330563x386545116656959500",
+    "cliente": "Bruce Henrique dos Santos",
+    "horas": 6,
+    "criado_em": 1775659327218,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "08/04/2026 11:42"
+  },
+  {
+    "id": "1775757987838x981548184607129600",
+    "cliente": "Fabricio Oliveira Ribeiro",
+    "horas": 1,
+    "criado_em": 1775757985039,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "09/04/2026 15:06"
+  },
+  {
+    "id": "1775769866869x627817486200340500",
+    "cliente": "Izabella  Ferreira Gomes Carneiro Brom",
+    "horas": 2,
+    "criado_em": 1775769864203,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "09/04/2026 18:24"
+  },
+  {
+    "id": "1775825218134x251528824650989570",
+    "cliente": "Joao Luís  Brina",
+    "horas": -1,
+    "criado_em": 1775825215518,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "10/04/2026 09:46"
+  },
+  {
+    "id": "1776088361278x555450406781321200",
+    "cliente": "Gabriela  Rigueira",
+    "horas": 12,
+    "criado_em": 1776088357496,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "13/04/2026 10:52"
+  },
+  {
+    "id": "1776095414536x959912712686796800",
+    "cliente": "Lilian Monteiro",
+    "horas": -1,
+    "criado_em": 1776095411203,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "13/04/2026 12:50"
+  },
+  {
+    "id": "1776342929365x851629081041043500",
+    "cliente": "Luiz Silvério Souza",
+    "horas": 6,
+    "criado_em": 1776342928132,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "16/04/2026 09:35"
+  },
+  {
+    "id": "1776426421365x933102589751066600",
+    "cliente": "Barbara  Pepe",
+    "horas": 6,
+    "criado_em": 1776426424006,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "17/04/2026 08:47"
+  },
+  {
+    "id": "1776427968309x532380895551946750",
+    "cliente": "DOMINGOS DE PAULA FREITAS JUNIOR",
+    "horas": 6,
+    "criado_em": 1776427968308,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "17/04/2026 09:12"
+  },
+  {
+    "id": "1776866796377x389989619046285300",
+    "cliente": "Marina Villela",
+    "horas": 1,
+    "criado_em": 1776866798298,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "22/04/2026 11:06"
+  },
+  {
+    "id": "1776882540542x237195204306665470",
+    "cliente": "Ana Luiza  Vieira Bernardi Campos",
+    "horas": 12,
+    "criado_em": 1776882542105,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "22/04/2026 15:29"
+  },
+  {
+    "id": "1776889479064x993626563076423700",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 6,
+    "criado_em": 1776889480692,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "22/04/2026 17:24"
+  },
+  {
+    "id": "1776952038184x223578072515870720",
+    "cliente": "Paula Arrighi Toledo",
+    "horas": 3,
+    "criado_em": 1776952039694,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "23/04/2026 10:47"
+  },
+  {
+    "id": "1776952052696x976523838048174100",
+    "cliente": "Pedro Viana Diniz",
+    "horas": 3,
+    "criado_em": 1776952053729,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "23/04/2026 10:47"
+  },
+  {
+    "id": "1777370657977x747804724722925600",
+    "cliente": "Manoel Bruno  Pereira Lima",
+    "horas": 12,
+    "criado_em": 1777370660166,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "28/04/2026 07:04"
+  },
+  {
+    "id": "1777383649566x116130322757976060",
+    "cliente": "Maria Luiza Oliveira",
+    "horas": 48,
+    "criado_em": 1777383650209,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "28/04/2026 10:40"
+  },
+  {
+    "id": "1777469811166x780244698619707400",
+    "cliente": "MARIANA BARBOSA HORTA DOS SANTOS",
+    "horas": 4,
+    "criado_em": 1777469812382,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "29/04/2026 10:36"
+  },
+  {
+    "id": "1777561687283x187941253600772100",
+    "cliente": "Hugo Luiz Barros Alves",
+    "horas": 6,
+    "criado_em": 1777561688628,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "30/04/2026 12:08"
+  },
+  {
+    "id": "1777905572842x104999351643275260",
+    "cliente": "Alex  Teste",
+    "horas": 1,
+    "criado_em": 1777905575722,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "04/05/2026 11:39"
+  },
+  {
+    "id": "1777905615941x613331526671663100",
+    "cliente": "Alex  Teste",
+    "horas": -1,
+    "criado_em": 1777905618402,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "04/05/2026 11:40"
+  },
+  {
+    "id": "1778183105377x429427013376540700",
+    "cliente": "Beatriz  Silveira",
+    "horas": 5,
+    "criado_em": 1778183106505,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "07/05/2026 16:45"
+  },
+  {
+    "id": "1778202391384x598824180603945000",
+    "cliente": "Renata Mendes Guimarães Pinto",
+    "horas": 6,
+    "criado_em": 1778202393787,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "07/05/2026 22:06"
+  },
+  {
+    "id": "1778278691590x282089723351793660",
+    "cliente": "Luiz Silvério Souza",
+    "horas": 6,
+    "criado_em": 1778278692279,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "08/05/2026 19:18"
+  },
+  {
+    "id": "1778505591281x137139473992122370",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 3,
+    "criado_em": 1778505592155,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "11/05/2026 10:19"
+  },
+  {
+    "id": "1778593450369x962661972630831100",
+    "cliente": "Marcela Barbosa",
+    "horas": 6,
+    "criado_em": 1778593451545,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "12/05/2026 10:44"
+  },
+  {
+    "id": "1778598239404x108859556195467260",
+    "cliente": "Vanessa Pereira",
+    "horas": 6,
+    "criado_em": 1778598240255,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "12/05/2026 12:04"
+  },
+  {
+    "id": "1778677333329x257470237777068030",
+    "cliente": "Isabella Gomes Miquelanti",
+    "horas": 6,
+    "criado_em": 1778677335147,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "13/05/2026 10:02"
+  },
+  {
+    "id": "1778702573583x379736308453998600",
+    "cliente": "Bárbara  Linhares Calácio e Silva",
+    "horas": 6,
+    "criado_em": 1778702574530,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "13/05/2026 17:02"
+  },
+  {
+    "id": "1778781739265x293432055538909200",
+    "cliente": "Rubia Ferreira Goulart",
+    "horas": 6,
+    "criado_em": 1778781741413,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "14/05/2026 15:02"
+  },
+  {
+    "id": "1779105903843x831087132989718500",
+    "cliente": "MATEUS MACHADO",
+    "horas": 4,
+    "criado_em": 1779105905082,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "18/05/2026 09:05"
+  },
+  {
+    "id": "1779121854787x856333935168454700",
+    "cliente": "Bárbara Carvalho de Miranda",
+    "horas": 48,
+    "criado_em": 1779121855755,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "18/05/2026 13:30"
+  },
+  {
+    "id": "1779197275433x269491341312655360",
+    "cliente": "Jessica  Pedrosa",
+    "horas": 6,
+    "criado_em": 1779197276720,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "19/05/2026 10:27"
+  },
+  {
+    "id": "1779208832974x933805696151191600",
+    "cliente": "Pollyanna Sayuri",
+    "horas": 48,
+    "criado_em": 1779208833916,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "19/05/2026 13:40"
+  },
+  {
+    "id": "1779303712513x578506314744332300",
+    "cliente": "Vitor Moura Pereira",
+    "horas": 6,
+    "criado_em": 1779303713753,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "20/05/2026 16:01"
+  },
+  {
+    "id": "1779385480347x278052221320167420",
+    "cliente": "Danilo Fernandes",
+    "horas": 48,
+    "criado_em": 1779385482022,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "21/05/2026 14:44"
+  },
+  {
+    "id": "1779385947718x324109216485212160",
+    "cliente": "Daniel Asevedo",
+    "horas": 24,
+    "criado_em": 1779385949173,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "21/05/2026 14:52"
+  },
+  {
+    "id": "1779389143492x628898127682469900",
+    "cliente": "Isabella  Lopes Lusvarghi",
+    "horas": 6,
+    "criado_em": 1779389144435,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "21/05/2026 15:45"
+  },
+  {
+    "id": "1779458936847x599653010183290900",
+    "cliente": "Bruna Oliveira Porto",
+    "horas": 6,
+    "criado_em": 1779458937864,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "22/05/2026 11:08"
+  },
+  {
+    "id": "1779478806141x630993906521604100",
+    "cliente": "lais lopes",
+    "horas": 6,
+    "criado_em": 1779478806972,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "22/05/2026 16:40"
+  },
+  {
+    "id": "1779719113590x846238442628055000",
+    "cliente": "Gustavo Gomes Grateki",
+    "horas": 2,
+    "criado_em": 1779719114668,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "25/05/2026 11:25"
+  },
+  {
+    "id": "1779719528859x162484676052123650",
+    "cliente": "Ana Luiza  Vieira Bernardi Campos",
+    "horas": 6,
+    "criado_em": 1779719529668,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "25/05/2026 11:32"
+  },
+  {
+    "id": "1779720461646x193603365842190340",
+    "cliente": "Gustavo Gomes Grateki",
+    "horas": 24,
+    "criado_em": 1779720462347,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "25/05/2026 11:47"
+  },
+  {
+    "id": "1779796706767x312195595328552960",
+    "cliente": "Júlio  Dantas Araújo Duarte",
+    "horas": 24,
+    "criado_em": 1779796708279,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "26/05/2026 08:58"
+  },
+  {
+    "id": "1779884479269x413358429970104300",
+    "cliente": "Victor Braga",
+    "horas": 6,
+    "criado_em": 1779884480584,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "27/05/2026 09:21"
+  },
+  {
+    "id": "1779967422689x262321121154301950",
+    "cliente": "Maria Izabel  De Castro Magalhães Fortes",
+    "horas": 6,
+    "criado_em": 1779967424207,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "28/05/2026 08:23"
+  },
+  {
+    "id": "1779977214510x105939676537815040",
+    "cliente": "Izabella  Ferreira Gomes Carneiro Brom",
+    "horas": 6,
+    "criado_em": 1779977216188,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "28/05/2026 11:06"
+  },
+  {
+    "id": "1780002108877x909720577774452700",
+    "cliente": "Barbara  Pepe",
+    "horas": 6,
+    "criado_em": 1780002111201,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "28/05/2026 18:01"
+  },
+  {
+    "id": "1780002258410x841506172978856000",
+    "cliente": "Matheus  Gallo",
+    "horas": 6,
+    "criado_em": 1780002260192,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "28/05/2026 18:04"
+  },
+  {
+    "id": "1780056316699x327358198434234400",
+    "cliente": "Bruna Oliveira Porto",
+    "horas": 1,
+    "criado_em": 1780056318079,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "29/05/2026 09:05"
+  },
+  {
+    "id": "1780064060233x150713539834150900",
+    "cliente": "Iasmin  Marques",
+    "horas": 6,
+    "criado_em": 1780064062134,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "29/05/2026 11:14"
+  },
+  {
+    "id": "1780073561618x294581384973647900",
+    "cliente": "Rubia Ferreira Goulart",
+    "horas": 2,
+    "criado_em": 1780073564074,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "29/05/2026 13:52"
+  },
+  {
+    "id": "1780338160600x551391230536712200",
+    "cliente": "Marcelo  Amaral",
+    "horas": 48,
+    "criado_em": 1780338160745,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "01/06/2026 15:22"
+  },
+  {
+    "id": "1780426812637x209896969979297800",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 2,
+    "criado_em": 1780426812988,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "02/06/2026 16:00"
+  },
+  {
+    "id": "1780498243455x668165191232651300",
+    "cliente": "Pollyanna Sayuri",
+    "horas": 2,
+    "criado_em": 1780498243818,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "03/06/2026 11:50"
+  },
+  {
+    "id": "1780498845397x554851320277237800",
+    "cliente": "Douglas Eduardo de Oliveira Correa",
+    "horas": 6,
+    "criado_em": 1780498845761,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "03/06/2026 12:00"
+  },
+  {
+    "id": "1780695983562x861866433297514500",
+    "cliente": "Ana Luiza  Vieira Bernardi Campos",
+    "horas": 6,
+    "criado_em": 1780695984703,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "05/06/2026 18:46"
+  },
+  {
+    "id": "1780934582906x421450321130160100",
+    "cliente": "Herbert Bruno Luppi Mendonça",
+    "horas": 6,
+    "criado_em": 1780934582389,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "08/06/2026 13:03"
+  },
+  {
+    "id": "1781030446927x666631042003632100",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 6,
+    "criado_em": 1781030446730,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "09/06/2026 15:40"
+  },
+  {
+    "id": "1781226135478x602066550447931400",
+    "cliente": "Wagner Mendes",
+    "horas": 6,
+    "criado_em": 1781226136445,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "11/06/2026 22:02"
+  },
+  {
+    "id": "1781534581068x261882183837810700",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 3,
+    "criado_em": 1781534580920,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "15/06/2026 11:43"
+  },
+  {
+    "id": "1781539229540x608314558439489500",
+    "cliente": "Rubia Ferreira Goulart",
+    "horas": 6,
+    "criado_em": 1781539229712,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "15/06/2026 13:00"
+  },
+  {
+    "id": "1781561521563x329944720576348160",
+    "cliente": "Luiz Silvério Souza",
+    "horas": 6,
+    "criado_em": 1781561521833,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "15/06/2026 19:12"
+  },
+  {
+    "id": "1781654710185x553307632858038300",
+    "cliente": "Greice De Campos Oliveira",
+    "horas": 5,
+    "criado_em": 1781654711120,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "16/06/2026 21:05"
+  },
+  {
+    "id": "1781699632087x307124566478815200",
+    "cliente": "Karla Vieira",
+    "horas": 6,
+    "criado_em": 1781699632186,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "17/06/2026 09:33"
+  },
+  {
+    "id": "1781880133997x219918577837539330",
+    "cliente": "Danilo Fernandes",
+    "horas": 1,
+    "criado_em": 1781880134512,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "19/06/2026 11:42"
+  },
+  {
+    "id": "1782137035312x212992593890639870",
+    "cliente": "Pollyanna Sayuri",
+    "horas": -2,
+    "criado_em": 1782137036173,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "22/06/2026 11:03"
+  },
+  {
+    "id": "1782138120585x762206479939010600",
+    "cliente": "José Sabino",
+    "horas": 12,
+    "criado_em": 1782138122579,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "22/06/2026 11:22"
+  },
+  {
+    "id": "1782228737418x554955037807476740",
+    "cliente": "Barbara  Pepe",
+    "horas": 6,
+    "criado_em": 1782228739410,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "23/06/2026 12:32"
+  },
+  {
+    "id": "1782315796305x641103081138552800",
+    "cliente": "DOMINGOS DE PAULA FREITAS JUNIOR",
+    "horas": -4,
+    "criado_em": 1782315797393,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "24/06/2026 12:43"
+  },
+  {
+    "id": "1782478859360x987634667054694400",
+    "cliente": "Danilo Fernandes",
+    "horas": -2,
+    "criado_em": 1782478859549,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "26/06/2026 10:00"
+  },
+  {
+    "id": "1782487644011x482133913937379300",
+    "cliente": "lais lopes",
+    "horas": 2,
+    "criado_em": 1782487644292,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "26/06/2026 12:27"
+  },
+  {
+    "id": "1782499713208x850962868740030500",
+    "cliente": "Bruna Oliveira Porto",
+    "horas": 6,
+    "criado_em": 1782499714139,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "26/06/2026 15:48"
+  },
+  {
+    "id": "1782742280456x761273417186934800",
+    "cliente": "Ana Luiza  Vieira Bernardi Campos",
+    "horas": 24,
+    "criado_em": 1782742279959,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "29/06/2026 11:11"
+  },
+  {
+    "id": "1782745622541x704075818917167100",
+    "cliente": "Marcela  Coelho Silva Ribeiro",
+    "horas": 24,
+    "criado_em": 1782745621839,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "29/06/2026 12:07"
+  },
+  {
+    "id": "1782832518447x896943204669587500",
+    "cliente": "Joao Luís  Brina",
+    "horas": 1,
+    "criado_em": 1782832519814,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "30/06/2026 12:15"
+  },
+  {
+    "id": "1782838129321x616440239070380000",
+    "cliente": "Henrique  Soares Dutra Oliveira",
+    "horas": 24,
+    "criado_em": 1782838130404,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "30/06/2026 13:48"
+  },
+  {
+    "id": "1782838284557x956772476178923500",
+    "cliente": "Henrique  Soares Dutra Oliveira",
+    "horas": -24,
+    "criado_em": 1782838285231,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "30/06/2026 13:51"
+  },
+  {
+    "id": "1782839920033x928206579839533000",
+    "cliente": "Danielle Calil",
+    "horas": 24,
+    "criado_em": 1782839920730,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "30/06/2026 14:18"
+  },
+  {
+    "id": "1782935544727x472538509867221000",
+    "cliente": "Bruna  Bragança",
+    "horas": 3,
+    "criado_em": 1782935546262,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "01/07/2026 16:52"
+  },
+  {
+    "id": "1783019217875x445740653479723000",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 3,
+    "criado_em": 1783019219070,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "02/07/2026 16:06"
+  },
+  {
+    "id": "1783097355943x181966706509348860",
+    "cliente": "Daniel Asevedo",
+    "horas": 24,
+    "criado_em": 1783097357911,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "03/07/2026 13:49"
+  },
+  {
+    "id": "1783104293457x851087720875819000",
+    "cliente": "Hugo Pimenta Ferreira",
+    "horas": 6,
+    "criado_em": 1783104294578,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "03/07/2026 15:44"
+  },
+  {
+    "id": "1783513274355x403358770082873340",
+    "cliente": "Marcelo  Amaral",
+    "horas": 1,
+    "criado_em": 1783513275212,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "08/07/2026 09:21"
+  },
+  {
+    "id": "1783513635633x301710196149846000",
+    "cliente": "Adria Luiza  Silva Manari",
+    "horas": 6,
+    "criado_em": 1783513637173,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "08/07/2026 09:27"
+  },
+  {
+    "id": "1783621584493x416502093131808800",
+    "cliente": "Danielle Calil",
+    "horas": 2,
+    "criado_em": 1783621586893,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "09/07/2026 15:26"
+  },
+  {
+    "id": "1784147675902x817741292319539200",
+    "cliente": "Gustavo Gomes Grateki Gomes Grateki",
+    "horas": -1,
+    "criado_em": 1784147680580,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "15/07/2026 17:34"
+  },
+  {
+    "id": "1784201978187x444468364568166400",
+    "cliente": "Gustavo Gomes Grateki Gomes Grateki Gomes Grateki",
+    "horas": 24,
+    "criado_em": 1784201979938,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "16/07/2026 08:39"
+  },
+  {
+    "id": "1784286812858x217495280483041280",
+    "cliente": "Maria Elisa  Vilani Andrade  Vilani Andrade  Vilani Andrade",
+    "horas": 6,
+    "criado_em": 1784286813257,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "17/07/2026 08:13"
+  },
+  {
+    "id": "1784311320848x505556187476131840",
+    "cliente": "Rubia Ferreira Goulart",
+    "horas": 2,
+    "criado_em": 1784311324364,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "17/07/2026 15:02"
+  },
+  {
+    "id": "1784315026235x816332856694145000",
+    "cliente": "Bruna  Bragança",
+    "horas": 6,
+    "criado_em": 1784315030399,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "17/07/2026 16:03"
+  },
+  {
+    "id": "1784548565083x117014255173369860",
+    "cliente": "Rubia Ferreira Goulart",
+    "horas": 1,
+    "criado_em": 1784548566526,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "20/07/2026 08:56"
+  },
+  {
+    "id": "1784575052792x624917396826357800",
+    "cliente": "Gesiane Tolentino",
+    "horas": 1,
+    "criado_em": 1784575056102,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "20/07/2026 16:17"
+  },
+  {
+    "id": "1784580288012x112534052737122300",
+    "cliente": "MATEUS MACHADO",
+    "horas": 6,
+    "criado_em": 1784580290250,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "20/07/2026 17:44"
+  },
+  {
+    "id": "1784798890426x225037670040731650",
+    "cliente": "Isabella Lopes Lusvarghi",
+    "horas": 6,
+    "criado_em": 1784798892112,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "23/07/2026 06:28"
+  },
+  {
+    "id": "1784898499438x659235521098416100",
+    "cliente": "Raquel  LInhares Pena LInhares Pena",
+    "horas": 6,
+    "criado_em": 1784898499660,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "24/07/2026 10:08"
+  },
+  {
+    "id": "1785245826923x212217821309435900",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 3,
+    "criado_em": 1785245828683,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "28/07/2026 10:37"
+  },
+  {
+    "id": "1785265411299x282995848764194800",
+    "cliente": "Adria Luiza  Silva Manari",
+    "horas": 1,
+    "criado_em": 1785265412820,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "28/07/2026 16:03"
+  },
+  {
+    "id": "1785267354453x681173979157495800",
+    "cliente": "Adria Luiza  Silva Manari",
+    "horas": -1,
+    "criado_em": 1785267355617,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "28/07/2026 16:35"
+  },
+  {
+    "id": "1785421705456x735122541127139300",
+    "cliente": "Marina Villela",
+    "horas": 6,
+    "criado_em": 1785421706651,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "30/07/2026 11:28"
+  },
+  {
+    "id": "1785518180609x561951405839220740",
+    "cliente": "Maria Izabel De Castro Magalhães Fortes",
+    "horas": 6,
+    "criado_em": 1785518182638,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "31/07/2026 14:16"
+  },
+  {
+    "id": "1785771160565x791912574898929700",
+    "cliente": "Karla Vieira",
+    "horas": 6,
+    "criado_em": 1785771161722,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "03/08/2026 12:32"
+  },
+  {
+    "id": "1785861621211x318213171702661100",
+    "cliente": "celeste diniz ribeiro",
+    "horas": 6,
+    "criado_em": 1785861622238,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "04/08/2026 13:40"
+  },
+  {
+    "id": "1785876813414x185222773082947600",
+    "cliente": "Bárbara de Melo Bicalho de Melo Bicalho de Melo Bicalho",
+    "horas": 6,
+    "criado_em": 1785876814926,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "04/08/2026 17:53"
+  },
+  {
+    "id": "1785934265733x661573682033852400",
+    "cliente": "Marina Villela",
+    "horas": 5,
+    "criado_em": 1785934266385,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "05/08/2026 09:51"
+  },
+  {
+    "id": "1785939898060x733995587817963500",
+    "cliente": "Juriane Amaral Zavali",
+    "horas": 24,
+    "criado_em": 1785939898732,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "05/08/2026 11:24"
+  },
+  {
+    "id": "1785953135254x531747493171953660",
+    "cliente": "Michelle Rodrigues Oliveira Gangana Rodrigues Oliveira Gangana",
+    "horas": 6,
+    "criado_em": 1785953136886,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "05/08/2026 15:05"
+  },
+  {
+    "id": "1786107532497x612628504904466400",
+    "cliente": "Nayara",
+    "horas": 4,
+    "criado_em": 1786107533458,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "07/08/2026 09:58"
+  },
+  {
+    "id": "1786108817936x975000636150775800",
+    "cliente": "Nayara",
+    "horas": 1,
+    "criado_em": 1786108818842,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "07/08/2026 10:20"
+  },
+  {
+    "id": "1786113756145x478493655594696700",
+    "cliente": "Cezar Antonio Abreu de Souza Abreu de Souza Abreu de Souza",
+    "horas": 12,
+    "criado_em": 1786113756483,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "07/08/2026 11:42"
+  },
+  {
+    "id": "1786372951439x212909958519586800",
+    "cliente": "Jaqueline Grasiela de Souza  Souza  Souza",
+    "horas": 5,
+    "criado_em": 1786372953247,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "10/08/2026 11:42"
+  },
+  {
+    "id": "1786377844056x199515229978099700",
+    "cliente": "José Sabino",
+    "horas": 12,
+    "criado_em": 1786377845458,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "10/08/2026 13:04"
+  },
+  {
+    "id": "1786396837323x298518233814663200",
+    "cliente": "Gabriela Resende de Carvalho Ferraz Resende de Carvalho Ferraz",
+    "horas": 1,
+    "criado_em": 1786396838967,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "10/08/2026 18:20"
+  },
+  {
+    "id": "1786545105917x915546866785452000",
+    "cliente": "Rosana Gomes de Alcantara",
+    "horas": 6,
+    "criado_em": 1786545107869,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "12/08/2026 11:31"
+  },
+  {
+    "id": "1786546204328x309310883682058240",
+    "cliente": "Jaqueline Grasiela de Souza  Souza  Souza  Souza  Souza  Souza",
+    "horas": 1,
+    "criado_em": 1786546206064,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "12/08/2026 11:50"
+  },
+  {
+    "id": "1786551648926x767055315555582000",
+    "cliente": "Barbara  Pepe",
+    "horas": 6,
+    "criado_em": 1786551651181,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "12/08/2026 13:20"
+  },
+  {
+    "id": "1786626662395x965834401097711600",
+    "cliente": "Mariana Danif Danif Danif",
+    "horas": 6,
+    "criado_em": 1786626664357,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "13/08/2026 10:11"
+  },
+  {
+    "id": "1786629932804x862157951024496600",
+    "cliente": "MARIANA VAZ DE MELO DINIZ",
+    "horas": 4,
+    "criado_em": 1786629934533,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "13/08/2026 11:05"
+  },
+  {
+    "id": "1786629985888x393821737242066940",
+    "cliente": "MARIANA VAZ DE MELO DINIZ",
+    "horas": -4,
+    "criado_em": 1786629987505,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "13/08/2026 11:06"
+  },
+  {
+    "id": "1786629995356x238931073711210500",
+    "cliente": "Mariana Danif Danif Danif Danif Danif",
+    "horas": 4,
+    "criado_em": 1786629997054,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "13/08/2026 11:06"
+  },
+  {
+    "id": "1786631517040x261117178097434620",
+    "cliente": "Gustavo Gomes Grateki",
+    "horas": -1,
+    "criado_em": 1786631518803,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "13/08/2026 11:31"
+  },
+  {
+    "id": "1786708368780x906152277677178900",
+    "cliente": "Marcela  Coelho Silva Ribeiro",
+    "horas": 3,
+    "criado_em": 1786708370321,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "14/08/2026 08:52"
+  },
+  {
+    "id": "1786721767557x396717835863982100",
+    "cliente": "Juriane Amaral Zavali",
+    "horas": 2,
+    "criado_em": 1786721769613,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "14/08/2026 12:36"
+  },
+  {
+    "id": "1786969021939x916310014929403900",
+    "cliente": "Jaqueline Grasiela de Souza  Souza  Souza  Souza  Souza  Souza  Souza",
+    "horas": 6,
+    "criado_em": 1786969024076,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "17/08/2026 09:17"
+  },
+  {
+    "id": "1786986721189x362838707895271400",
+    "cliente": "Kaisy Nágella Alves",
+    "horas": 1,
+    "criado_em": 1786986723275,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "17/08/2026 14:12"
+  },
+  {
+    "id": "1786991125021x841241251202728000",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 1,
+    "criado_em": 1786991126990,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "17/08/2026 15:25"
+  },
+  {
+    "id": "1787146891073x392245038364229600",
+    "cliente": "Lillian Guimarães de Faria",
+    "horas": 24,
+    "criado_em": 1787146894288,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "19/08/2026 10:41"
+  },
+  {
+    "id": "1787147076841x469894984020262900",
+    "cliente": "Maria de Fátima Mota",
+    "horas": 6,
+    "criado_em": 1787147079389,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "19/08/2026 10:44"
+  },
+  {
+    "id": "1787168354024x843989708059181000",
+    "cliente": "Gustavo Gomes Grateki",
+    "horas": -1,
+    "criado_em": 1787168357273,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "19/08/2026 16:39"
+  },
+  {
+    "id": "1787324971984x114407654045777920",
+    "cliente": "Marcelo  Amaral",
+    "horas": 50,
+    "criado_em": 1787324975497,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "21/08/2026 12:09"
+  },
+  {
+    "id": "1787663581100x574980595408175100",
+    "cliente": "Marcela  Coelho Silva Ribeiro",
+    "horas": -1,
+    "criado_em": 1787663584430,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "25/08/2026 10:13"
+  },
+  {
+    "id": "1787664809370x819854440900329500",
+    "cliente": "Marcela  Coelho Silva Ribeiro",
+    "horas": 1,
+    "criado_em": 1787664812001,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "25/08/2026 10:33"
+  },
+  {
+    "id": "1787665778056x153633765870010370",
+    "cliente": "Marcela Barbosa",
+    "horas": -1,
+    "criado_em": 1787665781249,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "25/08/2026 10:49"
+  },
+  {
+    "id": "1787687283041x363604861330915300",
+    "cliente": "Ana Luiza  Vieira Bernardi Campos",
+    "horas": 24,
+    "criado_em": 1787687284576,
+    "operador": "Carolayne Rocha",
+    "criado_em_fmt": "25/08/2026 16:48"
+  },
+  {
+    "id": "1787840896784x482953812064862200",
+    "cliente": "Daniel Asevedo",
+    "horas": 24,
+    "criado_em": 1787840899237,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "27/08/2026 11:28"
+  },
+  {
+    "id": "1787841128798x257061370521714700",
+    "cliente": "Gustavo Gomes Grateki",
+    "horas": 24,
+    "criado_em": 1787841131784,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "27/08/2026 11:32"
+  },
+  {
+    "id": "1787864661624x242771619436560400",
+    "cliente": "Maria Luiza Oliveira",
+    "horas": 48,
+    "criado_em": 1787864665237,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "27/08/2026 18:04"
+  },
+  {
+    "id": "1787919932533x118099102032723970",
+    "cliente": "Marcela Barbosa",
+    "horas": 5,
+    "criado_em": 1787919935481,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "28/08/2026 09:25"
+  },
+  {
+    "id": "1787921291050x576602903807262700",
+    "cliente": "Marcela Barbosa",
+    "horas": 1,
+    "criado_em": 1787921293619,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "28/08/2026 09:48"
+  },
+  {
+    "id": "1787931288091x769796997528682500",
+    "cliente": "Ana Paula  Meireles",
+    "horas": 2,
+    "criado_em": 1787931291129,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "28/08/2026 12:34"
+  },
+  {
+    "id": "1788177416638x292377812982300700",
+    "cliente": "Maria Laura  Klein Lazaroto Klein Lazaroto",
+    "horas": 4,
+    "criado_em": 1788177419882,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "31/08/2026 08:56"
+  },
+  {
+    "id": "1788261514677x745205335108091900",
+    "cliente": "Hugo Luiz Barros Alves",
+    "horas": 6,
+    "criado_em": 1788261515672,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "01/09/2026 08:18"
+  },
+  {
+    "id": "1788270458351x851006540708053000",
+    "cliente": "marina abreu machado lage abreu machado lage abreu machado lage abreu machado lage",
+    "horas": 6,
+    "criado_em": 1788270461442,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "01/09/2026 10:47"
+  },
+  {
+    "id": "1788280221001x830152476506193900",
+    "cliente": "Bárbara Carvalho de Miranda",
+    "horas": 24,
+    "criado_em": 1788280224337,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "01/09/2026 13:30"
+  },
+  {
+    "id": "1788367879918x462287921845633000",
+    "cliente": "Isabella Lopes Lusvarghi",
+    "horas": 1,
+    "criado_em": 1788367881731,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "02/09/2026 13:51"
+  },
+  {
+    "id": "1788796194368x680338434704801800",
+    "cliente": "Monica  Fátima Fernandes Ferreira  Fátima Fernandes Ferreira  Fátima Fernandes Ferreira",
+    "horas": 6,
+    "criado_em": 1788796195549,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "07/09/2026 12:49"
+  },
+  {
+    "id": "1788875112930x234837260248285200",
+    "cliente": "Maria Laura  Klein Lazaroto Klein Lazaroto Klein Lazaroto",
+    "horas": 1,
+    "criado_em": 1788875116089,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "08/09/2026 10:45"
+  },
+  {
+    "id": "1788880436318x971297324348473300",
+    "cliente": "Ana Luiza  Vieira Bernardi Campos",
+    "horas": -1,
+    "criado_em": 1788880439010,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "08/09/2026 12:13"
+  },
+  {
+    "id": "1788883628998x712860367517122600",
+    "cliente": "Gabriela Resende de Carvalho Ferraz Resende de Carvalho Ferraz Resende de Carvalho Ferraz Resende de Carvalho Ferraz",
+    "horas": 6,
+    "criado_em": 1788883632050,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "08/09/2026 13:07"
+  },
+  {
+    "id": "1788960204818x948397984716423200",
+    "cliente": "Bárbara Vidigal Vidigal Vidigal",
+    "horas": 2,
+    "criado_em": 1788960208053,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "09/09/2026 10:23"
+  },
+  {
+    "id": "1788963600744x481556599693377540",
+    "cliente": "Samuel Magnabosco",
+    "horas": 24,
+    "criado_em": 1788963604013,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "09/09/2026 11:20"
+  },
+  {
+    "id": "1788971633207x178219607773151230",
+    "cliente": "Pollyanna Sayuri",
+    "horas": 48,
+    "criado_em": 1788971636747,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "09/09/2026 13:33"
+  },
+  {
+    "id": "1788986166147x877235532831653900",
+    "cliente": "Gabriel  Araújo Moura Leite Araújo Moura Leite",
+    "horas": 6,
+    "criado_em": 1788986168964,
+    "operador": "Alexandre Penido",
+    "criado_em_fmt": "09/09/2026 17:36"
+  },
+  {
+    "id": "1789043662203x928556944819486700",
+    "cliente": "Ana Luiza  Vieira Bernardi Campos",
+    "horas": 1,
+    "criado_em": 1789043666290,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "10/09/2026 09:34"
+  },
+  {
+    "id": "1789071479840x944082270820761600",
+    "cliente": "Vitor Moura Pereira",
+    "horas": 6,
+    "criado_em": 1789071484357,
+    "operador": "Patrícia  Cristina Araújo",
+    "criado_em_fmt": "10/09/2026 17:18"
+  }
+]

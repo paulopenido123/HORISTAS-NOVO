@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pacientes cadastrados — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F8F9; --panel:#FFFFFF; --panel-2:#EAF4F3;
+    --line: rgba(14,42,58,0.10); --line-strong: rgba(14,42,58,0.22);
+    --ink:#10222E; --ink-muted:#55707C; --ink-faint:#8AA0A9;
+    --cyan:#0EA5A0; --cyan-soft: rgba(14,165,160,0.12);
+    --coral:#D65C3F; --coral-soft: rgba(214,92,63,0.12);
+    --verde:#1F8F5C;
+    --navy:#0E2A3B; --onnavy-muted:#9FB8C4;
+    --display:'Manrope', sans-serif; --serif:'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--serif); }
+  a { color: inherit; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px;
+           background: var(--navy); position: sticky; top:0; z-index:100; }
+  .brand { font-family: var(--display); font-weight:800; color:#fff; font-size:15px; }
+  header a.sair, header a.voltar { font-size:13px; color: var(--onnavy-muted); text-decoration:none; margin-left:16px; }
+  header a.sair:hover, header a.voltar:hover { color:#fff; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px; }
+  .hero-txt { margin-bottom: 24px; display:flex; justify-content:space-between; align-items:end; gap:16px; flex-wrap:wrap; }
+  .hero-txt .eyebrow { font-family: var(--display); font-weight:700; font-size:12px; color: var(--cyan);
+                        text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .hero-txt h1 { font-family: var(--display); font-size: 24px; color: var(--navy); }
+  .card { background: var(--panel); border:1px solid var(--line-strong); border-radius:10px; padding:24px; overflow-x:auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--ink-faint); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 11px; text-transform: uppercase; letter-spacing: 0.02em; white-space:nowrap; }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--line); color: var(--ink); white-space:nowrap; }
+  td.nome { font-weight:700; }
+  .vazio { color: var(--ink-faint); font-size: 13px; padding: 12px 0; }
+  .btn-ghost { background: transparent; color: var(--ink-muted); border: 1px solid var(--line-strong); padding: 9px 16px; border-radius: 7px; font-family: var(--display); font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
+  .btn-ghost:hover { color: var(--ink); border-color: var(--cyan); }
+  .btn-editar { background: var(--cyan-soft); color: var(--cyan); border:1px solid rgba(14,165,160,0.3); border-radius:7px; padding:7px 14px; font-family: var(--display); font-weight:600; font-size:12.5px; cursor:pointer; }
+
+  /* ---------- Modal de cadastro/edição ---------- */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(14,30,40,0.55); align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+  .modal-overlay.aberto { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--line-strong); border-radius: 12px; padding: 26px; width: 100%; max-width: 640px; max-height:88vh; overflow-y:auto; text-align:left; box-shadow: 0 20px 60px rgba(14,42,58,0.25); }
+  .modal h3 { font-weight: 700; font-size: 16px; color: var(--ink); margin-bottom: 4px; }
+  .cell-label { font-weight: 700; font-size: 12px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 10px; }
+  .muted-cell { font-size: 13px; color: var(--ink-muted); line-height: 1.55; }
+  input[type=text], input[type=number], input[type=date], input[type=email], select {
+    width: 100%; padding: 10px 13px; border-radius: 7px; border: 1px solid var(--line-strong);
+    background: #fff; color: var(--ink); font-family: var(--display); font-size: 13.5px;
+  }
+  input::placeholder { color: var(--ink-faint); }
+  #form-editar-paciente label { display:flex; flex-direction:column; gap:5px; }
+  #form-editar-paciente .muted-cell { font-size: 12px; }
+  .btn-gerar { background: var(--cyan); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: var(--display); font-size: 13.5px; }
+  .btn-fechar { background: none; border: none; color: var(--ink-muted); font-size: 13px; cursor: pointer; font-family: var(--display); }
+  .flash.erro { background: var(--coral-soft); color: var(--coral); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 13.5px; font-weight: 600; }
+
+  @media (max-width: 640px) { .container { padding: 22px 16px 60px; } .card { padding:16px; } }
+</style>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+<script>
+(function() {
+  const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+  const token = tokenMeta ? tokenMeta.content : null;
+  const fetchOriginal = window.fetch;
+  window.fetch = function(url, opcoes) {
+    opcoes = opcoes || {};
+    const metodo = (opcoes.method || 'GET').toUpperCase();
+    if (token && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(metodo)) {
+      opcoes.headers = Object.assign({}, opcoes.headers, { 'X-CSRFToken': token });
+    }
+    return fetchOriginal(url, opcoes);
+  };
+})();
+</script>
+
+<header>
+  <div class="brand">🗂️ Pacientes cadastrados</div>
+  <div>
+    <a class="voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar ao painel</a>
+    <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="hero-txt">
+    <div>
+      <div class="eyebrow">ÁREA DO CLIENTE</div>
+      <h1>Seus pacientes</h1>
+    </div>
+    <button type="button" class="btn-ghost" onclick="abrirCadastro()">+ Cadastre o seu paciente</button>
+  </div>
+
+  <div class="card">
+    {% if pacientes %}
+    <table>
+      <thead>
+        <tr>
+          <th>Nome completo</th><th>Nascimento</th><th>CPF</th><th>RG</th><th>E-mail</th>
+          <th>Sexo</th><th>Estado civil</th><th>Cor</th><th>Convênio</th><th>Profissão</th><th>Indicação</th>
+          <th>Nome do pai</th><th>Nome da mãe</th>
+          <th>Endereço</th><th>Bairro</th><th>CEP</th><th>Cidade</th><th>Estado</th>
+          <th>Responsável</th><th>Tipo</th><th>Telefone resp.</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pacientes %}
+        <tr>
+          <td class="nome">{{ p.nome_completo }}</td>
+          <td>{{ p.data_nascimento or '—' }}</td>
+          <td>{{ p.cpf or '—' }}</td>
+          <td>{{ p.rg or '—' }}</td>
+          <td>{{ p.email or '—' }}</td>
+          <td>{{ p.sexo or '—' }}</td>
+          <td>{{ p.estado_civil or '—' }}</td>
+          <td>{{ p.cor or '—' }}</td>
+          <td>{{ p.convenio or '—' }}</td>
+          <td>{{ p.profissao or '—' }}</td>
+          <td>{{ p.indicacao or '—' }}</td>
+          <td>{{ p.nome_pai or '—' }}</td>
+          <td>{{ p.nome_mae or '—' }}</td>
+          <td>{{ p.endereco or '—' }}</td>
+          <td>{{ p.bairro or '—' }}</td>
+          <td>{{ p.cep or '—' }}</td>
+          <td>{{ p.cidade or '—' }}</td>
+          <td>{{ p.estado or '—' }}</td>
+          <td>{{ p.responsavel_nome or '—' }}</td>
+          <td>{{ p.responsavel_tipo or '—' }}</td>
+          <td>{{ p.responsavel_telefone or '—' }}</td>
+          <td><button type="button" class="btn-editar" onclick="abrirEdicao('{{ p.id }}')">Editar dados</button></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="vazio">Você ainda não cadastrou nenhum paciente. Use o botão "Cadastre o seu paciente" acima.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay-paciente">
+  <div class="modal">
+    <h3 id="titulo-modal-paciente" style="margin-bottom:4px;">Cadastre o seu paciente</h3>
+    <p style="color:var(--ink-muted); font-size:13px; margin-bottom:18px;">Só o nome completo é obrigatório -- o resto você pode preencher ou completar depois.</p>
+    <div id="erro-paciente" class="flash erro" style="display:none;"></div>
+    <form id="form-editar-paciente" style="display:flex; flex-direction:column; gap:14px;">
+      <div>
+        <div class="cell-label">Informações pessoais</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <label style="grid-column:1/-1;"><span class="muted-cell">Nome completo *</span><input type="text" name="nome_completo" required></label>
+          <label><span class="muted-cell">Nome do pai</span><input type="text" name="nome_pai"></label>
+          <label><span class="muted-cell">Nome da mãe</span><input type="text" name="nome_mae"></label>
+          <label><span class="muted-cell">Data de nascimento</span><input type="date" name="data_nascimento"></label>
+          <label><span class="muted-cell">CPF</span><input type="text" name="cpf"></label>
+          <label><span class="muted-cell">RG</span><input type="text" name="rg"></label>
+          <label><span class="muted-cell">E-mail</span><input type="email" name="email"></label>
+          <label><span class="muted-cell">Sexo</span>
+            <select name="sexo"><option value=""></option><option>Masculino</option><option>Feminino</option></select>
+          </label>
+          <label><span class="muted-cell">Estado civil</span>
+            <select name="estado_civil"><option value=""></option><option>Solteiro</option><option>Casado</option><option>Divorciado</option><option>Viúvo</option><option>União estável</option></select>
+          </label>
+          <label><span class="muted-cell">Cor</span>
+            <select name="cor"><option value=""></option><option>Leucoderma</option><option>Faioderma</option><option>Melanoderma</option></select>
+          </label>
+          <label><span class="muted-cell">Convênio</span><input type="text" name="convenio"></label>
+          <label><span class="muted-cell">Profissão</span><input type="text" name="profissao"></label>
+          <label style="grid-column:1/-1;"><span class="muted-cell">Indicação</span><input type="text" name="indicacao"></label>
+        </div>
+      </div>
+      <div>
+        <div class="cell-label">Endereço</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <label style="grid-column:1/-1;"><span class="muted-cell">Endereço</span><input type="text" name="endereco"></label>
+          <label><span class="muted-cell">Bairro</span><input type="text" name="bairro"></label>
+          <label><span class="muted-cell">CEP</span><input type="text" name="cep"></label>
+          <label><span class="muted-cell">Cidade</span><input type="text" name="cidade"></label>
+          <label><span class="muted-cell">Estado</span><input type="text" name="estado"></label>
+        </div>
+      </div>
+      <div>
+        <div class="cell-label">Informações do responsável</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <label style="grid-column:1/-1;"><span class="muted-cell">Nome completo</span><input type="text" name="responsavel_nome"></label>
+          <label><span class="muted-cell">Tipo</span>
+            <select name="responsavel_tipo">
+              <option value=""></option><option>Mãe</option><option>Pai</option><option>Cônjuge</option>
+              <option>Filho</option><option>Filha</option><option>Avô</option><option>Avó</option>
+              <option>Tio</option><option>Tia</option><option>Parceiro</option><option>Outro</option>
+            </select>
+          </label>
+          <label><span class="muted-cell">Telefone</span><input type="text" name="responsavel_telefone"></label>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:6px;">
+        <button type="button" class="btn-gerar" style="width:auto; padding:11px 24px;" onclick="salvarPaciente()">Salvar</button>
+        <button type="button" class="btn-fechar" onclick="fecharModalPaciente()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Ficha completa de cada paciente já cadastrado, pra preencher o modal de
+// edição sem precisar de uma requisição extra ao servidor.
+const PACIENTES_POR_ID = {};
+{% for p in pacientes %}
+PACIENTES_POR_ID["{{ p.id }}"] = {{ p | tojson }};
+{% endfor %}
+
+function abrirCadastro() {
+  const form = document.getElementById('form-editar-paciente');
+  form.reset();
+  form.dataset.pacienteId = '';
+  document.getElementById('erro-paciente').style.display = 'none';
+  document.getElementById('titulo-modal-paciente').textContent = 'Cadastre o seu paciente';
+  document.getElementById('modal-overlay-paciente').classList.add('aberto');
+}
+
+function abrirEdicao(pacienteId) {
+  const dados = PACIENTES_POR_ID[pacienteId];
+  if (!dados) return;
+  const form = document.getElementById('form-editar-paciente');
+  form.reset();
+  form.dataset.pacienteId = pacienteId;
+  document.getElementById('erro-paciente').style.display = 'none';
+  document.getElementById('titulo-modal-paciente').textContent = 'Editar dados do paciente';
+  Object.keys(dados).forEach((campo) => {
+    const input = form.elements[campo];
+    if (input && dados[campo] != null) {
+      input.value = campo === 'data_nascimento' ? String(dados[campo]).slice(0, 10) : dados[campo];
+    }
+  });
+  document.getElementById('modal-overlay-paciente').classList.add('aberto');
+}
+
+function fecharModalPaciente() {
+  document.getElementById('modal-overlay-paciente').classList.remove('aberto');
+}
+
+async function salvarPaciente() {
+  const form = document.getElementById('form-editar-paciente');
+  const erroEl = document.getElementById('erro-paciente');
+  const pacienteId = form.dataset.pacienteId;
+  const dados = {};
+  new FormData(form).forEach((valor, chave) => { dados[chave] = valor; });
+
+  if (!dados.nome_completo || !dados.nome_completo.trim()) {
+    erroEl.textContent = 'Informe o nome completo do paciente.';
+    erroEl.style.display = 'block';
+    return;
+  }
+
+  const url = pacienteId ? `/api/pacientes/${pacienteId}` : '/api/pacientes';
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    });
+    const resultado = await resp.json();
+    if (!resp.ok) {
+      erroEl.textContent = resultado.erro || 'Não foi possível salvar.';
+      erroEl.style.display = 'block';
+      return;
+    }
+    location.reload();
+  } catch (e) {
+    erroEl.textContent = 'Erro de conexão ao salvar.';
+    erroEl.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>

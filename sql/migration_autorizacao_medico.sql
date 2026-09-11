@@ -1,0 +1,27 @@
+-- Liberação manual de acesso pelo admin -- pedido do Paulo em 10/09/2026
+-- (mandou print da tela do sistema maior original com o toggle "Usuário
+-- autorizado no sistema"): quando um médico se cadastra SOZINHO (ver rota
+-- /primeiro-acesso em app/routes/auth.py), o nome dele aparece em
+-- VERMELHO na lista de Clientes do admin (app/routes/admin.py, rota
+-- /admin/clientes) até o admin clicar em "Liberar acesso". Enquanto não
+-- for liberado, ele consegue fazer login normalmente e comprar horas,
+-- mas fica BLOQUEADO de reservar consultório (ver a checagem em
+-- app/services/reserva_service.py, reservar_turno/reservar_por_hora).
+--
+-- Coluna nasce com default TRUE (não FALSE) de propósito, por dois
+-- motivos:
+--   1) Backfill: preenche todo médico que JÁ existia no banco (já usando
+--      o sistema normalmente) como autorizado=true, pra ninguém que já
+--      estava ativo ser travado de repente por essa mudança.
+--   2) Fail-safe pra daqui pra frente: quem cria médico pela função
+--      criar_medico() (app/services/supabase_client.py) sempre passa o
+--      valor de `autorizado` explicitamente agora -- só a rota de
+--      autocadastro público (/primeiro-acesso) passa autorizado=False; o
+--      resto (ex: importação de agenda fixa em agenda_fixos_service.py,
+--      cadastrado pelo próprio admin a partir de planilha já conferida)
+--      continua nascendo autorizado=True. Deixar o DEFAULT da coluna
+--      também em TRUE significa que se algum caminho novo esquecer de
+--      passar esse campo no futuro, o comportamento "falha aberto" é
+--      igual ao de sempre (médico consegue usar o sistema normalmente)
+--      em vez de um bloqueio silencioso e difícil de rastrear.
+alter table medicos add column if not exists autorizado boolean not null default true;

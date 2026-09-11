@@ -106,10 +106,24 @@ def clientes():
             or busca in (m.get('email') or '').lower()
         ]
     # Saldo de horas (carteira "salas") e saldo de IA (em R$) de cada um,
-    # pra mostrar na lista -- mesmas funções usadas no painel do médico.
+    # pra mostrar na lista.
+    #
+    # ⚠️ Corrigido em 11/09/2026 (a tela estava demorando muito pra abrir
+    # depois da migração dos ~130 médicos horistas do Life Max): antes,
+    # esse loop chamava creditos_db.saldo_em_horas_medico(m['id']) e
+    # creditos_db.obter_saldo_ia(m['id']) PRA CADA MÉDICO -- e
+    # saldo_em_horas_medico, por baixo dos panos, ainda rebuscava a lista
+    # de pacotes de hora (listar_pacotes_horas()) do zero a cada chamada.
+    # Isso dava 3 consultas SEPARADAS ao banco por médico (~390 no total
+    # com 130 médicos) só pra abrir essa tela -- e o "*" do select acima
+    # já tinha trazido saldo_creditos/saldo_ia de todo mundo de uma vez!
+    # Agora: busca os pacotes de hora UMA única vez (fora do loop) e
+    # calcula o saldo em horas/IA direto dos dados que já vieram no
+    # select("*"), sem nenhuma consulta extra por médico.
+    pacotes_horas = creditos_db.listar_pacotes_horas()
     for m in lista:
-        m['saldo_horas'] = creditos_db.saldo_em_horas_medico(m['id'])
-        m['saldo_ia'] = creditos_db.obter_saldo_ia(m['id'])
+        m['saldo_horas'] = creditos_db.estimar_horas_compraveis(m.get('saldo_creditos') or 0, pacotes_horas)
+        m['saldo_ia'] = float(m.get('saldo_ia') or 0)
     return render_template('admin_clientes.html', medicos=lista, busca=request.args.get('busca') or '')
 
 

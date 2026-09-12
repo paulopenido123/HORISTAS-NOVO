@@ -40,6 +40,12 @@ def painel():
     # e também o botão "Pacientes cadastrados".
     reservas = db.listar_reservas_medico(medico["id"])
     pacientes = pacientes_service.listar_pacientes_medico(medico["id"])
+    # Item 5 (pedido do Paulo em 11/09/2026): pra cada reserva, a lista
+    # de pacientes marcados pra receber o e-mail de agendamento -- busca
+    # tudo de uma vez (uma query só) em vez de uma por reserva.
+    pacientes_agendados_por_reserva = db.listar_pacientes_agendados_por_reservas([r["id"] for r in reservas])
+    for r in reservas:
+        r["pacientes_agendados"] = pacientes_agendados_por_reserva.get(r["id"], [])
     return render_template("painel_medico.html", medico=medico, saldo=saldo, saldo_horas=saldo_horas,
                             transacoes=transacoes, precos=precos,
                             horas_minimas=horas_minimas, preco_minimo=preco_minimo,
@@ -295,6 +301,62 @@ def definir_paciente_da_reserva(reserva_id):
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
     return jsonify(resultado)
+
+
+@medico_painel_bp.route("/api/reservas/<reserva_id>/hora-confirmada", methods=["POST"])
+@requer_login_medico
+def definir_hora_confirmada_reserva(reserva_id):
+    """Campo "confirmação da hora" na seção de e-mail de agendamento da
+    "Minha agenda" -- pedido do Paulo em 11/09/2026."""
+    body = request.get_json(force=True)
+    hora_confirmada = (body.get("hora_confirmada") or "").strip()
+    try:
+        resultado = reserva_service.definir_hora_confirmada(reserva_id, medico_logado_id(), hora_confirmada)
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    return jsonify({"resultado": "Confirmação de horário salva.", "reserva": resultado})
+
+
+@medico_painel_bp.route("/api/reservas/<reserva_id>/pacientes-agendados", methods=["POST"])
+@requer_login_medico
+def adicionar_paciente_agendado(reserva_id):
+    """Botão "+ Adicionar paciente" -- pra quando mais de um paciente
+    está agendado pro mesmo horário/turno (pedido do Paulo em 11/09/2026)."""
+    body = request.get_json(force=True)
+    paciente_id = (body.get("paciente_id") or "").strip()
+    try:
+        pacientes_agendados = reserva_service.adicionar_paciente_agendamento(reserva_id, medico_logado_id(), paciente_id)
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    return jsonify({"resultado": "Paciente adicionado.", "pacientes_agendados": pacientes_agendados})
+
+
+@medico_painel_bp.route("/api/reservas/<reserva_id>/pacientes-agendados/<paciente_id>/remover", methods=["POST"])
+@requer_login_medico
+def remover_paciente_agendado(reserva_id, paciente_id):
+    try:
+        pacientes_agendados = reserva_service.remover_paciente_agendamento(reserva_id, medico_logado_id(), paciente_id)
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    return jsonify({"resultado": "Paciente removido dessa reserva.", "pacientes_agendados": pacientes_agendados})
+
+
+@medico_painel_bp.route("/api/reservas/<reserva_id>/pacientes-agendados/<paciente_id>/enviar-email", methods=["POST"])
+@requer_login_medico
+def enviar_email_paciente_agendado(reserva_id, paciente_id):
+    """Botão "Enviar e-mail" -- pedido do Paulo em 11/09/2026. Levanta
+    400 com mensagem clara se a hora ainda não foi confirmada ou se o
+    paciente não tem e-mail cadastrado."""
+    try:
+        resultado = reserva_service.enviar_email_agendamento_paciente(reserva_id, medico_logado_id(), paciente_id)
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    if not resultado["enviado"]:
+        return jsonify({
+            "erro": "Não consegui mandar o e-mail agora (o envio de e-mail -- SMTP_*/EMAIL_FROM -- "
+                    "ainda não está configurado neste sistema).",
+        }), 400
+    return jsonify({"resultado": "E-mail enviado ao paciente.", **resultado})
 
 
 @medico_painel_bp.route("/api/perfil/cpf-cnpj", methods=["POST"])

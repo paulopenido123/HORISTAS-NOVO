@@ -76,7 +76,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
         {% for m in medicos %}
         <tr>
           <td><strong class="{{ 'nome-bloqueado' if not m.autorizado else '' }}">{{ m.nome }}</strong>{% if not m.ativo %}<br><span class="muted">(inativo)</span>{% endif %}</td>
-          <td class="muted">{{ m.telefone or '—' }}{% if m.email %}<br>{{ m.email }}{% endif %}</td>
+          <td class="muted">{{ m.telefone or '—' }}{% if m.email %}<br>{{ m.email }}{% if m.email_confirmado %} <span title="E-mail confirmado pelo médico">⭐</span>{% endif %}{% endif %}</td>
           <td><span class="tag">{{ m.tipo_vinculo or 'avulso' }}</span></td>
           <td>
             {% if m.autorizado %}

@@ -129,6 +129,53 @@ def enviar_link_primeiro_acesso(medico_id: str, email: str) -> dict:
     return {"enviado": enviado, "link": link}
 
 
+_VALIDADE_HORAS_CONFIRMACAO_EMAIL = 72
+
+
+def enviar_confirmacao_email(medico_id: str, email: str) -> None:
+    """Item 1 (pedido do Paulo em 11/09/2026): manda o link de
+    confirmação de e-mail pro médico -- chamado pelo admin sempre que
+    cadastra ou altera o e-mail de um médico (Clientes > Inserir novo /
+    Editar dados). Não devolve nada e não levanta erro se o SMTP não
+    estiver configurado (mesmo padrão de sempre -- `enviar_email` só
+    devolve False nesse caso, não quebra o cadastro)."""
+    if not email:
+        return
+
+    token = secrets.token_urlsafe(32)
+    expira_em = datetime.now(timezone.utc) + timedelta(hours=_VALIDADE_HORAS_CONFIRMACAO_EMAIL)
+
+    get_client().table("tokens_recuperacao_senha").insert({
+        "tipo": "medico",
+        "usuario_id": medico_id,
+        "token_hash": _hash_token(token),
+        "expira_em": expira_em.isoformat(),
+        "contexto": "confirmar_email",
+    }).execute()
+
+    from flask import url_for
+    from app.services import supabase_client as db
+    medico = db.get_medico_by_id(medico_id)
+    link = url_for("auth.confirmar_email", token=token, _external=True)
+    email_service.notificar_confirmar_email(medico.get("nome", "") if medico else "", link, email)
+
+
+def confirmar_email(token: str) -> dict | None:
+    """Chamada pela rota pública /confirmar-email/<token> (ver
+    app/routes/auth.py). Marca `email_confirmado=True` no médico dono do
+    token e devolve o médico atualizado -- ou None se o token for
+    inválido, expirado, já usado, ou não for desse contexto (ex: alguém
+    tentando usar um token de recuperação de senha aqui)."""
+    registro = validar_token(token)
+    if registro is None or registro.get("contexto") != "confirmar_email" or registro["tipo"] != "medico":
+        return None
+
+    from app.services import supabase_client as db
+    medico = db.definir_email_confirmado(registro["usuario_id"], True)
+    get_client().table("tokens_recuperacao_senha").update({"usado": True}).eq("id", registro["id"]).execute()
+    return medico
+
+
 def validar_token(token: str) -> dict | None:
     """Devolve a linha do token (com 'tipo' e 'usuario_id') se ainda for
     válido -- existe, não expirou e não foi usado -- ou None."""

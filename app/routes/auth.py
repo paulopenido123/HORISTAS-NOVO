@@ -81,6 +81,17 @@ def primeiro_acesso():
                     f"O assistente de WhatsApp dele só é liberado depois do primeiro pagamento."
                 )
 
+                # Item 2 (pedido do Paulo em 11/09/2026): aviso por
+                # E-MAIL pro(s) admin(s) além do WhatsApp acima -- mesmo
+                # padrão gracioso de sempre (se ADMIN_EMAIL/SMTP não
+                # estiverem configurados, só não manda, não quebra o
+                # cadastro do médico).
+                from app.config import Config
+                destinatarios_admin = [e.strip() for e in (Config.ADMIN_EMAIL or "").split(",") if e.strip()]
+                if destinatarios_admin:
+                    from app.services import email_service
+                    email_service.notificar_admin_novo_cadastro_pendente(nome, telefone_digitado, destinatarios_admin)
+
                 return redirect(url_for("medico_painel.painel"))
 
         elif etapa_enviada == "senha":
@@ -106,6 +117,17 @@ def primeiro_acesso():
 
     return render_template("primeiro_acesso.html", erro=erro, etapa=etapa,
                             medico=medico, telefone_digitado=telefone_digitado)
+
+
+@auth_bp.route("/confirmar-email/<token>")
+def confirmar_email(token):
+    """Item 1 (pedido do Paulo em 11/09/2026): link mandado por e-mail
+    toda vez que o admin cadastra/altera o e-mail de um médico (Clientes
+    > Inserir novo / Editar dados). Ao clicar, a ⭐ aparece do lado do
+    e-mail dele na lista de Clientes do admin -- ver
+    recuperacao_senha_service.confirmar_email."""
+    medico = rec_senha.confirmar_email(token)
+    return render_template("confirmar_email.html", medico=medico)
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])

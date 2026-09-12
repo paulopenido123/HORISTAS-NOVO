@@ -282,6 +282,72 @@ def definir_paciente_reserva(reserva_id: str, paciente_id: str | None) -> dict:
     return resp.data[0]
 
 
+def definir_hora_confirmada_reserva(reserva_id: str, hora_confirmada: str | None) -> dict:
+    """Campo "confirmação da hora" (ver reserva_service.definir_hora_confirmada)
+    -- pedido do Paulo em 11/09/2026."""
+    resp = (
+        get_client().table("reservas").update({"hora_confirmada": hora_confirmada}).eq("id", reserva_id).execute()
+    )
+    return resp.data[0]
+
+
+def listar_pacientes_agendados_por_reservas(reserva_ids: list[str]) -> dict:
+    """Pra cada reserva, a lista de pacientes marcados pra receber o
+    e-mail de confirmação de agendamento (tabela `reserva_pacientes`,
+    ver sql/migration_notificacoes_email.sql) -- busca todo mundo de UMA
+    vez (uma query só, com `in_`) em vez de uma consulta por reserva,
+    mesmo cuidado do N+1 corrigido em admin.clientes() em 11/09/2026.
+    Devolve um dict {reserva_id: [linha, ...]}, cada linha já com
+    `pacientes.nome_completo`/`pacientes.email` embutidos."""
+    if not reserva_ids:
+        return {}
+    resp = (
+        get_client().table("reserva_pacientes")
+        .select("*, pacientes(nome_completo, email)")
+        .in_("reserva_id", reserva_ids)
+        .execute()
+    )
+    agrupado: dict[str, list[dict]] = {}
+    for linha in resp.data:
+        agrupado.setdefault(linha["reserva_id"], []).append(linha)
+    return agrupado
+
+
+def adicionar_paciente_reserva(reserva_id: str, paciente_id: str) -> dict | None:
+    """Insere (ou ignora, se já existir) uma linha em `reserva_pacientes`
+    -- usada tanto pelo botão legado "Incluir/alterar paciente" (mantém
+    os dois mecanismos sincronizados, ver reserva_service.associar_paciente)
+    quanto pelo novo "+ Adicionar paciente" da seção de e-mail de
+    agendamento (reserva_service.adicionar_paciente_agendamento)."""
+    client = get_client()
+    existente = (
+        client.table("reserva_pacientes").select("id")
+        .eq("reserva_id", reserva_id).eq("paciente_id", paciente_id).execute().data
+    )
+    if existente:
+        return existente[0]
+    resp = client.table("reserva_pacientes").insert({
+        "reserva_id": reserva_id, "paciente_id": paciente_id,
+    }).execute()
+    return resp.data[0] if resp.data else None
+
+
+def remover_paciente_da_reserva(reserva_id: str, paciente_id: str):
+    (
+        get_client().table("reserva_pacientes")
+        .delete().eq("reserva_id", reserva_id).eq("paciente_id", paciente_id).execute()
+    )
+
+
+def marcar_email_agendamento_enviado(reserva_id: str, paciente_id: str):
+    (
+        get_client().table("reserva_pacientes")
+        .update({"email_enviado_em": agora_iso()})
+        .eq("reserva_id", reserva_id).eq("paciente_id", paciente_id)
+        .execute()
+    )
+
+
 def marcar_reserva_cancelada(reserva_id: str) -> dict:
     """Muda o status pra 'cancelada' e grava `cancelado_em` (ver
     migration_cancelado_em.sql) -- o reembolso (ou não, se dentro de 12h)
@@ -481,6 +547,18 @@ def definir_autorizacao_medico(medico_id: str, autorizado: bool) -> dict:
     ativar/desativar cadastro)."""
     resp = (
         get_client().table("medicos").update({"autorizado": autorizado}).eq("id", medico_id).execute()
+    )
+    return resp.data[0] if resp.data else None
+
+
+def definir_email_confirmado(medico_id: str, confirmado: bool) -> dict | None:
+    """Liga (quando o médico clica no link de confirmação -- ver
+    recuperacao_senha_service.confirmar_email) ou desliga (quando o
+    admin cadastra/troca o e-mail dele -- ver app/routes/admin.py,
+    novo_cliente/editar_cliente) a ⭐ que aparece do lado do e-mail na
+    lista de Clientes do admin -- pedido do Paulo em 11/09/2026."""
+    resp = (
+        get_client().table("medicos").update({"email_confirmado": confirmado}).eq("id", medico_id).execute()
     )
     return resp.data[0] if resp.data else None
 

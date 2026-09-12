@@ -357,6 +357,25 @@ def cancelar_reserva(reserva_id: str, medico_id: str) -> dict:
             saldo_atual = resultado["saldo_novo"]
             reembolsado = True
 
+    # Item 5 (pedido do Paulo em 11/09/2026): confirma o cancelamento por
+    # e-mail direto pro médico, se ele tiver e-mail cadastrado -- não
+    # pode quebrar o cancelamento (já efetivado acima) se o e-mail falhar.
+    try:
+        medico = db.get_medico_by_id(medico_id)
+        if medico and medico.get("email"):
+            consultorio = db.get_consultorio_by_id(reserva["consultorio_id"])
+            descricao_periodo = reserva.get("periodo") or f"{reserva.get('quantidade_horas')}h avulsa " \
+                                                            f"({reserva.get('hora_inicio', '')}-{reserva.get('hora_fim', '')})"
+            email_service.notificar_cancelamento_medico(
+                nome_medico=medico["nome"],
+                consultorio_nome=consultorio["nome"] if consultorio else "Consultório",
+                data=reserva["data"],
+                horario=descricao_periodo,
+                destinatario=medico["email"],
+            )
+    except Exception as e:
+        print(f"[reserva_service] Erro ao mandar confirmação de cancelamento pro médico: {e}")
+
     return {
         "reembolsado": reembolsado,
         "horas_reembolsadas": horas_reembolsadas if reembolsado else 0,
@@ -391,7 +410,100 @@ def associar_paciente(reserva_id: str, medico_id: str, paciente_id: str | None) 
             raise ValueError("Paciente não encontrado.")
 
     db.definir_paciente_reserva(reserva_id, paciente_id or None)
+
+    # Mantém reserva_pacientes em sincronia -- o paciente marcado aqui já
+    # entra automaticamente na lista de "Enviar e-mail" da seção nova
+    # (item 5), sem o médico precisar adicionar de novo com "+ Adicionar
+    # paciente". Só ADICIONA (nunca remove): trocar o paciente principal
+    # aqui não tira quem já tinha sido incluído a mais na mesma reserva.
+    if paciente_id:
+        db.adicionar_paciente_reserva(reserva_id, paciente_id)
+
     return {"paciente_nome": paciente["nome_completo"] if paciente else None}
+
+
+def definir_hora_confirmada(reserva_id: str, medico_id: str, hora_confirmada: str | None) -> dict:
+    """Campo "confirmação da hora" -- pedido do Paulo em 11/09/2026: o
+    médico confirma a hora EXATA da consulta (útil principalmente pra
+    reserva de TURNO, que cobre um período inteiro em vez de um horário
+    exato) antes de poder mandar o e-mail de agendamento pro paciente."""
+    reserva = db.get_reserva_by_id(reserva_id)
+    if not reserva:
+        raise ValueError("Reserva não encontrada.")
+    if reserva["medico_id"] != medico_id:
+        raise ValueError("Essa reserva não é sua.")
+    hora_confirmada = (hora_confirmada or "").strip() or None
+    return db.definir_hora_confirmada_reserva(reserva_id, hora_confirmada)
+
+
+def _checar_reserva_e_paciente_do_medico(reserva_id: str, medico_id: str, paciente_id: str):
+    from app.services import pacientes_service
+    reserva = db.get_reserva_by_id(reserva_id)
+    if not reserva:
+        raise ValueError("Reserva não encontrada.")
+    if reserva["medico_id"] != medico_id:
+        raise ValueError("Essa reserva não é sua.")
+    paciente = pacientes_service.get_paciente_by_id(paciente_id)
+    if not paciente or paciente["medico_id"] != medico_id:
+        raise ValueError("Paciente não encontrado.")
+    return reserva, paciente
+
+
+def adicionar_paciente_agendamento(reserva_id: str, medico_id: str, paciente_id: str) -> list[dict]:
+    """Botão "+ Adicionar paciente" -- pedido do Paulo em 11/09/2026:
+    quando mais de um paciente está agendado pro mesmo horário/turno,
+    inclui outro paciente (além do marcado em "Incluir/alterar
+    paciente") na lista que recebe o e-mail de confirmação de
+    agendamento. Devolve a lista atualizada de pacientes dessa reserva."""
+    if not paciente_id:
+        raise ValueError("Escolha um paciente.")
+    _checar_reserva_e_paciente_do_medico(reserva_id, medico_id, paciente_id)
+    db.adicionar_paciente_reserva(reserva_id, paciente_id)
+    return db.listar_pacientes_agendados_por_reservas([reserva_id]).get(reserva_id, [])
+
+
+def remover_paciente_agendamento(reserva_id: str, medico_id: str, paciente_id: str) -> list[dict]:
+    """"Remover" da lista de pacientes agendados dessa reserva (não
+    apaga o cadastro do paciente, só tira ele dessa reserva específica)."""
+    reserva = db.get_reserva_by_id(reserva_id)
+    if not reserva:
+        raise ValueError("Reserva não encontrada.")
+    if reserva["medico_id"] != medico_id:
+        raise ValueError("Essa reserva não é sua.")
+    db.remover_paciente_da_reserva(reserva_id, paciente_id)
+    return db.listar_pacientes_agendados_por_reservas([reserva_id]).get(reserva_id, [])
+
+
+def enviar_email_agendamento_paciente(reserva_id: str, medico_id: str, paciente_id: str) -> dict:
+    """Botão "Enviar e-mail" -- pedido do Paulo em 11/09/2026: manda pro
+    paciente o dia, o horário confirmado, o consultório e o endereço
+    (padrão da Lifemax, ver creditos_service.endereco_padrao_formatado)
+    da consulta. Exige que a "confirmação da hora" já tenha sido
+    preenchida pelo médico e que o paciente tenha e-mail cadastrado --
+    levanta ValueError com uma mensagem clara nos dois casos, sem
+    quebrar o resto da tela."""
+    reserva, paciente = _checar_reserva_e_paciente_do_medico(reserva_id, medico_id, paciente_id)
+    if not reserva.get("hora_confirmada"):
+        raise ValueError("Preencha a confirmação da hora antes de enviar o e-mail.")
+    if not paciente.get("email"):
+        raise ValueError(f'O paciente "{paciente["nome_completo"]}" não tem e-mail cadastrado.')
+
+    medico = db.get_medico_by_id(medico_id)
+    consultorio = db.get_consultorio_by_id(reserva["consultorio_id"])
+    endereco = creditos_db.endereco_padrao_formatado()
+
+    enviado = email_service.notificar_agendamento_paciente(
+        nome_paciente=paciente["nome_completo"],
+        nome_medico=medico["nome"] if medico else "",
+        data=reserva["data"],
+        hora_confirmada=reserva["hora_confirmada"],
+        endereco=endereco,
+        consultorio_nome=consultorio["nome"] if consultorio else "Consultório",
+        destinatario=paciente["email"],
+    )
+    if enviado:
+        db.marcar_email_agendamento_enviado(reserva_id, paciente_id)
+    return {"enviado": enviado, "pacientes_agendados": db.listar_pacientes_agendados_por_reservas([reserva_id]).get(reserva_id, [])}
 
 
 def _pos_reserva(medico_id: str, consultorio_id: str, reserva: dict):
@@ -421,6 +533,30 @@ def _pos_reserva(medico_id: str, consultorio_id: str, reserva: dict):
         )
     except Exception as e:
         print(f"[reserva_service] Erro ao notificar funcionários: {e}")
+
+    # Item 5 (pedido do Paulo em 11/09/2026): confirma o agendamento por
+    # e-mail direto pro PRÓPRIO médico (diferente do aviso de
+    # funcionários acima) -- só se ele tiver e-mail cadastrado.
+    if medico and medico.get("email"):
+        try:
+            email_service.notificar_agendamento_medico(
+                nome_medico=medico["nome"],
+                consultorio_nome=consultorio["nome"] if consultorio else "Consultório",
+                data=reserva["data"],
+                horario=descricao_periodo,
+                destinatario=medico["email"],
+            )
+        except Exception as e:
+            print(f"[reserva_service] Erro ao mandar confirmação de agendamento pro médico: {e}")
+
+    # Botão "Incluir/alterar paciente" já marcado ANTES da reserva (não é
+    # o caso normal, mas por segurança) -- mantém reserva_pacientes em
+    # sincronia com reservas.paciente_id (ver associar_paciente).
+    if reserva.get("paciente_id"):
+        try:
+            db.adicionar_paciente_reserva(reserva["id"], reserva["paciente_id"])
+        except Exception as e:
+            print(f"[reserva_service] Erro ao sincronizar paciente da reserva: {e}")
 
     if medico:
         try:

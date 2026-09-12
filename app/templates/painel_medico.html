@@ -140,6 +140,25 @@
   .celula-paciente { font-weight:600; }
   .celula-paciente.vazia { color: var(--ink-faint); font-weight:400; }
 
+  /* E-mail de agendamento pro paciente -- pedido do Paulo em 11/09/2026 */
+  details.ajuste-email-agendamento { margin-top:8px; }
+  details.ajuste-email-agendamento summary { cursor:pointer; color: var(--navy); font-weight:700; font-size:12px; list-style:none; }
+  details.ajuste-email-agendamento summary::-webkit-details-marker { display:none; }
+  .form-email-agendamento { margin-top:8px; padding:12px; background: var(--panel-2); border-radius:8px; display:flex; flex-direction:column; gap:8px; min-width:230px; }
+  .form-email-agendamento label { font-size:11.5px; font-weight:700; color: var(--ink-muted); }
+  .linha-hora-confirmada { display:flex; gap:6px; align-items:center; }
+  .linha-hora-confirmada input { width:90px !important; padding:7px 9px !important; font-size:12.5px !important; }
+  .btn-salvar-hora, .btn-adicionar-paciente-agendado { background: var(--navy); color:#fff; border:none; border-radius:6px; padding:7px 11px; font-family: var(--display); font-weight:700; font-size:11.5px; cursor:pointer; white-space:nowrap; }
+  .lista-pacientes-agendados { display:flex; flex-direction:column; gap:6px; margin-top:2px; }
+  .linha-paciente-agendado { display:flex; align-items:center; gap:8px; justify-content:space-between; font-size:12.5px; background:#fff; border-radius:6px; padding:6px 9px; }
+  .linha-paciente-agendado .nome-paciente-ag { font-weight:600; flex:1; }
+  .btn-enviar-email { background: var(--cyan); color:#fff; border:none; border-radius:6px; padding:5px 9px; font-family: var(--display); font-weight:700; font-size:11px; cursor:pointer; }
+  .btn-remover-paciente-agendado { background:none; border:none; color: var(--coral); font-size:11px; font-weight:700; cursor:pointer; }
+  .tag-email-enviado { color:#1C8A4C; font-weight:700; font-size:11px; }
+  .adicionar-paciente-agendado { display:flex; gap:6px; margin-top:2px; }
+  .adicionar-paciente-agendado select { flex:1; }
+  .erro-email-agendamento { color: var(--coral); font-size:11.5px; font-weight:600; }
+
   .precos-info { font-size: 13.5px; color: var(--ink-muted); }
   .precos-info strong { color: var(--ink); }
 
@@ -295,6 +314,42 @@ if ("serviceWorker" in navigator) {
             {% else %}
               <button class="btn-cancelar" onclick="cancelarReserva(this)">Cancelar</button>
             {% endif %}
+            <details class="ajuste-email-agendamento">
+              <summary>📧 E-mail de agendamento</summary>
+              <div class="form-email-agendamento" data-reserva-id="{{ r.id }}">
+                <label>Confirmação da hora (obrigatório pra enviar o e-mail)</label>
+                <div class="linha-hora-confirmada">
+                  <input type="text" class="input-hora-confirmada" placeholder="HH:MM" value="{{ r.hora_confirmada or '' }}">
+                  <button type="button" class="btn-salvar-hora" onclick="salvarHoraConfirmada('{{ r.id }}', this)">Salvar</button>
+                </div>
+                <div class="lista-pacientes-agendados">
+                  {% for pa in r.pacientes_agendados %}
+                  <div class="linha-paciente-agendado" data-paciente-id="{{ pa.paciente_id }}">
+                    <span class="nome-paciente-ag">{{ pa.pacientes.nome_completo if pa.pacientes else '—' }}</span>
+                    {% if pa.email_enviado_em %}
+                      <span class="tag-email-enviado">Enviado ✓</span>
+                    {% else %}
+                      <button type="button" class="btn-enviar-email" onclick="enviarEmailPacienteAgendado('{{ r.id }}', '{{ pa.paciente_id }}', this)">Enviar e-mail</button>
+                    {% endif %}
+                    <button type="button" class="btn-remover-paciente-agendado" onclick="removerPacienteAgendado('{{ r.id }}', '{{ pa.paciente_id }}', this)">Remover</button>
+                  </div>
+                  {% else %}
+                  <p class="muted-cell" data-vazio-pacientes-agendados>Nenhum paciente incluído ainda pra receber e-mail.</p>
+                  {% endfor %}
+                </div>
+                {% if pacientes %}
+                <div class="adicionar-paciente-agendado">
+                  <select class="select-adicionar-paciente-agendado">
+                    {% for p in pacientes %}<option value="{{ p.id }}">{{ p.nome_completo }}</option>{% endfor %}
+                  </select>
+                  <button type="button" class="btn-adicionar-paciente-agendado" onclick="adicionarPacienteAgendado('{{ r.id }}', this)">+ Adicionar paciente</button>
+                </div>
+                {% else %}
+                <p class="muted-cell">Cadastre um paciente primeiro (botão no topo) pra poder incluir aqui.</p>
+                {% endif %}
+                <div class="erro-email-agendamento" style="display:none;"></div>
+              </div>
+            </details>
           </td>
         </tr>
         {% endfor %}
@@ -760,6 +815,138 @@ async function inserirPaciente(reservaId, botao) {
     alert('Erro de conexão ao incluir o paciente.');
     botao.disabled = false;
     botao.textContent = 'Inserir';
+  }
+}
+
+// ---------- E-mail de agendamento pro paciente (pedido do Paulo em 11/09/2026) ----------
+
+function renderizarPacientesAgendados(reservaId, pacientesAgendados) {
+  const container = document.querySelector(`.form-email-agendamento[data-reserva-id="${reservaId}"] .lista-pacientes-agendados`);
+  if (!container) return;
+  if (!pacientesAgendados || pacientesAgendados.length === 0) {
+    container.innerHTML = '<p class="muted-cell" data-vazio-pacientes-agendados>Nenhum paciente incluído ainda pra receber e-mail.</p>';
+    return;
+  }
+  container.innerHTML = pacientesAgendados.map(pa => {
+    const nome = (pa.pacientes && pa.pacientes.nome_completo) || '—';
+    const acaoEnvio = pa.email_enviado_em
+      ? '<span class="tag-email-enviado">Enviado ✓</span>'
+      : `<button type="button" class="btn-enviar-email" onclick="enviarEmailPacienteAgendado('${reservaId}', '${pa.paciente_id}', this)">Enviar e-mail</button>`;
+    return `<div class="linha-paciente-agendado" data-paciente-id="${pa.paciente_id}">
+              <span class="nome-paciente-ag">${nome}</span>
+              ${acaoEnvio}
+              <button type="button" class="btn-remover-paciente-agendado" onclick="removerPacienteAgendado('${reservaId}', '${pa.paciente_id}', this)">Remover</button>
+            </div>`;
+  }).join('');
+}
+
+async function salvarHoraConfirmada(reservaId, botao) {
+  const bloco = botao.closest('.form-email-agendamento');
+  const input = bloco.querySelector('.input-hora-confirmada');
+  const erroEl = bloco.querySelector('.erro-email-agendamento');
+  erroEl.style.display = 'none';
+  botao.disabled = true;
+  const textoOriginal = botao.textContent;
+  botao.textContent = 'Salvando...';
+  try {
+    const resp = await fetch(`/api/reservas/${reservaId}/hora-confirmada`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hora_confirmada: input.value.trim() }),
+    });
+    const resultado = await resp.json();
+    if (!resp.ok) {
+      erroEl.textContent = resultado.erro || 'Não foi possível salvar a hora confirmada.';
+      erroEl.style.display = 'block';
+    }
+  } catch (e) {
+    erroEl.textContent = 'Erro de conexão ao salvar a hora confirmada.';
+    erroEl.style.display = 'block';
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
+}
+
+async function adicionarPacienteAgendado(reservaId, botao) {
+  const bloco = botao.closest('.form-email-agendamento');
+  const select = bloco.querySelector('.select-adicionar-paciente-agendado');
+  const erroEl = bloco.querySelector('.erro-email-agendamento');
+  erroEl.style.display = 'none';
+  if (!select.value) return;
+  botao.disabled = true;
+  try {
+    const resp = await fetch(`/api/reservas/${reservaId}/pacientes-agendados`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paciente_id: select.value }),
+    });
+    const resultado = await resp.json();
+    if (!resp.ok) {
+      erroEl.textContent = resultado.erro || 'Não foi possível adicionar esse paciente.';
+      erroEl.style.display = 'block';
+      return;
+    }
+    renderizarPacientesAgendados(reservaId, resultado.pacientes_agendados);
+  } catch (e) {
+    erroEl.textContent = 'Erro de conexão ao adicionar o paciente.';
+    erroEl.style.display = 'block';
+  } finally {
+    botao.disabled = false;
+  }
+}
+
+async function removerPacienteAgendado(reservaId, pacienteId, botao) {
+  if (!confirm('Remover esse paciente do e-mail de agendamento dessa reserva?')) return;
+  const bloco = botao.closest('.form-email-agendamento');
+  const erroEl = bloco.querySelector('.erro-email-agendamento');
+  erroEl.style.display = 'none';
+  botao.disabled = true;
+  try {
+    const resp = await fetch(`/api/reservas/${reservaId}/pacientes-agendados/${pacienteId}/remover`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const resultado = await resp.json();
+    if (!resp.ok) {
+      erroEl.textContent = resultado.erro || 'Não foi possível remover esse paciente.';
+      erroEl.style.display = 'block';
+      botao.disabled = false;
+      return;
+    }
+    renderizarPacientesAgendados(reservaId, resultado.pacientes_agendados);
+  } catch (e) {
+    erroEl.textContent = 'Erro de conexão ao remover o paciente.';
+    erroEl.style.display = 'block';
+    botao.disabled = false;
+  }
+}
+
+async function enviarEmailPacienteAgendado(reservaId, pacienteId, botao) {
+  const bloco = botao.closest('.form-email-agendamento');
+  const erroEl = bloco.querySelector('.erro-email-agendamento');
+  erroEl.style.display = 'none';
+  botao.disabled = true;
+  botao.textContent = 'Enviando...';
+  try {
+    const resp = await fetch(`/api/reservas/${reservaId}/pacientes-agendados/${pacienteId}/enviar-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const resultado = await resp.json();
+    if (!resp.ok) {
+      erroEl.textContent = resultado.erro || 'Não foi possível enviar o e-mail.';
+      erroEl.style.display = 'block';
+      botao.disabled = false;
+      botao.textContent = 'Enviar e-mail';
+      return;
+    }
+    renderizarPacientesAgendados(reservaId, resultado.pacientes_agendados);
+  } catch (e) {
+    erroEl.textContent = 'Erro de conexão ao enviar o e-mail.';
+    erroEl.style.display = 'block';
+    botao.disabled = false;
+    botao.textContent = 'Enviar e-mail';
   }
 }
 

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmação de e-mail — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --line: #DCE6E8; --muted: #55707C; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(160deg, var(--navy), var(--navy-soft));
+    padding: 20px;
+  }
+  .card { background: white; border-radius: 16px; padding: 36px; width: 100%; max-width: 420px; text-align: center; }
+  .icone { font-size: 40px; margin-bottom: 6px; }
+  h1 { margin: 0 0 10px; font-size: 20px; color: var(--navy); }
+  p { margin: 0 0 22px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+  .aviso.erro p { color: #D65C3F; }
+  a.btn { display: inline-block; background: var(--navy); color: white; text-decoration: none; padding: 12px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="card {{ 'aviso erro' if not medico else '' }}">
+    {% if medico %}
+      <div class="icone">⭐</div>
+      <h1>E-mail confirmado!</h1>
+      <p>Seu e-mail foi confirmado com sucesso. Já pode fechar esta página.</p>
+    {% else %}
+      <div class="icone">⚠️</div>
+      <h1>Link inválido ou expirado</h1>
+      <p>Esse link de confirmação já foi usado, expirou, ou não é válido. Se ainda precisar confirmar seu
+      e-mail, peça pro administrador conferir/salvar seu e-mail de novo em Clientes para receber um novo link.</p>
+    {% endif %}
+    <a class="btn" href="{{ url_for('auth.login') }}">Ir para o login</a>
+  </div>
+</body>
+</html>

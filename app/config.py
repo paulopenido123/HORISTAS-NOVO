@@ -157,6 +157,15 @@ class Config:
     # --- Notificação da gerente (Patricia) ---
     ADMIN_PHONE_PATRICIA = os.getenv("ADMIN_PHONE_PATRICIA")
 
+    # --- Avisos operacionais por e-mail pro admin (Paulo/Patricia) ---
+    # Usado só pra "novo médico se cadastrou pelo site, precisa ser
+    # liberado" (ver app/routes/auth.py, primeiro_acesso) -- separado dos
+    # telefones acima porque esses são pro WhatsApp, esses aqui pro
+    # e-mail. Aceita mais de um endereço separado por vírgula. Sem
+    # preencher, o aviso simplesmente não é mandado por e-mail (o aviso
+    # por WhatsApp continua funcionando normalmente se configurado).
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+
     # --- Criptografia em repouso (prontuário e exames) ---
     ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
 

@@ -81,7 +81,7 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
     <div class="secao">Contato</div>
     <div class="grid-dados">
       <div class="campo-view"><label>Telefone</label><div class="valor {{ '' if medico.telefone else 'vazio' }}">{{ medico.telefone or 'Não informado' }}</div></div>
-      <div class="campo-view"><label>E-mail</label><div class="valor {{ '' if medico.email else 'vazio' }}">{{ medico.email or 'Não informado' }}</div></div>
+      <div class="campo-view"><label>E-mail</label><div class="valor {{ '' if medico.email else 'vazio' }}">{{ medico.email or 'Não informado' }}{% if medico.email and medico.email_confirmado %} <span title="E-mail confirmado pelo médico">⭐</span>{% endif %}</div></div>
       <div class="campo-view"><label>Especialidade</label><div class="valor {{ '' if medico.especialidade else 'vazio' }}">{{ medico.especialidade or 'Não informado' }}</div></div>
       <div class="campo-view"><label>CRM</label><div class="valor {{ '' if medico.crm else 'vazio' }}">{{ medico.crm or 'Não informado' }}</div></div>
       <div class="campo-view"><label>CPF / CNPJ</label><div class="valor {{ '' if medico.cpf_cnpj else 'vazio' }}">{{ medico.cpf_cnpj or 'Não informado' }}</div></div>

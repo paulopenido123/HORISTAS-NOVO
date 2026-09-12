@@ -82,10 +82,30 @@ def horas():
         mes_valor = f"{ano:04d}-{mes:02d}"
 
     stats = creditos_db.estatisticas_horas(mes, ano)
+    endereco = creditos_db.obter_endereco_padrao()
     return render_template(
         'admin_horas.html', stats=stats, mes=mes, ano=ano,
-        mes_valor=mes_valor, mes_nome=_NOMES_MESES[mes],
+        mes_valor=mes_valor, mes_nome=_NOMES_MESES[mes], endereco=endereco,
     )
+
+
+@admin_bp.route('/horas/endereco-padrao', methods=['POST'])
+@_admin
+def atualizar_endereco_padrao():
+    """Salva o endereço padrão da Lifemax (usado no e-mail de agendamento
+    pro paciente -- ver reserva_service.enviar_email_agendamento_paciente)
+    -- pedido do Paulo em 11/09/2026."""
+    creditos_db.atualizar_endereco_padrao(
+        rua=(request.form.get('rua') or '').strip(),
+        numero=(request.form.get('numero') or '').strip(),
+        complemento=(request.form.get('complemento') or '').strip(),
+        bairro=(request.form.get('bairro') or '').strip(),
+        cidade=(request.form.get('cidade') or '').strip(),
+        estado=(request.form.get('estado') or '').strip()[:2].upper(),
+        cep=(request.form.get('cep') or '').strip(),
+    )
+    flash('Endereço padrão atualizado.', 'ok')
+    return redirect(url_for('admin.horas'))
 
 
 @admin_bp.route('/clientes')
@@ -145,6 +165,13 @@ def autorizacao_cliente(medico_id):
     db.definir_autorizacao_medico(medico_id, novo_valor)
     if novo_valor:
         flash(f'Acesso de {medico["nome"]} liberado -- já pode reservar consultório.', 'ok')
+        # Item 3 (pedido do Paulo em 11/09/2026): avisa o médico por
+        # e-mail que ele já está apto a usar o sistema/comprar horas --
+        # só quando ele TEM e-mail cadastrado; sem SMTP configurado só
+        # não manda (padrão de sempre).
+        if medico.get('email'):
+            from app.services import email_service
+            email_service.notificar_acesso_liberado(medico['nome'], medico['email'])
     else:
         flash(f'Acesso de {medico["nome"]} bloqueado -- não vai conseguir reservar consultório até ser liberado de novo.', 'ok')
     return redirect(url_for('admin.clientes', busca=request.form.get('busca') or ''))
@@ -313,6 +340,13 @@ def novo_cliente():
         # -- ver comentário em scripts_migracao/importar_horistas_lifemax.py):
         # já nasce com termo aceito, não precisa passar pela tela de termo.
         db.get_client().table('medicos').update({'termo_aceito': True}).eq('id', medico['id']).execute()
+
+        # Item 1 (pedido do Paulo em 11/09/2026): se já nasceu com
+        # e-mail, manda o link de confirmação -- a ⭐ aparece do lado do
+        # e-mail na lista de Clientes assim que ele confirmar.
+        if medico.get('email'):
+            rec_senha.enviar_confirmacao_email(medico['id'], medico['email'])
+
         flash(f'Cliente "{nome}" cadastrado com sucesso.', 'ok')
         return redirect(url_for('admin.visualizar_cliente', medico_id=medico['id']))
 
@@ -361,13 +395,15 @@ def editar_cliente(medico_id):
             return redirect(url_for('admin.editar_cliente', medico_id=medico_id))
 
         convenios = [c.strip() for c in (request.form.get('convenios') or '').split(',') if c.strip()]
+        email_antigo = medico.get('email') or ''
+        email_novo = (request.form.get('email') or '').strip()
         db.atualizar_medico(
             medico_id=medico_id,
             nome=nome,
             telefone=telefone,
             especialidade=(request.form.get('especialidade') or '').strip(),
             cpf_cnpj=(request.form.get('cpf_cnpj') or '').strip(),
-            email=(request.form.get('email') or '').strip(),
+            email=email_novo,
             crm=(request.form.get('crm') or '').strip(),
             endereco_cep=(request.form.get('endereco_cep') or '').strip(),
             endereco_rua=(request.form.get('endereco_rua') or '').strip(),
@@ -379,6 +415,14 @@ def editar_cliente(medico_id):
             convenios=convenios,
             tipo_vinculo=(request.form.get('tipo_vinculo') or '').strip() or None,
         )
+
+        # Item 1 (pedido do Paulo em 11/09/2026): se o e-mail mudou (ou
+        # nasceu agora), a confirmação anterior não vale mais pro e-mail
+        # novo -- tira a ⭐ e manda um novo link de confirmação.
+        if email_novo and email_novo != email_antigo:
+            db.definir_email_confirmado(medico_id, False)
+            rec_senha.enviar_confirmacao_email(medico_id, email_novo)
+
         flash(f'Dados de "{nome}" atualizados.', 'ok')
         return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 

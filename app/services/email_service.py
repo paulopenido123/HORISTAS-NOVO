@@ -252,3 +252,177 @@ def notificar_notas_periodo_contador(medico_nome: str, ano: int, mes: int, notas
     </div>
     """
     return enviar_email([destinatario], assunto, corpo_html)
+
+
+# ---------------------------------------------------------------------
+# Avisos automáticos por e-mail -- pedido do Paulo em 11/09/2026 (ver
+# sql/migration_notificacoes_email.sql e app/routes/auth.py,
+# app/routes/admin.py, app/services/reserva_service.py,
+# app/routes/webhooks_asaas.py, que chamam as funções abaixo).
+# ---------------------------------------------------------------------
+
+def notificar_confirmar_email(nome: str, link_confirmar: str, destinatario: str) -> bool:
+    """Item 1: e-mail com o link de confirmação, mandado toda vez que o
+    admin cadastra ou altera o e-mail de um médico (Clientes > Inserir
+    novo / Editar dados). Quando o médico clica, aparece uma ⭐ do lado
+    do e-mail dele na lista de Clientes do admin."""
+    assunto = "Confirme seu e-mail — Sistema Lifemax"
+    corpo_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px;">
+        <h2 style="color: #1a3c5e;">Confirme seu e-mail</h2>
+        <p>Olá, {_esc(nome)}! Pra confirmar que este e-mail é mesmo seu, clique no botão abaixo.</p>
+        <p>
+            <a href="{link_confirmar}" style="background:#1a3c5e; color:white; padding:10px 18px;
+               border-radius:6px; text-decoration:none; display:inline-block;">
+               Confirmar meu e-mail
+            </a>
+        </p>
+        <p style="color: #888; font-size: 12px;">Se você não reconhece este cadastro, pode ignorar este e-mail.</p>
+        <p style="color: #888; font-size: 12px; margin-top: 20px;">
+            Notificação automática — Sistema Lifemax
+        </p>
+    </div>
+    """
+    return enviar_email([destinatario], assunto, corpo_html)
+
+
+def notificar_admin_novo_cadastro_pendente(nome_medico: str, telefone: str, destinatarios: list[str]) -> bool:
+    """Item 2: aviso por e-mail ao(s) admin(s) (ADMIN_EMAIL) quando um
+    médico se autocadastra pelo site (/primeiro-acesso) e fica
+    aguardando liberação em Clientes."""
+    assunto = f"Novo cadastro aguardando liberação: {nome_medico}"
+    corpo_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px;">
+        <h2 style="color: #1a3c5e;">Novo médico aguardando liberação</h2>
+        <p><strong>{_esc(nome_medico)}</strong> ({_esc(telefone)}) acabou de se cadastrar sozinho pelo site.</p>
+        <p>Ele já consegue entrar e comprar horas, mas fica bloqueado de reservar consultório até
+        você liberar o acesso em <strong>Clientes</strong> (botão "Liberar acesso").</p>
+        <p style="color: #888; font-size: 12px; margin-top: 20px;">
+            Notificação automática — Sistema Lifemax
+        </p>
+    </div>
+    """
+    return enviar_email(destinatarios, assunto, corpo_html)
+
+
+def notificar_acesso_liberado(nome: str, destinatario: str) -> bool:
+    """Item 3: aviso por e-mail ao médico quando o admin clica em
+    "Liberar acesso" em Clientes -- a partir daí ele já pode reservar
+    consultório (comprar horas ele já podia desde o cadastro)."""
+    assunto = "Seu acesso foi liberado — Sistema Lifemax"
+    corpo_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px;">
+        <h2 style="color: #1a3c5e;">Seu acesso foi liberado!</h2>
+        <p>Olá, {_esc(nome)}! Seu cadastro foi conferido e liberado -- você já pode reservar
+        consultório e comprar horas normalmente no sistema.</p>
+        <p style="color: #888; font-size: 12px; margin-top: 20px;">
+            Notificação automática — Sistema Lifemax
+        </p>
+    </div>
+    """
+    return enviar_email([destinatario], assunto, corpo_html)
+
+
+def notificar_recibo_compra_horas(nome: str, valor: float, horas: float | None,
+                                   forma_pagamento: str, destinatario: str) -> bool:
+    """Item 4: recibo por e-mail toda vez que uma compra de horas é
+    confirmada (PIX ou cartão) -- ver webhooks_asaas.confirmar_pagamento_e_creditar."""
+    linha_horas = f"<tr><td style='padding:6px 0; color:#555;'>Horas:</td><td style='padding:6px 0; font-weight:bold;'>{horas}h</td></tr>" if horas else ""
+    assunto = "Recibo de pagamento — Sistema Lifemax"
+    corpo_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px;">
+        <h2 style="color: #1a3c5e;">Pagamento confirmado</h2>
+        <p>Olá, {_esc(nome)}! Confirmamos o recebimento do seu pagamento. Segue o recibo:</p>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding:6px 0; color:#555;">Valor:</td>
+                <td style="padding:6px 0; font-weight:bold;">R$ {valor:.2f}</td></tr>
+            {linha_horas}
+            <tr><td style="padding:6px 0; color:#555;">Forma de pagamento:</td>
+                <td style="padding:6px 0; font-weight:bold;">{_esc(forma_pagamento)}</td></tr>
+        </table>
+        <p style="color: #888; font-size: 12px; margin-top: 20px;">
+            Notificação automática — Sistema Lifemax
+        </p>
+    </div>
+    """
+    return enviar_email([destinatario], assunto, corpo_html)
+
+
+def notificar_agendamento_medico(nome_medico: str, consultorio_nome: str, data: str, horario: str,
+                                  destinatario: str) -> bool:
+    """Item 5 (lado do médico): confirma que uma reserva foi feita --
+    mandado direto pro e-mail do PRÓPRIO médico (diferente de
+    notificar_turno_escolhido, que avisa a recepção/funcionários)."""
+    assunto = f"Agendamento confirmado — {data}"
+    corpo_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px;">
+        <h2 style="color: #1a3c5e;">Agendamento confirmado</h2>
+        <p>Olá, {_esc(nome_medico)}! Sua reserva foi confirmada:</p>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding:6px 0; color:#555;">Consultório:</td>
+                <td style="padding:6px 0; font-weight:bold;">{_esc(consultorio_nome)}</td></tr>
+            <tr><td style="padding:6px 0; color:#555;">Data:</td>
+                <td style="padding:6px 0; font-weight:bold;">{data}</td></tr>
+            <tr><td style="padding:6px 0; color:#555;">Horário:</td>
+                <td style="padding:6px 0; font-weight:bold;">{_esc(horario)}</td></tr>
+        </table>
+        <p style="color: #888; font-size: 12px; margin-top: 20px;">
+            Notificação automática — Sistema Lifemax
+        </p>
+    </div>
+    """
+    return enviar_email([destinatario], assunto, corpo_html)
+
+
+def notificar_cancelamento_medico(nome_medico: str, consultorio_nome: str, data: str, horario: str,
+                                   destinatario: str) -> bool:
+    """Item 5 (lado do médico): confirma que uma reserva foi cancelada."""
+    assunto = f"Agendamento cancelado — {data}"
+    corpo_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px;">
+        <h2 style="color: #1a3c5e;">Agendamento cancelado</h2>
+        <p>Olá, {_esc(nome_medico)}! A reserva abaixo foi cancelada:</p>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding:6px 0; color:#555;">Consultório:</td>
+                <td style="padding:6px 0; font-weight:bold;">{_esc(consultorio_nome)}</td></tr>
+            <tr><td style="padding:6px 0; color:#555;">Data:</td>
+                <td style="padding:6px 0; font-weight:bold;">{data}</td></tr>
+            <tr><td style="padding:6px 0; color:#555;">Horário:</td>
+                <td style="padding:6px 0; font-weight:bold;">{_esc(horario)}</td></tr>
+        </table>
+        <p style="color: #888; font-size: 12px; margin-top: 20px;">
+            Notificação automática — Sistema Lifemax
+        </p>
+    </div>
+    """
+    return enviar_email([destinatario], assunto, corpo_html)
+
+
+def notificar_agendamento_paciente(nome_paciente: str, nome_medico: str, data: str, hora_confirmada: str,
+                                    endereco: str, consultorio_nome: str, destinatario: str) -> bool:
+    """Item 5 (lado do paciente): mandado só quando o médico clica em
+    "Enviar e-mail" na tela "Minha agenda", com a hora já confirmada por
+    ele. `endereco` vem pronto formatado (ver
+    creditos_service.endereco_padrao_formatado)."""
+    assunto = f"Sua consulta com {nome_medico} — {data}"
+    corpo_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px;">
+        <h2 style="color: #1a3c5e;">Confirmação de consulta</h2>
+        <p>Olá, {_esc(nome_paciente)}! Sua consulta com <strong>{_esc(nome_medico)}</strong> está
+        confirmada:</p>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding:6px 0; color:#555;">Data:</td>
+                <td style="padding:6px 0; font-weight:bold;">{data}</td></tr>
+            <tr><td style="padding:6px 0; color:#555;">Horário:</td>
+                <td style="padding:6px 0; font-weight:bold;">{_esc(hora_confirmada)}</td></tr>
+            <tr><td style="padding:6px 0; color:#555;">Consultório:</td>
+                <td style="padding:6px 0; font-weight:bold;">{_esc(consultorio_nome)}</td></tr>
+            <tr><td style="padding:6px 0; color:#555;">Endereço:</td>
+                <td style="padding:6px 0; font-weight:bold;">{_esc(endereco)}</td></tr>
+        </table>
+        <p style="color: #888; font-size: 12px; margin-top: 20px;">
+            Notificação automática — Lifemax
+        </p>
+    </div>
+    """
+    return enviar_email([destinatario], assunto, corpo_html)

@@ -21,6 +21,17 @@ body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
 .nota{color:#62788A;font-size:12.5px;margin-top:-14px;margin-bottom:24px}
 .titulo-acumulado{font-size:13.5px;font-weight:800;color:#0B3A52;text-transform:uppercase;letter-spacing:.03em;margin-bottom:14px;padding-top:10px;border-top:1px solid #e3ebef}
 @media(max-width:760px){.kpis{grid-template-columns:1fr}}
+.card-endereco{margin-top:24px}
+.card-endereco h2{margin-top:0;font-size:16px}
+.card-endereco p.explica{color:#62788A;font-size:12.5px;margin-top:-6px;margin-bottom:18px}
+.linha-endereco{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.linha-endereco.tres{grid-template-columns:1fr 1fr 1fr}
+.linha-endereco label{display:block;font-size:12px;font-weight:700;color:#62788A;margin-bottom:6px}
+.linha-endereco input{width:100%;box-sizing:border-box;padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px}
+.card-endereco button{padding:10px 18px;border:0;border-radius:8px;background:#082A3D;color:#fff;font-weight:700;font-size:13px;cursor:pointer;margin-top:6px}
+.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}
+.flash.ok{background:#E3F7EE;color:#0B7B45}
+@media(max-width:700px){.linha-endereco,.linha-endereco.tres{grid-template-columns:1fr}}
 </style></head><body>
 <div class="top"><strong>LIFEMAX ADMIN · HORAS</strong><span>Administrador</span></div>
 <div class="nav">
@@ -80,6 +91,55 @@ body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
         <div class="num">{{ stats.horas_na_praca_total }}</div>
       </div>
     </div>
+  </div>
+
+  <div class="card card-endereco">
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% for categoria, texto in mensagens %}
+        <div class="flash {{ categoria }}">{{ texto }}</div>
+      {% endfor %}
+    {% endwith %}
+    <h2>Endereço padrão da Lifemax</h2>
+    <p class="explica">Usado no e-mail de confirmação de consulta mandado pro paciente (dia, local e
+      consultório) e no mapa de qualquer médico sem endereço próprio cadastrado.</p>
+    <form method="post" action="{{ url_for('admin.atualizar_endereco_padrao') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="linha-endereco">
+        <div>
+          <label for="rua">Rua/Avenida</label>
+          <input type="text" id="rua" name="rua" value="{{ endereco.rua }}">
+        </div>
+        <div>
+          <label for="numero">Número</label>
+          <input type="text" id="numero" name="numero" value="{{ endereco.numero }}">
+        </div>
+        <div>
+          <label for="complemento">Complemento</label>
+          <input type="text" id="complemento" name="complemento" value="{{ endereco.complemento }}">
+        </div>
+      </div>
+      <div class="linha-endereco tres">
+        <div>
+          <label for="bairro">Bairro</label>
+          <input type="text" id="bairro" name="bairro" value="{{ endereco.bairro }}">
+        </div>
+        <div>
+          <label for="cidade">Cidade</label>
+          <input type="text" id="cidade" name="cidade" value="{{ endereco.cidade }}">
+        </div>
+        <div>
+          <label for="estado">Estado (UF)</label>
+          <input type="text" id="estado" name="estado" value="{{ endereco.estado }}" maxlength="2">
+        </div>
+      </div>
+      <div class="linha-endereco tres">
+        <div>
+          <label for="cep">CEP</label>
+          <input type="text" id="cep" name="cep" value="{{ endereco.cep }}">
+        </div>
+      </div>
+      <button type="submit">Salvar endereço padrão</button>
+    </form>
   </div>
 </div>
 </body></html>

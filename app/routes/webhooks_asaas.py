@@ -69,6 +69,23 @@ def confirmar_pagamento_e_creditar(asaas_payment_id: str) -> bool:
             pagamento_id=pagamento["id"], carteira="ia", categoria="ia",
         )
 
+    # Item 4 (pedido do Paulo em 11/09/2026): recibo por e-mail da compra
+    # de horas -- não pode quebrar o crédito já dado se o e-mail falhar
+    # (mesmo padrão de sempre, ver reserva_service._pos_reserva).
+    try:
+        medico_recibo = db.get_medico_by_id(medico_id)
+        if medico_recibo and medico_recibo.get("email"):
+            from app.services import email_service
+            email_service.notificar_recibo_compra_horas(
+                nome=medico_recibo["nome"],
+                valor=float(pagamento["valor"]),
+                horas=horas_pacote,
+                forma_pagamento=pagamento.get("forma_pagamento") or "PIX",
+                destinatario=medico_recibo["email"],
+            )
+    except Exception as e:
+        print(f"[webhooks_asaas] Erro ao mandar recibo por e-mail: {e}")
+
     if era_primeiro_pagamento:
         _liberar_assistente_pelo_primeiro_pagamento(medico_id)
 

@@ -37,6 +37,62 @@ def obter_precos() -> dict:
     return {"horas_minimas": 1}
 
 
+def obter_endereco_padrao() -> dict:
+    """Endereço padrão da Lifemax (colunas `endereco_padrao_*` de
+    `precos`, ver migration_endereco_padrao_lifemax.sql) -- usado desde
+    11/09/2026 no e-mail de confirmação de consulta pro paciente
+    (reserva_service.enviar_email_agendamento_paciente). Editável em
+    Admin > Horas."""
+    precos = obter_precos()
+    return {
+        "rua": precos.get("endereco_padrao_rua") or "",
+        "numero": precos.get("endereco_padrao_numero") or "",
+        "complemento": precos.get("endereco_padrao_complemento") or "",
+        "bairro": precos.get("endereco_padrao_bairro") or "",
+        "cidade": precos.get("endereco_padrao_cidade") or "",
+        "estado": precos.get("endereco_padrao_estado") or "",
+        "cep": precos.get("endereco_padrao_cep") or "",
+    }
+
+
+def endereco_padrao_formatado() -> str:
+    """Mesmo endereço de obter_endereco_padrao(), já formatado numa
+    linha só pra usar direto no corpo do e-mail."""
+    e = obter_endereco_padrao()
+    partes = []
+    if e["rua"]:
+        linha = e["rua"]
+        if e["numero"]:
+            linha += f", {e['numero']}"
+        if e["complemento"]:
+            linha += f" ({e['complemento']})"
+        partes.append(linha)
+    if e["bairro"]:
+        partes.append(e["bairro"])
+    cidade_estado = " - ".join(p for p in [e["cidade"], e["estado"]] if p)
+    if cidade_estado:
+        partes.append(cidade_estado)
+    return ", ".join(partes) or "Endereço não configurado"
+
+
+def atualizar_endereco_padrao(rua: str, numero: str, complemento: str, bairro: str,
+                               cidade: str, estado: str, cep: str) -> dict:
+    """Salva o endereço padrão da Lifemax -- tela Admin > Horas."""
+    client = get_client()
+    atual = client.table("precos").select("id").limit(1).execute().data
+    payload = {
+        "endereco_padrao_rua": rua, "endereco_padrao_numero": numero,
+        "endereco_padrao_complemento": complemento, "endereco_padrao_bairro": bairro,
+        "endereco_padrao_cidade": cidade, "endereco_padrao_estado": estado,
+        "endereco_padrao_cep": cep,
+    }
+    if atual:
+        resp = client.table("precos").update(payload).eq("id", atual[0]["id"]).execute()
+    else:
+        resp = client.table("precos").insert(payload).execute()
+    return resp.data[0]
+
+
 def atualizar_precos(preco_hora_1: float, preco_hora_2: float, preco_hora_3: float,
                       preco_turno: float, horas_minimas: int) -> dict:
     """Mantida só por compatibilidade (nada mais chama essa função hoje --

@@ -8,11 +8,24 @@ Ter essa lógica duplicada em dois lugares é como bugs de inconsistência
 acontecem — por isso os dois canais chamam as mesmas funções abaixo.
 """
 from datetime import datetime, timedelta
+import threading
 
 from app.services import supabase_client as db
 from app.services import creditos_service as creditos_db
 from app.services import email_service
 from app.services import notificacao_saldo
+
+
+def _rodar_em_segundo_plano(fn, *args, **kwargs):
+    """Roda `fn` numa thread separada, sem travar a resposta pro médico --
+    pedido do Paulo em 15/09/2026: reclamou que clicar em "Reservar" e
+    depois na célula demorava muito pra responder. O gargalo real não
+    era a grade (isso já foi resolvido no frontend, que agora atualiza a
+    tela na hora sem recarregar tudo de novo) -- era esperar o envio dos
+    e-mails de notificação (recepção + médico) e a checagem/criação de
+    evento no Google Agenda ANTES de devolver a resposta HTTP. Essas
+    ações continuam acontecendo normalmente, só que em background."""
+    threading.Thread(target=fn, args=args, kwargs=kwargs, daemon=True).start()
 
 
 # Janela mínima de aviso para cancelamento com reembolso -- pedido do
@@ -160,8 +173,8 @@ def reservar_turno(medico_id: str, consultorio_id: str, data: str, periodo: str)
     resultado = creditos_db.debitar_credito_por_reserva(
         medico_id, preco, reserva["id"], quantidade_horas=len(horarios_do_turno)
     )
-    _criar_evento_google(medico, consultorio_id, reserva, data, hora_inicio_periodo, hora_fim_periodo)
-    _pos_reserva(medico_id, consultorio_id, reserva)
+    _rodar_em_segundo_plano(_finalizar_pos_reserva, medico, consultorio_id, reserva,
+                             data, hora_inicio_periodo, hora_fim_periodo, medico_id)
     return {"reserva": reserva, "preco": preco, "saldo_atual": resultado["saldo_novo"],
             "saldo_horas": creditos_db.saldo_em_horas_medico(medico_id)}
 
@@ -213,8 +226,8 @@ def reservar_por_hora(medico_id: str, consultorio_id: str, data: str,
     resultado = creditos_db.debitar_credito_por_reserva(
         medico_id, preco, reserva["id"], quantidade_horas=quantidade_horas
     )
-    _criar_evento_google(medico, consultorio_id, reserva, data, hora_inicio, hora_fim)
-    _pos_reserva(medico_id, consultorio_id, reserva)
+    _rodar_em_segundo_plano(_finalizar_pos_reserva, medico, consultorio_id, reserva,
+                             data, hora_inicio, hora_fim, medico_id)
     return {"reserva": reserva, "preco": preco, "saldo_atual": resultado["saldo_novo"],
             "saldo_horas": creditos_db.saldo_em_horas_medico(medico_id)}
 
@@ -358,8 +371,24 @@ def cancelar_reserva(reserva_id: str, medico_id: str) -> dict:
             reembolsado = True
 
     # Item 5 (pedido do Paulo em 11/09/2026): confirma o cancelamento por
-    # e-mail direto pro médico, se ele tiver e-mail cadastrado -- não
-    # pode quebrar o cancelamento (já efetivado acima) se o e-mail falhar.
+    # e-mail direto pro médico, se ele tiver e-mail cadastrado -- roda em
+    # background (pedido do Paulo em 15/09/2026, mesmo motivo da reserva:
+    # não travar a resposta esperando o envio do e-mail).
+    _rodar_em_segundo_plano(_notificar_cancelamento_por_email, medico_id, reserva)
+
+    return {
+        "reembolsado": reembolsado,
+        "horas_reembolsadas": horas_reembolsadas if reembolsado else 0,
+        "saldo_atual": saldo_atual,
+        "saldo_horas": creditos_db.saldo_em_horas_medico(medico_id),
+        "dentro_de_12h": dentro_de_12h,
+    }
+
+
+def _notificar_cancelamento_por_email(medico_id: str, reserva: dict):
+    """E-mail de confirmação de cancelamento pro médico -- roda em
+    background (ver _rodar_em_segundo_plano), não pode travar nem quebrar
+    o cancelamento (que já foi efetivado antes de chamar isso)."""
     try:
         medico = db.get_medico_by_id(medico_id)
         if medico and medico.get("email"):
@@ -375,14 +404,6 @@ def cancelar_reserva(reserva_id: str, medico_id: str) -> dict:
             )
     except Exception as e:
         print(f"[reserva_service] Erro ao mandar confirmação de cancelamento pro médico: {e}")
-
-    return {
-        "reembolsado": reembolsado,
-        "horas_reembolsadas": horas_reembolsadas if reembolsado else 0,
-        "saldo_atual": saldo_atual,
-        "saldo_horas": creditos_db.saldo_em_horas_medico(medico_id),
-        "dentro_de_12h": dentro_de_12h,
-    }
 
 
 def associar_paciente(reserva_id: str, medico_id: str, paciente_id: str | None) -> dict:
@@ -504,6 +525,16 @@ def enviar_email_agendamento_paciente(reserva_id: str, medico_id: str, paciente_
     if enviado:
         db.marcar_email_agendamento_enviado(reserva_id, paciente_id)
     return {"enviado": enviado, "pacientes_agendados": db.listar_pacientes_agendados_por_reservas([reserva_id]).get(reserva_id, [])}
+
+
+def _finalizar_pos_reserva(medico: dict | None, consultorio_id: str, reserva: dict,
+                            data: str, hora_inicio: str, hora_fim: str, medico_id: str):
+    """Agrupa as ações de pós-reserva que rodam em background (ver
+    _rodar_em_segundo_plano acima): criar o evento no Google Agenda (se
+    conectado) e mandar os e-mails de notificação. Nada aqui pode
+    demorar a resposta que o médico já recebeu na tela."""
+    _criar_evento_google(medico, consultorio_id, reserva, data, hora_inicio, hora_fim)
+    _pos_reserva(medico_id, consultorio_id, reserva)
 
 
 def _pos_reserva(medico_id: str, consultorio_id: str, reserva: dict):

@@ -45,7 +45,33 @@ def horas_da_reserva_por_hora(hora_inicio: str, quantidade_horas: int) -> list[s
 
 def listar_bloqueios() -> list[dict]:
     resp = get_client().table("template_semanal_bloqueios").select("*").execute()
-    return resp.data
+    return resp.data + _bloqueios_fixos_fim_de_semana()
+
+
+# Regra fixa -- pedido do Paulo em 15/09/2026: sábado e domingo, a partir
+# de 12h (ou seja, os horários de tarde e noite: 13h em diante), ficam
+# SEMPRE bloqueados para reserva, em TODOS os consultórios, sem precisar
+# de nenhuma configuração manual na Semana Padrão. Isso entra
+# automaticamente em qualquer lugar que já use listar_bloqueios(): a
+# Grade de Turnos do médico, a Agenda Horistas do admin (fica cinza,
+# igual aos outros bloqueios) e a própria checagem de disponibilidade
+# em verificar_disponibilidade (então o horário fica de fato indisponível
+# pra reservar, não só visualmente cinza) -- e a Matriz de Agendamento
+# também passa a refletir isso automaticamente (ver app/routes/admin.py
+# api_matriz, que agora busca os bloqueios daqui em vez de ler a tabela
+# direto).
+_DIAS_FIM_DE_SEMANA = (0, 6)  # 0=domingo, 6=sábado (mesma convenção do dia_semana_de)
+_HORARIOS_BLOQUEADOS_FIM_DE_SEMANA = HORARIOS_POR_PERIODO["tarde"] + HORARIOS_POR_PERIODO["noite"]
+
+
+def _bloqueios_fixos_fim_de_semana() -> list[dict]:
+    consultorio_ids = [c["id"] for c in get_client().table("consultorios").select("id").execute().data]
+    return [
+        {"consultorio_id": cid, "dia_semana": dia, "hora_inicio": hora}
+        for cid in consultorio_ids
+        for dia in _DIAS_FIM_DE_SEMANA
+        for hora in _HORARIOS_BLOQUEADOS_FIM_DE_SEMANA
+    ]
 
 
 def esta_bloqueado(bloqueios: list[dict], consultorio_id: str, dia_semana: int, hora_inicio: str) -> bool:

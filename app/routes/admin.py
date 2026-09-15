@@ -692,7 +692,12 @@ def api_matriz():
     client = db.get_client()
     holds = client.table('matriz_reservas_admin').select('*').eq('consultorio_id', consultorio_id).gte('data', inicio.isoformat()).lte('data', fim.isoformat()).execute().data
     reservas = client.table('reservas').select('*,medicos(nome)').eq('consultorio_id', consultorio_id).gte('data', inicio.isoformat()).lte('data', fim.isoformat()).neq('status','cancelada').execute().data
-    bloqueios = client.table('template_semanal_bloqueios').select('*').eq('consultorio_id', consultorio_id).execute().data
+    # Busca os bloqueios via template_service em vez de ler a tabela
+    # direto -- pedido do Paulo em 15/09/2026: assim a Matriz já reflete
+    # AUTOMATICAMENTE a regra fixa de sábado/domingo a partir de 12h
+    # bloqueados (ver template_service._bloqueios_fixos_fim_de_semana),
+    # sem precisar duplicar essa regra aqui.
+    bloqueios = [b for b in template_service.listar_bloqueios() if b['consultorio_id'] == consultorio_id]
     return {'data_inicio':inicio.isoformat(),'data_fim':fim.isoformat(),'holds':holds,'reservas':reservas,'bloqueios':bloqueios}
 
 

@@ -58,16 +58,16 @@
   /* Espaçamento compacto entre os blocos de consultório -- pedido do
      Paulo em 14/09/2026, mesma referência visual usada na Grade de
      Turnos do médico. */
-  #lista-consultorios { display: flex; flex-direction: column; gap: 8px; }
+  #lista-consultorios { display: flex; flex-direction: column; gap: 3px; }
   .bloco-consultorio { background: white; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .bloco-consultorio-header {
-    padding: 6px 12px; border-bottom: 1px solid var(--line); background: #FAFCFC;
+    padding: 3px 10px; border-bottom: 1px solid var(--line); background: #FAFCFC;
     font-family: inherit; font-weight: 800; font-size: 14px; color: var(--navy);
   }
 
   .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
-  .grade-cabecalho .col-dia { text-align: center; padding: 5px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia { text-align: center; padding: 3px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
   .grade-cabecalho .col-dia .numero { font-size: 14px; }
   .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; }
   .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }

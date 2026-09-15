@@ -422,18 +422,6 @@ if ("serviceWorker" in navigator) {
       </div>
       {% endif %}
 
-      {% if status_ia %}
-      <div class="cell">
-        <div class="cell-label">Saldo para IA</div>
-        <div class="total">R$ {{ "%.2f"|format(status_ia.saldo) }}</div>
-        <p class="muted-cell">Usado só pela IA (secretária virtual, análise de prontuário, voz, contábil) — nunca pra reserva de sala.</p>
-        <button class="btn-cyan" style="margin-top:16px;" onclick="abrirModalCompra('ia')">+ Comprar créditos de IA</button>
-        {% if status_ia.saldo <= 10 %}
-          <div class="aviso-saldo">Pra utilizar o seu crédito, vá até <a href="{{ url_for('medico_painel.pagina_painel_ia') }}">Painel de IA</a> e ative a utilização.</div>
-        {% endif %}
-      </div>
-      {% endif %}
-
       <div class="cell">
         <div class="cell-label">Meu perfil</div>
         <p class="muted-cell" style="margin-bottom:14px;">Seus dados de contato, endereço e informações de
@@ -504,58 +492,9 @@ if ("serviceWorker" in navigator) {
   </div>
   {% endif %}
 
-  {% if status_ia %}
-  <div class="painel">
-    <h2>Assistente de IA</h2>
-    <p class="muted-cell" style="margin-bottom:10px;">
-      Saldo para IA: <strong>R$ {{ "%.2f"|format(status_ia.saldo) }}</strong>
-    </p>
-    <div class="grid-modulos">
-      {% for slug, m in status_ia.modulos.items() %}
-      <div class="card-modulo">
-        <h3>{{ m.rotulo }}</h3>
-        {% if m.ativado_pelo_medico %}
-          <p><strong style="color: var(--cyan);">✓ Ativado</strong> por você em Painel de IA.</p>
-        {% elif m.em_trial %}
-          <p><strong>Teste grátis</strong> — {{ m.dias_restantes }} dia(s) restante(s).</p>
-        {% else %}
-          <p>Não ativado — só o crédito de teste grátis funciona aqui.</p>
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-    <a href="{{ url_for('medico_painel.pagina_painel_ia') }}" class="btn-ghost" style="margin-top:10px; display:inline-block;">⚙️ Painel de IA</a>
-    <p style="margin-top: 14px; color: var(--ink-muted);">
-      Envios de confirmação grátis restantes: {{ status_ia.tetos_gratis.secretaria_envio_paciente.restantes }} de
-      {{ status_ia.tetos_gratis.secretaria_envio_paciente.limite }}. Análises de prontuário grátis restantes:
-      {{ status_ia.tetos_gratis.prontuario_analise.restantes }} de {{ status_ia.tetos_gratis.prontuario_analise.limite }}.
-    </p>
-
-    {% if extrato_ia %}
-    <table style="margin-top: 14px;">
-      <thead><tr><th>Data</th><th>Módulo</th><th>Descrição</th><th>Custo</th></tr></thead>
-      <tbody>
-        {% for u in extrato_ia %}
-        <tr>
-          <td>{{ u.criado_em[:10] }}</td>
-          <td>{{ {'secretaria': 'Secretaria', 'prontuario': 'Prontuário', 'financeiro': 'Financeiro'}.get(u.modulo_slug, u.modulo_slug) }}</td>
-          <td>{{ u.descricao or '—' }}</td>
-          <td>
-            {% if u.gratuito %}
-              <span style="color: var(--ink-muted);">Grátis</span>
-            {% else %}
-              <span class="valor-negativo">R$ {{ "%.2f"|format(u.custo_cobrado) }}</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-      <div class="vazio">Nenhum uso de IA ainda.</div>
-    {% endif %}
-  </div>
-  {% endif %}
+  {# Bloco "Assistente de IA" (saldo de IA, módulos de IA, extrato de uso
+     de IA) removido a pedido do Paulo em 15/09/2026 -- este pacote não
+     vende mais crédito de IA pro médico, só horas pra reserva de sala. #}
 
   <div class="painel">
     <h2>Minhas notas fiscais</h2>
@@ -646,33 +585,9 @@ if ("serviceWorker" in navigator) {
         <select id="select-parcelas" style="width:100%; padding:9px 12px; border-radius:7px; border:1px solid var(--line-strong); font-family:var(--display); font-size:13.5px;"></select>
       </div>
       <button class="btn-gerar" onclick="irParaConfirmacao('horas')">Continuar</button>
-      <button class="opcao-link" type="button" onclick="abrirTransferencia('ia')">🔁 Prefiro transferir saldo da minha conta de IA</button>
       <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
     </div>
     {% endif %}
-
-    <div class="passo-modal" id="passo-ia" {% if medico.tipo_vinculo not in ('fixo', 'horista') %}hidden{% endif %}>
-      <h3>Comprar créditos para IA</h3>
-      <p style="margin-bottom:16px;">Usado só pelos módulos de assistente de IA (secretária virtual, prontuário, voz) — nunca pra reservar consultório.</p>
-      <div class="valores-rapidos">
-        <button type="button" onclick="definirValorIa(20)">R$ 20</button>
-        <button type="button" onclick="definirValorIa(50)">R$ 50</button>
-        <button type="button" onclick="definirValorIa(100)">R$ 100</button>
-        <button type="button" onclick="definirValorIa(200)">R$ 200</button>
-      </div>
-      <input type="number" id="input-valor-ia" min="10" step="5" placeholder="Valor em R$ pra IA">
-      <p style="font-size:12px; color: var(--ink-muted); margin:10px 0 0; line-height:1.5;">
-        O sistema da Lifemax usa o Chat GPT pra analisar prontuários e exames, marcar consultas
-        pelo WhatsApp Assistant sem precisar de secretária, preencher prontuários por voz
-        economizando tempo, e outros serviços — para liberar o uso, vá até o seu
-        <a href="{{ url_for('medico_painel.pagina_painel_ia') }}">Painel de IA</a> e marque as opções onde você quer utilizar a IA.
-      </p>
-      <button class="btn-gerar" style="margin-top:14px;" onclick="irParaConfirmacao('ia')">Continuar</button>
-      {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
-      <button class="opcao-link" type="button" onclick="abrirTransferencia('salas')">🔁 Prefiro transferir saldo da minha conta de horas</button>
-      {% endif %}
-      <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
-    </div>
 
     <div class="passo-modal" id="passo-confirmacao" hidden>
       <h3>Confirme o destino</h3>
@@ -683,16 +598,9 @@ if ("serviceWorker" in navigator) {
       <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
     </div>
 
-    {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
-    <div class="passo-modal" id="passo-transferencia" hidden>
-      <h3>Transferir saldo</h3>
-      <p id="explicacao-transferencia" style="font-size:13px; color: var(--ink-muted); margin-bottom:14px;"></p>
-      <input type="number" id="input-valor-transferencia" min="1" step="1" placeholder="Quantas horas?">
-      <button class="btn-gerar" style="margin-top:14px;" onclick="confirmarTransferencia()">Transferir</button>
-      <button class="opcao-link" type="button" onclick="mostrarPasso(estadoCompra.origemTransferencia === 'ia' ? 'passo-horas' : 'passo-ia')">← Voltar</button>
-      <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
-    </div>
-    {% endif %}
+    {# Passo "Transferir saldo" removido a pedido do Paulo em 15/09/2026 --
+       só existia pra mover saldo entre a carteira de horas e a carteira
+       de IA, que não existe mais nesta tela. #}
 
   </div>
 </div>
@@ -1026,11 +934,11 @@ const HTML_MODAL_COMPRA_ORIGINAL = document.getElementById('modal-conteudo').inn
 </script>
 
 <script>
-// Estado do fluxo de compra em várias telas dentro do mesmo modal:
-// horas/ia (escolha + valor) -> confirmação -> pagamento. Guardado aqui
-// (não só em campos escondidos) porque o passo de confirmação precisa
-// mostrar um resumo em texto antes de deixar o médico seguir pro Asaas.
-let estadoCompra = { destino: null, pacoteHoras: null, valorSalas: 0, parcelas: 1, valorIa: 0, origemTransferencia: null };
+// Estado do fluxo de compra em várias telas dentro do mesmo modal: escolha
+// do pacote de horas -> confirmação -> pagamento. Guardado aqui (não só em
+// campos escondidos) porque o passo de confirmação precisa mostrar um
+// resumo em texto antes de deixar o médico seguir pro Asaas.
+let estadoCompra = { destino: null, pacoteHoras: null, valorSalas: 0, parcelas: 1 };
 
 function mostrarPasso(idPasso) {
   document.querySelectorAll('#modal-conteudo .passo-modal').forEach(el => { el.hidden = true; });
@@ -1060,9 +968,6 @@ function selecionarPacote() {
   }
 }
 
-function definirValorIa(v) {
-  document.getElementById('input-valor-ia').value = v;
-}
 </script>
 
 <script>
@@ -1072,7 +977,7 @@ function abrirModalCompra(destino) {
   // reabria mostrando o conteúdo "sujo" da última tentativa (ex: só a
   // tela de status do cartão, sem a opção de PIX)
   document.getElementById('modal-conteudo').innerHTML = HTML_MODAL_COMPRA_ORIGINAL;
-  estadoCompra = { destino: null, pacoteHoras: null, valorSalas: 0, parcelas: 1, valorIa: 0, origemTransferencia: null };
+  estadoCompra = { destino: null, pacoteHoras: null, valorSalas: 0, parcelas: 1 };
   mostrarPasso('passo-' + (destino || 'horas'));
   document.getElementById('modal-overlay').classList.add('aberto');
 }
@@ -1085,35 +990,19 @@ let intervaloPolling = null;
 
 function irParaConfirmacao(destino) {
   const resumoEl = document.getElementById('resumo-confirmacao');
-  if (destino === 'horas') {
-    const el = _pacoteSelecionadoEl();
-    if (!el) { alert('Escolha um pacote de horas para continuar.'); return; }
-    const parcelasEl = document.getElementById('select-parcelas');
-    estadoCompra.destino = 'horas';
-    estadoCompra.pacoteHoras = parseInt(el.value, 10);
-    estadoCompra.valorSalas = parseFloat(el.dataset.total) || 0;
-    estadoCompra.valorIa = 0;
-    estadoCompra.parcelas = (parcelasEl && parcelasEl.value) ? parseInt(parcelasEl.value, 10) : 1;
-    const parcelaTexto = estadoCompra.parcelas > 1
-      ? `em até ${estadoCompra.parcelas}x no cartão (o PIX é sempre à vista)`
-      : 'à vista';
-    resumoEl.innerHTML = `Você está comprando <strong>${estadoCompra.pacoteHoras}h</strong> por
-      <strong>R$ ${estadoCompra.valorSalas.toFixed(2)}</strong> (${parcelaTexto}), que vão pra sua
-      carteira de <strong>HORAS</strong> — usada só pra reservar consultório.<br><br>
-      Confirma que é esse o saldo que você quer adicionar?`;
-  } else {
-    const valorIa = parseFloat(document.getElementById('input-valor-ia').value) || 0;
-    if (valorIa < 10) { alert('Digite um valor de pelo menos R$ 10,00 pra crédito de IA.'); return; }
-    estadoCompra.destino = 'ia';
-    estadoCompra.pacoteHoras = null;
-    estadoCompra.valorSalas = 0;
-    estadoCompra.parcelas = 1;
-    estadoCompra.valorIa = valorIa;
-    resumoEl.innerHTML = `Você está adicionando <strong>R$ ${valorIa.toFixed(2)}</strong> pra sua
-      carteira de <strong>CRÉDITO DE IA</strong> (assistente de IA, prontuário, voz) — esse saldo
-      nunca é usado pra reservar consultório.<br><br>
-      Confirma que é esse o saldo que você quer adicionar?`;
-  }
+  const el = _pacoteSelecionadoEl();
+  if (!el) { alert('Escolha um pacote de horas para continuar.'); return; }
+  const parcelasEl = document.getElementById('select-parcelas');
+  estadoCompra.destino = 'horas';
+  estadoCompra.pacoteHoras = parseInt(el.value, 10);
+  estadoCompra.valorSalas = parseFloat(el.dataset.total) || 0;
+  estadoCompra.parcelas = (parcelasEl && parcelasEl.value) ? parseInt(parcelasEl.value, 10) : 1;
+  const parcelaTexto = estadoCompra.parcelas > 1
+    ? `em até ${estadoCompra.parcelas}x no cartão (o PIX é sempre à vista)`
+    : 'à vista';
+  resumoEl.innerHTML = `Você está comprando <strong>${estadoCompra.pacoteHoras}h</strong> por
+    <strong>R$ ${estadoCompra.valorSalas.toFixed(2)}</strong> (${parcelaTexto}).<br><br>
+    Confirma que é esse o saldo que você quer adicionar?`;
   mostrarPasso('passo-confirmacao');
 }
 
@@ -1129,7 +1018,7 @@ async function gerarPix() {
     const resp = await fetch('/api/creditos/comprar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pacote_horas: estadoCompra.pacoteHoras, valor_ia: estadoCompra.valorIa }),
+      body: JSON.stringify({ pacote_horas: estadoCompra.pacoteHoras }),
     });
     const dados = await resp.json();
 
@@ -1167,7 +1056,6 @@ async function gerarCobrancaCartao() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         pacote_horas: estadoCompra.pacoteHoras,
-        valor_ia: estadoCompra.valorIa,
         parcelas: estadoCompra.parcelas,
       }),
     });
@@ -1193,67 +1081,6 @@ async function gerarCobrancaCartao() {
     `;
 
     iniciarPolling(dados.pagamento_id);
-  } catch (e) {
-    modal.innerHTML = `<p style="color:var(--coral);">Erro de conexão.</p>
-      <button class="btn-fechar" onclick="fecharModal()">Fechar</button>`;
-  }
-}
-
-function abrirTransferencia(origem) {
-  estadoCompra.origemTransferencia = origem;
-  const explicacaoEl = document.getElementById('explicacao-transferencia');
-  const inputEl = document.getElementById('input-valor-transferencia');
-  if (origem === 'ia') {
-    // Saindo da carteira de IA (medida em R$) -- o médico digita um valor em R$.
-    explicacaoEl.textContent = 'Move saldo da sua carteira de IA pra sua carteira de horas (reserva de consultório).';
-    inputEl.step = '0.01';
-    inputEl.placeholder = 'Valor em R$';
-  } else {
-    // Saindo da carteira de Salas/Horas (medida em horas, não em R$) -- o
-    // médico digita quantas horas quer converter, não um valor em dinheiro.
-    explicacaoEl.textContent = 'Move horas da sua carteira de reserva de salas pra crédito de IA (em R$, no valor da hora avulsa).';
-    inputEl.step = '1';
-    inputEl.placeholder = 'Quantas horas?';
-  }
-  inputEl.value = '';
-  mostrarPasso('passo-transferencia');
-}
-
-async function confirmarTransferencia() {
-  const quantidade = parseFloat(document.getElementById('input-valor-transferencia').value) || 0;
-  const origem = estadoCompra.origemTransferencia;
-  if (quantidade <= 0) {
-    alert(origem === 'salas' ? 'Digite uma quantidade de horas válida.' : 'Digite um valor válido para transferir.');
-    return;
-  }
-
-  const modal = document.getElementById('modal-conteudo');
-  modal.innerHTML = '<p>Transferindo...</p>';
-
-  // Saindo de 'salas', manda `horas` (a carteira de horas nunca é
-  // expressa em R$ pro médico); saindo de 'ia', manda `valor` em R$.
-  const corpo = origem === 'salas' ? { origem, horas: quantidade } : { origem, valor: quantidade };
-
-  try {
-    const resp = await fetch('/api/creditos/transferir', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(corpo),
-    });
-    const dados = await resp.json();
-
-    if (!resp.ok) {
-      modal.innerHTML = `<p style="color:var(--coral);">${dados.erro || 'Erro ao transferir.'}</p>
-        <button class="btn-fechar" onclick="fecharModal()">Fechar</button>`;
-      return;
-    }
-
-    modal.innerHTML = `
-      <h3>Transferência concluída</h3>
-      <p>${dados.resultado}</p>
-      <p style="font-size:13px; color: var(--ink-muted);">Saldo de horas agora: ${dados.saldo_horas}h · Saldo de IA agora: R$ ${dados.saldo_ia.toFixed(2)}</p>
-      <button class="btn-gerar" onclick="location.reload()">Fechar e atualizar</button>
-    `;
   } catch (e) {
     modal.innerHTML = `<p style="color:var(--coral);">Erro de conexão.</p>
       <button class="btn-fechar" onclick="fecharModal()">Fechar</button>`;

@@ -87,11 +87,11 @@
   /* Espaçamento reduzido -- pedido do Paulo em 14/09/2026: compactar mais
      os blocos de consultório pra caber mais informação visível na tela,
      igual à referência de layout que ele mandou por foto. */
-  #lista-consultorios { display: flex; flex-direction: column; gap: 8px; }
+  #lista-consultorios { display: flex; flex-direction: column; gap: 3px; }
   .bloco-consultorio { background: white; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .bloco-consultorio-header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 6px 12px; border-bottom: 1px solid var(--line); background: #FAFCFC;
+    padding: 3px 10px; border-bottom: 1px solid var(--line); background: #FAFCFC;
   }
   .bloco-consultorio-nome { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: var(--navy); }
   .btn-ver-foto {
@@ -106,7 +106,7 @@
      recepção/secretária vê na agenda dos mensalistas ---- */
   .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
-  .grade-cabecalho .col-dia { text-align: center; padding: 5px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia { text-align: center; padding: 3px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
   .grade-cabecalho .col-dia .numero { font-family: 'Manrope', sans-serif; font-size: 15px; }
   .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; }
   .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
@@ -594,7 +594,13 @@ async function clicarSlotLivre(consultorioId, dataIso, hora) {
 
     statusEl.textContent = `Reservado! Saldo atual: ${resultado.saldo_horas}h.`;
     statusEl.style.color = '#1F8F5C';
-    await carregarGrade();
+    // Atualiza a grade na hora, sem recarregar do servidor -- pedido do
+    // Paulo em 15/09/2026: recarregar a semana inteira (todos os
+    // consultórios) a cada clique deixava a resposta lenta. Como a API
+    // já devolve a reserva criada, só inserimos ela no estado local.
+    gradeAtual.reservas = gradeAtual.reservas || [];
+    gradeAtual.reservas.push(resultado.reserva);
+    renderizarGrade();
   } catch (e) {
     statusEl.textContent = 'Erro de conexão.';
     statusEl.style.color = '#D65C3F';
@@ -644,7 +650,10 @@ async function clicarBlocoReservado(reservaId, dataIso, horaInicio) {
       statusEl.style.color = '#D65C3F';
     }
 
-    await carregarGrade();
+    // Atualiza a grade na hora, sem recarregar do servidor -- mesmo
+    // motivo do comentário em clicarSlotLivre logo acima.
+    gradeAtual.reservas = (gradeAtual.reservas || []).filter(r => r.id !== reservaId);
+    renderizarGrade();
   } catch (e) {
     statusEl.textContent = 'Erro de conexão.';
     statusEl.style.color = '#D65C3F';

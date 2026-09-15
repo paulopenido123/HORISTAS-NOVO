@@ -52,10 +52,18 @@
   button.btn-nav { cursor: pointer; background: var(--teal-soft); border-color: var(--teal); color: var(--navy); font-weight: 700; }
   button.btn-nav:hover { background: #DCEEEC; }
 
-  /* ---- botão "Reservar horas avulsas", agora no alto da página ---- */
+  /* ---- botões "Reservar" / "Cancelar", no alto da página -- pedido do
+     Paulo em 14/09/2026: em vez de preencher Data + Hora início +
+     Quantidade de horas num formulário, o médico clica em "Reservar" e
+     depois clica direto no horário verde da grade (1h por clique, pode
+     clicar em vários); pra cancelar é a mesma lógica: clica em
+     "Cancelar" e depois no horário reservado por ele (azul). ---- */
   .painel-horas-avulsas { background:white; border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:20px; }
-  #consultorio-selecionado-label { font-size: 12.5px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
-  #consultorio-selecionado-label.vazio { color: var(--muted); font-weight: 500; }
+  .btn-nav.ativo { background: var(--navy); color: #fff; border-color: var(--navy); }
+  #btn-modo-cancelar.ativo { background: var(--coral); color: #fff; border-color: var(--coral); }
+  /* realce visual dos horários clicáveis conforme o modo ativo */
+  #lista-consultorios.modo-reservar .slot-vago:not(.indisponivel) { outline: 2px solid var(--teal); outline-offset: -2px; }
+  #lista-consultorios.modo-cancelar .bloco-reserva.minha { outline: 2px solid var(--coral); outline-offset: -2px; }
 
   .cabecalho-calendario {
     display: flex; align-items: center; justify-content: space-between;
@@ -76,11 +84,14 @@
      separação entre eles pra não confundir os campos de um com os do
      outro (pedido do Paulo em 11/09/2026: não existe mais seletor de
      consultório no alto da página -- a grade mostra TODOS de uma vez) ---- */
-  #lista-consultorios { display: flex; flex-direction: column; gap: 22px; }
-  .bloco-consultorio { background: white; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  /* Espaçamento reduzido -- pedido do Paulo em 14/09/2026: compactar mais
+     os blocos de consultório pra caber mais informação visível na tela,
+     igual à referência de layout que ele mandou por foto. */
+  #lista-consultorios { display: flex; flex-direction: column; gap: 8px; }
+  .bloco-consultorio { background: white; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .bloco-consultorio-header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 12px 16px; border-bottom: 1px solid var(--line); background: #FAFCFC;
+    padding: 6px 12px; border-bottom: 1px solid var(--line); background: #FAFCFC;
   }
   .bloco-consultorio-nome { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: var(--navy); }
   .btn-ver-foto {
@@ -95,7 +106,7 @@
      recepção/secretária vê na agenda dos mensalistas ---- */
   .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
-  .grade-cabecalho .col-dia { text-align: center; padding: 10px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia { text-align: center; padding: 5px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
   .grade-cabecalho .col-dia .numero { font-family: 'Manrope', sans-serif; font-size: 15px; }
   .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; }
   .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
@@ -121,11 +132,9 @@
     display: flex; align-items: center; gap: 4px; white-space: nowrap;
   }
   .bloco-reserva.minha { background: var(--azul-confirmado); cursor: pointer; }
-  .bloco-reserva.minha.selecionada { outline: 2px solid var(--coral); outline-offset: -2px; box-shadow: 0 0 0 3px rgba(214,92,63,0.35); }
   .bloco-reserva.outro-medico { background: var(--rosa); color: #8e2632; }
   .bloco-reserva .h { font-weight: 700; }
   #aviso-12h { display:none; background: var(--coral-soft); color: var(--coral); padding:10px 12px; border-radius:8px; font-size:12.5px; margin-top:10px; font-weight:600; }
-  #info-reserva-selecionada { font-size:12.5px; color: var(--muted); margin-top:10px; }
 
   #status-msg { font-size: 13px; margin-top: 12px; min-height: 18px; }
   #status-msg.ok { color: #1F8F5C; }
@@ -161,7 +170,6 @@
     .container { padding: 14px 12px 50px; }
     .barra-controles { padding: 12px; gap: 10px; }
     .legenda { flex-wrap: wrap; gap: 8px 14px; }
-    .painel-horas-avulsas > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
     .nav-semana .rotulo-semana { display: none; }
   }
 </style>
@@ -187,7 +195,7 @@
 <header>
   <div>
     <h1>Grade de Turnos — Lifemax</h1>
-    <p>Veja a disponibilidade de todos os consultórios da semana e reserve por hora cheia (mínimo 1h). Fica visível pros demais médicos na hora.</p>
+    <p>Veja a disponibilidade de todos os consultórios da semana. Clique em "Reservar" e depois no horário verde que deseja ocupar (1h por clique). Para cancelar, clique em "Cancelar" e depois no horário reservado por você (azul).</p>
   </div>
   <div style="text-align:right;">
     <div style="font-size:13px; color:#9FB8C4; margin-bottom:6px;">{{ medico.nome if medico else '' }}</div>
@@ -203,38 +211,15 @@
   </div>
   {% endif %}
 
-  {# "Reservar horas avulsas" subiu pro alto da página -- pedido do Paulo
-     em 11/09/2026, antes ficava embaixo da grade inteira. #}
+  {# Botões "Reservar" / "Cancelar" -- pedido do Paulo em 14/09/2026: sem
+     campos de Data/Hora início/Quantidade de horas -- é só escolher o
+     modo aqui e depois clicar direto no horário desejado na grade. #}
   <div class="painel-horas-avulsas">
-    <h3 style="margin:0 0 4px; font-size:15px; color:var(--navy);">Reservar horas avulsas</h3>
-    <p style="margin:0 0 14px; font-size:12.5px; color:var(--muted); line-height:1.5;">
-      Para reservar um consultório, escolha quantas horas deseja e clique no campo em verde na grade
-      abaixo para as horas escolhidas. Para cancelar, siga o mesmo processo: clique no horário
-      reservado por você (cor teal) e depois em "Cancelar".
-    </p>
-    <div id="consultorio-selecionado-label" class="vazio">Nenhum consultório escolhido ainda -- clique num horário verde na grade abaixo.</div>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:10px; align-items:end;">
-      <div>
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;">Data</label>
-        <input type="date" id="horas-data" style="width:100%;">
-      </div>
-      <div>
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;">Hora início</label>
-        <select id="horas-inicio" style="width:100%;"></select>
-      </div>
-      <div>
-        <label style="display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;">Quantidade de horas</label>
-        <input type="number" id="horas-quantidade" min="1" step="1" value="1" style="width:100%;">
-      </div>
-      <div>
-        <button class="btn-nav" style="width:100%; padding:9px;" onclick="reservarPorHora()">Reservar</button>
-      </div>
-      <div>
-        <button class="btn-nav" id="btn-cancelar-reserva" style="width:100%; padding:9px; background:var(--coral-soft); border-color:var(--coral); color:var(--coral);" disabled onclick="confirmarCancelamento()">Cancelar</button>
-      </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button type="button" class="btn-nav" id="btn-modo-reservar" style="padding:10px 18px; font-weight:800;" onclick="alternarModo('reservar')">🏥 Reservar</button>
+      <button type="button" class="btn-nav" id="btn-modo-cancelar" style="padding:10px 18px; font-weight:800; background:var(--coral-soft); border-color:var(--coral); color:var(--coral);" onclick="alternarModo('cancelar')">✕ Cancelar</button>
     </div>
     <div id="status-horas" style="font-size:13px; margin-top:10px;"></div>
-    <div id="info-reserva-selecionada"></div>
     <div id="aviso-12h">⚠️ O cancelamento com menos de 12 horas não gera reembolso.</div>
   </div>
 
@@ -308,15 +293,11 @@ const HORARIOS_DO_TURNO = {
 // cancelamento de uma reserva de turno (que não guarda hora_inicio).
 const INICIO_DO_TURNO = { manha: '08:00', tarde: '13:00', noite: '17:00' };
 
-// Reserva atualmente selecionada na grade para cancelamento (clicando num
-// bloco teal "reservado por mim") -- pedido do Paulo em 10/09/2026.
-let reservaSelecionadaParaCancelar = null;
-
-// Consultório escolhido pra próxima reserva -- pedido do Paulo em
-// 11/09/2026: não existe mais um seletor de consultório no alto da
-// página (a grade mostra TODOS de uma vez, empilhados); é clicando num
-// horário verde de um bloco específico que se escolhe o consultório.
-let consultorioSelecionadoParaReserva = null;
+// Modo ativo da grade -- pedido do Paulo em 14/09/2026: 'reservar',
+// 'cancelar' ou null (nenhum). Clicar num horário só tem efeito quando
+// há um modo ativo -- reservar clica em horário verde, cancelar clica
+// no horário reservado por mim (azul).
+let modoAtual = null;
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -354,16 +335,7 @@ function atualizarMesAno(dataInicioIso, dataFimIso) {
 async function carregarGrade() {
   const resp = await fetch(`/api/turnos/grade?data_inicio=${dataInicioAtual}&dias=7`);
   gradeAtual = await resp.json();
-
-  // se o consultório escolhido pra reserva não existe mais na resposta
-  // (raro -- ex: foi desativado nesse meio-tempo), limpa a seleção.
-  const idsAtuais = (gradeAtual.consultorios || []).map(c => c.id);
-  if (consultorioSelecionadoParaReserva && !idsAtuais.includes(consultorioSelecionadoParaReserva)) {
-    consultorioSelecionadoParaReserva = null;
-  }
-
   renderizarGrade();
-  atualizarLabelConsultorioSelecionado();
 }
 
 // ---------------------------------------------------------------------
@@ -523,19 +495,18 @@ function renderizarGrade() {
         if (ocupado) {
           const minha = !ocupado.admin && ocupado.medicoId === MEDICO_ATUAL_ID;
           const classe = minha ? 'minha' : 'outro-medico';
-          const titulo = ocupado.admin ? 'Reservado pelo administrador' : (minha ? 'Clique para selecionar e cancelar' : 'Reservado por outro profissional');
-          const selecionada = minha && reservaSelecionadaParaCancelar && reservaSelecionadaParaCancelar.id === ocupado.reservaId;
+          const titulo = ocupado.admin ? 'Reservado pelo administrador' : (minha ? 'Clique em "Cancelar" e depois aqui pra cancelar' : 'Reservado por outro profissional');
           const onclickAttr = minha
-            ? ` onclick="selecionarReservaParaCancelar('${ocupado.reservaId}', '${ocupado.dataIso}', '${ocupado.horaInicio}')"`
+            ? ` onclick="clicarBlocoReservado('${ocupado.reservaId}', '${ocupado.dataIso}', '${ocupado.horaInicio}')"`
             : '';
-          html += `<div class="bloco-reserva ${classe}${selecionada ? ' selecionada' : ''}" style="top:${top}px; height:${altura}px;" title="${titulo}"${onclickAttr}>
+          html += `<div class="bloco-reserva ${classe}" style="top:${top}px; height:${altura}px;" title="${titulo}"${onclickAttr}>
             <div class="h">${hora}</div><div>${ocupado.admin ? 'Reservado' : (minha ? 'Você' : ocupado.nome)}</div>
           </div>`;
         } else if (indisponivel) {
           html += `<div class="slot-vago indisponivel" style="top:${top}px; height:${altura}px;" title="Indisponível"></div>`;
         } else {
           html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;"
-            onclick="selecionarHoraNoFormulario('${consultorio.id}', '${dataIso}', '${hora}')"></div>`;
+            onclick="clicarSlotLivre('${consultorio.id}', '${dataIso}', '${hora}')"></div>`;
         }
       });
 
@@ -553,139 +524,39 @@ function renderizarGrade() {
     </div>`;
   }).join('');
 
-  document.getElementById('lista-consultorios').innerHTML = blocosHtml ||
+  const listaEl = document.getElementById('lista-consultorios');
+  listaEl.className = modoAtual ? `modo-${modoAtual}` : '';
+  listaEl.innerHTML = blocosHtml ||
     '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum consultório cadastrado ainda.</div>';
-}
-
-function selecionarHoraNoFormulario(consultorioId, dataIso, hora) {
-  // Clicar num horário livre da grade escolhe o CONSULTÓRIO daquele
-  // bloco e preenche o formulário de "Reservar horas avulsas" (em vez
-  // de reservar na hora) — assim o preço escalonado (1ª, 2ª, 3ª hora)
-  // continua sendo calculado corretamente quando o médico quiser
-  // reservar mais de 1 hora seguida.
-  consultorioSelecionadoParaReserva = consultorioId;
-  document.getElementById('horas-data').value = dataIso;
-  document.getElementById('horas-inicio').value = hora;
-  document.getElementById('horas-quantidade').value = 1;
-  atualizarLabelConsultorioSelecionado();
-  document.getElementById('horas-quantidade').focus();
-  document.querySelector('.painel-horas-avulsas').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function atualizarLabelConsultorioSelecionado() {
-  const el = document.getElementById('consultorio-selecionado-label');
-  const consultorio = (gradeAtual.consultorios || []).find(c => c.id === consultorioSelecionadoParaReserva);
-  if (consultorio) {
-    el.textContent = `Consultório escolhido: ${consultorio.nome}`;
-    el.classList.remove('vazio');
-  } else {
-    el.textContent = 'Nenhum consultório escolhido ainda -- clique num horário verde na grade abaixo.';
-    el.classList.add('vazio');
-  }
 }
 
 function _formatarDataBR(dataIso) {
   return `${dataIso.slice(8, 10)}/${dataIso.slice(5, 7)}/${dataIso.slice(0, 4)}`;
 }
 
-function selecionarReservaParaCancelar(reservaId, dataIso, horaInicio) {
-  reservaSelecionadaParaCancelar = { id: reservaId, dataIso, horaInicio };
-  atualizarPainelCancelamento();
+// Alterna o modo ativo -- pedido do Paulo em 14/09/2026: clicar de novo
+// no mesmo botão desliga o modo; clicar no outro botão troca direto.
+function alternarModo(modo) {
+  modoAtual = (modoAtual === modo) ? null : modo;
+  document.getElementById('btn-modo-reservar').classList.toggle('ativo', modoAtual === 'reservar');
+  document.getElementById('btn-modo-cancelar').classList.toggle('ativo', modoAtual === 'cancelar');
+  const statusEl = document.getElementById('status-horas');
+  if (modoAtual === 'reservar') {
+    statusEl.textContent = 'Clique num horário verde da grade abaixo para reservar.';
+    statusEl.style.color = '#55707C';
+  } else if (modoAtual === 'cancelar') {
+    statusEl.textContent = 'Clique num horário reservado por você (azul) na grade abaixo para cancelar.';
+    statusEl.style.color = '#55707C';
+  } else {
+    statusEl.textContent = '';
+  }
   renderizarGrade();
 }
 
-function atualizarPainelCancelamento() {
-  const infoEl = document.getElementById('info-reserva-selecionada');
-  const avisoEl = document.getElementById('aviso-12h');
-  const btnEl = document.getElementById('btn-cancelar-reserva');
-
-  if (!reservaSelecionadaParaCancelar) {
-    infoEl.textContent = '';
-    avisoEl.style.display = 'none';
-    btnEl.disabled = true;
-    return;
-  }
-
-  const { dataIso, horaInicio } = reservaSelecionadaParaCancelar;
-  infoEl.innerHTML = `Selecionado para cancelar: <strong>${_formatarDataBR(dataIso)} às ${horaInicio}</strong>.`;
-  btnEl.disabled = false;
-
-  // Só um aviso client-side (o servidor decide de verdade, com a hora
-  // certa do fuso de Brasília) -- se faltar menos de 12h daqui até o
-  // início da reserva, cancelar não devolve as horas.
-  const inicioDt = new Date(`${dataIso}T${horaInicio}:00`);
-  const diffHoras = (inicioDt.getTime() - Date.now()) / 3600000;
-  avisoEl.style.display = diffHoras < 12 ? 'block' : 'none';
-}
-
-async function confirmarCancelamento() {
-  if (!reservaSelecionadaParaCancelar) return;
+async function clicarSlotLivre(consultorioId, dataIso, hora) {
   const statusEl = document.getElementById('status-horas');
-  const btnEl = document.getElementById('btn-cancelar-reserva');
-
-  btnEl.disabled = true;
-  statusEl.textContent = 'Cancelando...';
-  statusEl.style.color = '#55707C';
-
-  try {
-    const resp = await fetch('/api/turnos/cancelar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reserva_id: reservaSelecionadaParaCancelar.id }),
-    });
-    const resultado = await resp.json();
-
-    if (!resp.ok) {
-      statusEl.textContent = resultado.erro || 'Erro ao cancelar.';
-      statusEl.style.color = '#D65C3F';
-      btnEl.disabled = false;
-      return;
-    }
-
-    if (resultado.reembolsado) {
-      statusEl.textContent = `Reserva cancelada. ${resultado.horas_reembolsadas}h devolvida(s). Saldo atual: ${resultado.saldo_horas}h.`;
-      statusEl.style.color = '#1F8F5C';
-    } else {
-      statusEl.textContent = `Reserva cancelada. Como faltavam menos de 12h, não houve reembolso de horas. Saldo atual: ${resultado.saldo_horas}h.`;
-      statusEl.style.color = '#D65C3F';
-    }
-
-    reservaSelecionadaParaCancelar = null;
-    atualizarPainelCancelamento();
-    await carregarGrade();
-  } catch (e) {
-    statusEl.textContent = 'Erro de conexão.';
-    statusEl.style.color = '#D65C3F';
-    btnEl.disabled = false;
-  }
-}
-
-document.getElementById('btn-anterior').addEventListener('click', () => {
-  dataInicioAtual = somarDias(dataInicioAtual, -7);
-  carregarGrade();
-});
-document.getElementById('btn-proxima').addEventListener('click', () => {
-  dataInicioAtual = somarDias(dataInicioAtual, 7);
-  carregarGrade();
-});
-
-carregarGrade();
-carregarPainelHoras();
-
-async function carregarPainelHoras() {
-  document.getElementById('horas-data').value = hojeISO();
-  document.getElementById('horas-inicio').innerHTML =
-    HORARIOS.map(h => `<option value="${h}">${h}</option>`).join('');
-}
-
-async function reservarPorHora() {
-  const statusEl = document.getElementById('status-horas');
-  const data = document.getElementById('horas-data').value;
-  const horaInicio = document.getElementById('horas-inicio').value;
-  const quantidadeHoras = parseInt(document.getElementById('horas-quantidade').value, 10);
-
-  if (!consultorioSelecionadoParaReserva || !data || !horaInicio || !quantidadeHoras) {
-    statusEl.textContent = 'Escolha um consultório clicando num horário verde na grade abaixo e preencha os campos.';
+  if (modoAtual !== 'reservar') {
+    statusEl.textContent = 'Clique primeiro em "Reservar" e depois no horário desejado.';
     statusEl.style.color = '#D65C3F';
     return;
   }
@@ -694,9 +565,9 @@ async function reservarPorHora() {
   // escolher por engano uma data/horário que já passou, avisa na hora
   // em vez de deixar ele esperar a resposta da API (que confere de novo,
   // com a hora certa do fuso de Brasília, e também bloqueia).
-  const inicioEscolhido = new Date(`${data}T${horaInicio}:00`);
+  const inicioEscolhido = new Date(`${dataIso}T${hora}:00`);
   if (inicioEscolhido.getTime() < Date.now()) {
-    statusEl.textContent = '⚠️ Esse horário já passou -- escolha uma data/horário futuro.';
+    statusEl.textContent = '⚠️ Esse horário já passou -- escolha um horário futuro.';
     statusEl.style.color = '#D65C3F';
     return;
   }
@@ -709,8 +580,8 @@ async function reservarPorHora() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        consultorio_id: consultorioSelecionadoParaReserva, data,
-        hora_inicio: horaInicio, quantidade_horas: quantidadeHoras,
+        consultorio_id: consultorioId, data: dataIso,
+        hora_inicio: hora, quantidade_horas: 1,
       }),
     });
     const resultado = await resp.json();
@@ -729,6 +600,67 @@ async function reservarPorHora() {
     statusEl.style.color = '#D65C3F';
   }
 }
+
+async function clicarBlocoReservado(reservaId, dataIso, horaInicio) {
+  const statusEl = document.getElementById('status-horas');
+  if (modoAtual !== 'cancelar') {
+    statusEl.textContent = 'Clique primeiro em "Cancelar" e depois no horário reservado por você.';
+    statusEl.style.color = '#D65C3F';
+    return;
+  }
+
+  // Só um aviso client-side (o servidor decide de verdade, com a hora
+  // certa do fuso de Brasília) -- se faltar menos de 12h daqui até o
+  // início da reserva, cancelar não devolve as horas.
+  const inicioDt = new Date(`${dataIso}T${horaInicio}:00`);
+  const diffHoras = (inicioDt.getTime() - Date.now()) / 3600000;
+  const avisoSemReembolso = diffHoras < 12
+    ? '\n\n⚠️ Faltam menos de 12h para esse horário -- o cancelamento não vai gerar reembolso de horas.'
+    : '';
+  if (!confirm(`Cancelar a reserva de ${_formatarDataBR(dataIso)} às ${horaInicio}?${avisoSemReembolso}`)) return;
+
+  statusEl.textContent = 'Cancelando...';
+  statusEl.style.color = '#55707C';
+
+  try {
+    const resp = await fetch('/api/turnos/cancelar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reserva_id: reservaId }),
+    });
+    const resultado = await resp.json();
+
+    if (!resp.ok) {
+      statusEl.textContent = resultado.erro || 'Erro ao cancelar.';
+      statusEl.style.color = '#D65C3F';
+      return;
+    }
+
+    if (resultado.reembolsado) {
+      statusEl.textContent = `Reserva cancelada. ${resultado.horas_reembolsadas}h devolvida(s). Saldo atual: ${resultado.saldo_horas}h.`;
+      statusEl.style.color = '#1F8F5C';
+    } else {
+      statusEl.textContent = `Reserva cancelada. Como faltavam menos de 12h, não houve reembolso de horas. Saldo atual: ${resultado.saldo_horas}h.`;
+      statusEl.style.color = '#D65C3F';
+    }
+
+    await carregarGrade();
+  } catch (e) {
+    statusEl.textContent = 'Erro de conexão.';
+    statusEl.style.color = '#D65C3F';
+  }
+}
+
+document.getElementById('btn-anterior').addEventListener('click', () => {
+  dataInicioAtual = somarDias(dataInicioAtual, -7);
+  carregarGrade();
+});
+document.getElementById('btn-proxima').addEventListener('click', () => {
+  dataInicioAtual = somarDias(dataInicioAtual, 7);
+  carregarGrade();
+});
+
+carregarGrade();
 </script>
 
 </body>

@@ -46,6 +46,25 @@
   .hero h1 { font-weight: 800; font-size: clamp(26px, 3.6vw, 44px); line-height: 1.12; letter-spacing: -0.01em; color: #fff; }
   .lead { color: rgba(234,242,245,0.82); font-size: 15.5px; margin-top: 10px; max-width: 520px; line-height: 1.6; }
 
+  /* ---------- Saldo de horas + botão "Reservar consultórios" no hero --
+     pedido do Paulo em 14/09/2026: sobem pra faixa azul escura do topo,
+     do lado direito, em vez de ficarem num bloco separado mais abaixo. ---- */
+  .hero-linha { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .hero-saldo-bloco { text-align: right; flex-shrink: 0; }
+  .hero-saldo-titulo { font-weight: 800; font-size: clamp(26px, 3.6vw, 44px); line-height: 1.12; letter-spacing: -0.01em; color: #fff; margin: 0; }
+  .hero-saldo-valor { font-weight: 800; font-size: 30px; color: #fff; margin: 4px 0 14px; }
+  .btn-branco {
+    background: #fff; color: var(--navy); border: 1px solid #fff; padding: 12px 22px; border-radius: 7px;
+    font-family: var(--display); font-weight: 800; font-size: 14.5px; cursor: pointer; text-decoration: none;
+    display: inline-block; text-align: center; transition: background 0.15s;
+  }
+  .btn-branco:hover { background: #DCEEEC; }
+
+  @media (max-width: 640px) {
+    .hero-linha { flex-direction: column; }
+    .hero-saldo-bloco { text-align: left; }
+  }
+
   /* ---------- Status/kicker/tag/total (padrão "área do cliente") ---------- */
   .kicker { font-weight: 700; font-size: 12px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 6px; }
   .tag { display: inline-block; background: var(--cyan-soft); color: var(--cyan); font-size: 12px; font-weight: 700; padding: 7px 16px; border-radius: 20px; }
@@ -240,9 +259,20 @@ if ("serviceWorker" in navigator) {
     </div>
   </div>
   <div class="container" style="padding-top:0; padding-bottom:0;">
-    <div class="eyebrow">Área do cliente</div>
-    <h1>Seu painel Lifemax.</h1>
-    <p class="lead">Acompanhe sua contratação, seu saldo de créditos e suas reservas.</p>
+    <div class="hero-linha">
+      <div>
+        <div class="eyebrow">Área do cliente</div>
+        <h1>Seu painel Lifemax.</h1>
+        <p class="lead">Acompanhe sua contratação, seu saldo de créditos e suas reservas.</p>
+      </div>
+      {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
+      <div class="hero-saldo-bloco">
+        <div class="hero-saldo-titulo">Saldo de horas</div>
+        <div class="hero-saldo-valor">{{ saldo_horas }}h</div>
+        <a class="btn-branco" href="{{ url_for('turnos.pagina_turnos') }}">🏥 Reservar consultórios</a>
+      </div>
+      {% endif %}
+    </div>
   </div>
 </section>
 
@@ -370,21 +400,12 @@ if ("serviceWorker" in navigator) {
     </div>
   </div>
 
-  {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
-  {# Botão "Reservar consultórios" -- pedido do Paulo em 10/09/2026: subiu
-     pro topo da página, logo abaixo do nome do cliente, em vez de ficar
-     lá embaixo depois da tabela de venda de horas avulsas. Mesma
-     condição de tipo_vinculo de sempre (só médico 'avulso' usa essa
-     tela -- ver comentário mais completo perto da tabela de venda de
-     horas avulsas, mais abaixo nesse arquivo). #}
-  <div class="painel">
-    <h2>Pronto para reservar mais um horário?</h2>
-    <p class="muted-cell" style="margin-bottom:14px;">Escolha a data, o horário e o consultório conforme disponibilidade. O tempo reservado é descontado automaticamente do seu saldo de horas.</p>
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <a class="btn-navy grande" href="{{ url_for('turnos.pagina_turnos') }}">🏥 Reservar consultórios</a>
-    </div>
-  </div>
-  {% endif %}
+  {# Botão "Reservar consultórios" -- pedido do Paulo em 14/09/2026: subiu
+     de vez pra faixa azul escura do topo (hero), junto com "Saldo de
+     horas" -- ver bloco .hero-saldo-bloco logo acima no <section class="hero">.
+     O bloco separado que ficava aqui (com o texto "Pronto para reservar
+     mais um horário?") foi removido. #}
+
 
   <div class="board">
     <div class="board-top"><span class="puck"></span>Visão geral da conta</div>

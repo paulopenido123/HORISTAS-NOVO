@@ -8,6 +8,7 @@ from app.services import creditos_service as creditos_db
 from app.services import relatorios_service
 from app.services import recuperacao_senha_service as rec_senha
 from app.services import nfe_service
+from app.services import template_service
 from app.extensions import csrf
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -642,6 +643,44 @@ def excluir_foto(consultorio_id):
 def matriz():
     consultorios = db.get_client().table('consultorios').select('*').order('nome').execute().data
     return render_template('admin_matriz.html', consultorios=consultorios)
+
+
+@admin_bp.route('/agenda-horistas')
+@_admin
+def agenda_horistas():
+    """Agenda Horistas -- pedido do Paulo em 14/09/2026: mesma grade que o
+    médico vê em /turnos (todos os consultórios, todos os turnos
+    disponíveis da semana), só que aqui, pra quem administra, o nome do
+    profissional aparece dentro do próprio campo de horário reservado.
+    O médico continua sem ver o nome de outros profissionais em /turnos
+    (ver redação em app/routes/turnos.py api_grade) -- só o admin vê
+    todos os nomes, porque essa tela é só de leitura (sem reservar/
+    cancelar por aqui, isso continua sendo feito pelo próprio médico ou
+    pela Matriz de Agendamento)."""
+    return render_template('admin_agenda_horistas.html')
+
+
+@admin_bp.route('/api/agenda-horistas/grade', methods=['GET'])
+@_admin
+def api_agenda_horistas_grade():
+    data_inicio_str = request.args.get('data_inicio', date.today().isoformat())
+    dias = int(request.args.get('dias', 7))
+
+    data_inicio = date.fromisoformat(data_inicio_str)
+    data_fim = data_inicio + timedelta(days=dias - 1)
+
+    # grade_de_turnos já retorna o nome de cada médico (join com
+    # medicos(nome)) -- diferente da rota do médico em /api/turnos/grade,
+    # aqui NÃO precisamos ocultar nomes: é a visão do administrador.
+    grade = db.grade_de_turnos(data_inicio.isoformat(), data_fim.isoformat())
+    grade['data_inicio'] = data_inicio.isoformat()
+    grade['data_fim'] = data_fim.isoformat()
+    grade['dias'] = dias
+    grade['bloqueios_template'] = template_service.listar_bloqueios()
+    inicio = data_inicio.isoformat(); fim = data_fim.isoformat()
+    grade['reservas_admin'] = (db.get_client().table('matriz_reservas_admin')
+        .select('*').gte('data', inicio).lte('data', fim).execute().data)
+    return grade
 
 
 @admin_bp.route('/api/matriz', methods=['GET'])

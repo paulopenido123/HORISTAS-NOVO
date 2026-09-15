@@ -59,6 +59,16 @@ def api_grade():
     data_fim = data_inicio + timedelta(days=dias - 1)
 
     grade = db.grade_de_turnos(data_inicio.isoformat(), data_fim.isoformat())
+
+    # Privacidade -- pedido do Paulo em 14/09/2026: o médico pode ver que
+    # um horário está ocupado, mas NUNCA o nome de outro profissional
+    # (só o dele mesmo). Quem vê todos os nomes é só o administrador, na
+    # tela "Agenda Horistas" (app/routes/admin.py api_agenda_horistas_grade).
+    medico_id_atual = medico_logado_id()
+    for r in grade.get("reservas", []):
+        if r.get("medico_id") != medico_id_atual:
+            r["medicos"] = None
+
     grade["data_inicio"] = data_inicio.isoformat()
     grade["data_fim"] = data_fim.isoformat()
     grade["dias"] = dias

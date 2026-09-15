@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda Horistas — Lifemax Admin</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+  :root {
+    --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --teal-soft: #EAF4F3;
+    --line: #DCE6E8; --muted: #55707C; --coral: #D65C3F; --coral-soft: #fbeae6;
+    --bege: #C8CDD1; --verde: #9BE79A; --rosa: #FFB8C0;
+    /* Mesma paleta da Matriz / da Grade de Turnos do médico, pra ficar
+       visualmente igual nas telas -- pedido do Paulo em 14/09/2026. */
+    --azul-confirmado: #22A7C5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Inter, Arial, sans-serif;
+    background: #F5F8F9; color: #10222E;
+  }
+  .top { background: var(--navy); color: #fff; padding: 18px 28px; display:flex; justify-content:space-between; align-items:center; }
+  .nav { padding: 14px 28px; background: #fff; border-bottom: 1px solid #e3ebef; }
+  .nav a { margin-right: 18px; color: #0B3A52; text-decoration: none; font-weight: 600; font-size: 14px; }
+  .nav a.ativo { color: var(--teal); border-bottom: 2px solid var(--teal); padding-bottom: 4px; }
+  .container { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  h1 { font-size: 19px; margin: 0 0 4px; }
+  .subtitulo { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+
+  .cabecalho-calendario {
+    display: flex; align-items: center; justify-content: space-between;
+    background: white; border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; margin-bottom: 10px;
+  }
+  .nav-semana { display: flex; align-items: center; gap: 10px; }
+  .nav-semana.direita { flex-direction: row-reverse; }
+  .nav-semana .rotulo-semana { font-size: 12.5px; font-weight: 700; color: var(--navy); }
+  .btn-seta {
+    cursor: pointer; background: var(--teal-soft); border: 1px solid var(--teal); color: var(--navy);
+    font-weight: 700; font-size: 18px; width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0;
+  }
+  .btn-seta:hover { background: #DCEEEC; }
+  .mes-ano-atual { font-size: 16px; font-weight: 700; color: var(--navy); text-transform: capitalize; text-align: center; flex: 1; }
+
+  .barra-controles {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+    background: white; border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; margin-bottom: 10px;
+  }
+  .legenda { display: flex; gap: 16px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot.livre { background: var(--verde); }
+  .dot.reservado { background: var(--azul-confirmado); }
+  .dot.bloqueado { background: var(--rosa); }
+  .dot.bege { background: var(--bege); }
+
+  /* Espaçamento compacto entre os blocos de consultório -- pedido do
+     Paulo em 14/09/2026, mesma referência visual usada na Grade de
+     Turnos do médico. */
+  #lista-consultorios { display: flex; flex-direction: column; gap: 8px; }
+  .bloco-consultorio { background: white; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .bloco-consultorio-header {
+    padding: 6px 12px; border-bottom: 1px solid var(--line); background: #FAFCFC;
+    font-family: inherit; font-weight: 800; font-size: 14px; color: var(--navy);
+  }
+
+  .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
+  .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia { text-align: center; padding: 5px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia .numero { font-size: 14px; }
+  .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; }
+  .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
+  .coluna-horas { position: relative; border-right: 1px solid var(--line); }
+  .coluna-horas .marca-hora { position: absolute; left: 0; right: 0; font-size: 8.5px; color: var(--muted); text-align: right; padding-right: 6px; transform: translateY(-50%); }
+  .coluna-dia {
+    border-right: 1px solid var(--line); position: relative;
+    background-image: repeating-linear-gradient(to bottom, #f1f4f5 0, #f1f4f5 1px, transparent 1px, transparent 21.6px);
+  }
+  .faixa-bege { position: absolute; left: 0; right: 0; background: var(--bege); pointer-events: none; z-index: 0; }
+  .slot-vago { position: absolute; left: 2px; right: 2px; border-radius: 3px; border: 1px dashed #e3e8ea; box-sizing: border-box; background: var(--verde); }
+  .slot-vago.indisponivel { background: var(--bege); border: 1px solid #b9c0c4; }
+  .bloco-reserva {
+    position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 0 4px; overflow: hidden;
+    color: white; font-size: 8px; line-height: 1.05; box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    display: flex; align-items: center; gap: 4px; white-space: nowrap;
+  }
+  .bloco-reserva.reservado { background: var(--azul-confirmado); }
+  .bloco-reserva.bloqueado { background: var(--rosa); color: #8e2632; }
+  .bloco-reserva .h { font-weight: 700; }
+
+  @media (max-width: 760px) {
+    .top, .nav { padding: 14px 16px; }
+    .container { padding: 14px 12px 50px; }
+    .nav-semana .rotulo-semana { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="top"><strong>LIFEMAX ADMIN · AGENDA HORISTAS</strong></div>
+<div class="nav">
+  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('admin.agenda_horistas') }}" class="ativo">Agenda Horistas</a>
+  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
+  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
+  <a href="{{ url_for('admin.clientes') }}">Clientes</a>
+  <a href="{{ url_for('admin.horas') }}">Horas</a>
+  <a href="{{ url_for('admin.relatorios') }}">Relatórios</a>
+  <a href="{{ url_for('admin.admin_logout') }}">Sair</a>
+</div>
+
+<div class="container">
+  <h1>Agenda Horistas</h1>
+  <p class="subtitulo">Mesma grade que o médico vê em "Grade de Turnos", com todos os consultórios e turnos disponíveis da semana -- aqui o nome do profissional aparece dentro de cada horário reservado. Tela somente de leitura (reservas e cancelamentos continuam sendo feitos pelo próprio médico, ou pela Matriz de Agendamento).</p>
+
+  <div class="cabecalho-calendario">
+    <div class="nav-semana">
+      <button class="btn-seta" id="btn-anterior" title="Semana anterior">&larr;</button>
+      <span class="rotulo-semana">Semana anterior</span>
+    </div>
+    <div class="mes-ano-atual" id="mes-ano-atual">—</div>
+    <div class="nav-semana direita">
+      <button class="btn-seta" id="btn-proxima" title="Próxima semana">&rarr;</button>
+      <span class="rotulo-semana">Próxima semana</span>
+    </div>
+  </div>
+
+  <div class="barra-controles">
+    <div class="legenda">
+      <span><span class="dot livre"></span> Livre</span>
+      <span><span class="dot reservado"></span> Reservado (nome do profissional)</span>
+      <span><span class="dot bloqueado"></span> Bloqueado pelo administrador</span>
+      <span><span class="dot bege"></span> Indisponível</span>
+    </div>
+  </div>
+
+  <div id="lista-consultorios"></div>
+</div>
+
+<script>
+const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+const GRID_INICIO_MIN = 8 * 60;
+const GRID_FIM_MIN = 20 * 60;
+const PX_POR_MIN = 0.36;
+
+const HORARIOS_DO_TURNO = {
+  manha: ['08:00', '09:00', '10:00', '11:00'],
+  tarde: ['13:00', '14:00', '15:00', '16:00'],
+  noite: ['17:00', '18:00', '19:00'],
+};
+const INICIO_DO_TURNO = { manha: '08:00', tarde: '13:00', noite: '17:00' };
+
+const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+               'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+let dataInicioAtual = hojeISO();
+let gradeAtual = { consultorios: [], reservas: [], reservas_admin: [], bloqueios_template: [] };
+
+function hojeISO() { return new Date().toISOString().slice(0, 10); }
+
+function formatarDataCurta(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return { dia: DIAS_SEMANA[d.getDay()], numero: String(d.getDate()).padStart(2, '0') };
+}
+
+function somarDias(iso, n) {
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function atualizarMesAno(dataInicioIso, dataFimIso) {
+  const inicio = new Date(dataInicioIso + 'T00:00:00');
+  const fim = new Date(dataFimIso + 'T00:00:00');
+  const el = document.getElementById('mes-ano-atual');
+  if (inicio.getMonth() === fim.getMonth() && inicio.getFullYear() === fim.getFullYear()) {
+    el.textContent = `${MESES[inicio.getMonth()]} ${inicio.getFullYear()}`;
+  } else if (inicio.getFullYear() === fim.getFullYear()) {
+    el.textContent = `${MESES[inicio.getMonth()]} / ${MESES[fim.getMonth()]} ${inicio.getFullYear()}`;
+  } else {
+    el.textContent = `${MESES[inicio.getMonth()]} ${inicio.getFullYear()} / ${MESES[fim.getMonth()]} ${fim.getFullYear()}`;
+  }
+}
+
+async function carregarGrade() {
+  const resp = await fetch(`/admin/api/agenda-horistas/grade?data_inicio=${dataInicioAtual}&dias=7`);
+  gradeAtual = await resp.json();
+  renderizarGrade();
+}
+
+function faixasBegeDoDia(consultorioId, dataIso) {
+  const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
+  const bloqueiosTemplate = gradeAtual.bloqueios_template || [];
+  const bloqueadoNoHorario = (hora) => bloqueiosTemplate.some(b =>
+    b.consultorio_id === consultorioId && b.dia_semana === diaSemana && b.hora_inicio === hora
+  );
+
+  const faixas = [];
+  let inicioFaixaAberta = null;
+  for (let min = GRID_INICIO_MIN; min < GRID_FIM_MIN; min += 60) {
+    const hora = `${String(Math.floor(min / 60)).padStart(2, '0')}:00`;
+    const foraDeHorario = !HORARIOS.includes(hora) || bloqueadoNoHorario(hora);
+    if (foraDeHorario && inicioFaixaAberta === null) inicioFaixaAberta = min;
+    if (!foraDeHorario && inicioFaixaAberta !== null) {
+      faixas.push([inicioFaixaAberta, min]);
+      inicioFaixaAberta = null;
+    }
+  }
+  if (inicioFaixaAberta !== null) faixas.push([inicioFaixaAberta, GRID_FIM_MIN]);
+  return faixas;
+}
+
+function renderizarGrade() {
+  const dias = [];
+  for (let i = 0; i < 7; i++) dias.push(somarDias(dataInicioAtual, i));
+  atualizarMesAno(dias[0], dias[dias.length - 1]);
+
+  const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
+    dias.map(d => {
+      const { dia, numero } = formatarDataCurta(d);
+      return `<div class="col-dia">${dia}<div class="numero">${numero}</div></div>`;
+    }).join('');
+
+  const alturaTotal = (GRID_FIM_MIN - GRID_INICIO_MIN) * PX_POR_MIN;
+
+  let colunaHoras = `<div class="coluna-horas" style="height:${alturaTotal}px;">`;
+  for (let min = GRID_INICIO_MIN; min <= GRID_FIM_MIN; min += 60) {
+    const top = (min - GRID_INICIO_MIN) * PX_POR_MIN;
+    const h = `${String(Math.floor(min / 60)).padStart(2, '0')}:00`;
+    colunaHoras += `<div class="marca-hora" style="top:${top}px;">${h}</div>`;
+  }
+  colunaHoras += `</div>`;
+
+  // ocupação: pra cada consultório+data+hora, o nome de quem reservou --
+  // aqui NUNCA ocultamos o nome (visão do administrador).
+  const ocupacao = {};
+  for (const h of (gradeAtual.reservas_admin || [])) {
+    ocupacao[`${h.consultorio_id}|${h.data}|${h.horario.slice(0,5)}`] = { nome: h.descricao || 'Bloqueado', bloqueado: true };
+  }
+  for (const r of (gradeAtual.reservas || [])) {
+    const nomeMedico = (r.medicos && r.medicos.nome) || 'Reservado';
+    let horariosOcupados;
+    if (r.tipo_reserva === 'hora' && r.hora_inicio) {
+      const horaInicioReal = r.hora_inicio.slice(0, 5);
+      const idxInicio = HORARIOS.indexOf(horaInicioReal);
+      const qtd = r.quantidade_horas || 1;
+      horariosOcupados = idxInicio >= 0 ? HORARIOS.slice(idxInicio, idxInicio + qtd) : [horaInicioReal];
+    } else {
+      horariosOcupados = HORARIOS_DO_TURNO[r.periodo] || [];
+    }
+    for (const h of horariosOcupados) {
+      ocupacao[`${r.consultorio_id}|${r.data}|${h}`] = { nome: nomeMedico, bloqueado: false };
+    }
+  }
+
+  const blocosHtml = (gradeAtual.consultorios || []).map(consultorio => {
+    const colunasDias = dias.map(dataIso => {
+      let html = `<div class="coluna-dia" style="height:${alturaTotal}px;">`;
+
+      faixasBegeDoDia(consultorio.id, dataIso).forEach(([inicio, fim]) => {
+        const top = (inicio - GRID_INICIO_MIN) * PX_POR_MIN;
+        const altura = (fim - inicio) * PX_POR_MIN;
+        html += `<div class="faixa-bege" style="top:${top}px; height:${altura}px;"></div>`;
+      });
+
+      HORARIOS.forEach(hora => {
+        const [hh, mm] = hora.split(':').map(Number);
+        const minutos = hh * 60 + mm;
+        if (minutos < GRID_INICIO_MIN || minutos >= GRID_FIM_MIN) return;
+        const top = (minutos - GRID_INICIO_MIN) * PX_POR_MIN;
+        const altura = 60 * PX_POR_MIN;
+        const chave = `${consultorio.id}|${dataIso}|${hora}`;
+        const ocupado = ocupacao[chave];
+        const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
+        const indisponivel = (gradeAtual.bloqueios_template || []).some(b =>
+          b.consultorio_id === consultorio.id && b.dia_semana === diaSemana && b.hora_inicio === hora
+        );
+
+        if (ocupado) {
+          const classe = ocupado.bloqueado ? 'bloqueado' : 'reservado';
+          html += `<div class="bloco-reserva ${classe}" style="top:${top}px; height:${altura}px;" title="${ocupado.nome}">
+            <div class="h">${hora}</div><div>${ocupado.nome}</div>
+          </div>`;
+        } else if (indisponivel) {
+          html += `<div class="slot-vago indisponivel" style="top:${top}px; height:${altura}px;" title="Indisponível"></div>`;
+        } else {
+          html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;" title="Livre"></div>`;
+        }
+      });
+
+      html += `</div>`;
+      return html;
+    }).join('');
+
+    return `<div class="bloco-consultorio">
+      <div class="bloco-consultorio-header">${consultorio.nome}</div>
+      <div class="grade-cabecalho">${cabecalhoDiasHtml}</div>
+      <div class="grade-scroll-vertical"><div class="grade-corpo">${colunaHoras + colunasDias}</div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('lista-consultorios').innerHTML = blocosHtml ||
+    '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum consultório cadastrado ainda.</div>';
+}
+
+document.getElementById('btn-anterior').addEventListener('click', () => {
+  dataInicioAtual = somarDias(dataInicioAtual, -7);
+  carregarGrade();
+});
+document.getElementById('btn-proxima').addEventListener('click', () => {
+  dataInicioAtual = somarDias(dataInicioAtual, 7);
+  carregarGrade();
+});
+
+carregarGrade();
+</script>
+</body>
+</html>

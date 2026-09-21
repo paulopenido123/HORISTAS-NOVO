@@ -9,6 +9,7 @@ from app.services import relatorios_service
 from app.services import recuperacao_senha_service as rec_senha
 from app.services import nfe_service
 from app.services import template_service
+from app.services import reserva_service
 from app.extensions import csrf
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -548,7 +549,7 @@ def consultorios():
             db.criar_consultorio(nome, descricao, 0)
             flash('Consultório criado.', 'ok')
             return redirect(url_for('admin.consultorios'))
-    lista = db.get_client().table('consultorios').select('*').order('nome').execute().data
+    lista = db.ordenar_consultorios(db.get_client().table('consultorios').select('*').order('nome').execute().data)
     return render_template('admin_consultorios.html', consultorios=lista, erro=erro)
 
 
@@ -641,8 +642,10 @@ def excluir_foto(consultorio_id):
 @admin_bp.route('/matriz')
 @_admin
 def matriz():
-    consultorios = db.get_client().table('consultorios').select('*').order('nome').execute().data
-    return render_template('admin_matriz.html', consultorios=consultorios)
+    # Pedido do Paulo em 21/09/2026: não seleciona mais um consultório por
+    # vez -- a tela já busca todos via /admin/api/matriz (ver rota
+    # api_matriz abaixo), então não precisa mais montar a lista aqui.
+    return render_template('admin_matriz.html')
 
 
 @admin_bp.route('/agenda-horistas')
@@ -686,19 +689,27 @@ def api_agenda_horistas_grade():
 @admin_bp.route('/api/matriz', methods=['GET'])
 @_admin
 def api_matriz():
-    consultorio_id = request.args.get('consultorio_id')
+    # Pedido do Paulo em 21/09/2026: a Matriz deixou de mostrar um
+    # consultório por vez (com um seletor "Consultório") e passou a
+    # mostrar TODOS os consultórios de uma vez, um bloco embaixo do
+    # outro em ordem crescente -- mesmo formato visual da Agenda
+    # Horistas (ver admin_agenda_horistas.html / api_agenda_horistas_grade
+    # acima). Por isso essa rota não filtra mais por consultorio_id: ela
+    # devolve a semana inteira, de todos os consultórios, de uma vez.
     inicio = date.fromisoformat(request.args.get('data_inicio', date.today().isoformat()))
     fim = inicio + timedelta(days=6)
     client = db.get_client()
-    holds = client.table('matriz_reservas_admin').select('*').eq('consultorio_id', consultorio_id).gte('data', inicio.isoformat()).lte('data', fim.isoformat()).execute().data
-    reservas = client.table('reservas').select('*,medicos(nome)').eq('consultorio_id', consultorio_id).gte('data', inicio.isoformat()).lte('data', fim.isoformat()).neq('status','cancelada').execute().data
+    consultorios = db.ordenar_consultorios(client.table('consultorios').select('*').execute().data)
+    holds = client.table('matriz_reservas_admin').select('*').gte('data', inicio.isoformat()).lte('data', fim.isoformat()).execute().data
+    reservas = client.table('reservas').select('*,medicos(nome)').gte('data', inicio.isoformat()).lte('data', fim.isoformat()).neq('status','cancelada').execute().data
     # Busca os bloqueios via template_service em vez de ler a tabela
     # direto -- pedido do Paulo em 15/09/2026: assim a Matriz já reflete
     # AUTOMATICAMENTE a regra fixa de sábado/domingo a partir de 12h
     # bloqueados (ver template_service._bloqueios_fixos_fim_de_semana),
     # sem precisar duplicar essa regra aqui.
-    bloqueios = [b for b in template_service.listar_bloqueios() if b['consultorio_id'] == consultorio_id]
-    return {'data_inicio':inicio.isoformat(),'data_fim':fim.isoformat(),'holds':holds,'reservas':reservas,'bloqueios':bloqueios}
+    bloqueios = template_service.listar_bloqueios()
+    return {'data_inicio':inicio.isoformat(),'data_fim':fim.isoformat(),'consultorios':consultorios,
+            'holds':holds,'reservas':reservas,'bloqueios':bloqueios}
 
 
 @admin_bp.route('/api/matriz/toggle', methods=['POST'])
@@ -821,3 +832,83 @@ def replicar_matriz():
         'data_inicio_origem': origem_inicio.isoformat(),
         'data_inicio_destino': destino_inicio.isoformat(),
     }
+
+
+# ---------------------------------------------------------------------
+# Item 6 (pedido do Paulo em 21/09/2026): botões "Agendar para:" e
+# "Cancelar agendamento", só pro admin, na Agenda Horistas. Reaproveita
+# 100% da regra de saldo/conflito/reembolso já usada quando o próprio
+# médico reserva ou cancela (ver reserva_service.reservar_por_hora /
+# cancelar_reserva_admin) -- só passa criado_por_admin/cancelado_por_admin
+# =True, pra Grade de Turnos, Minha Agenda e o extrato de horas do médico
+# mostrarem que foi o administrador quem fez.
+# ---------------------------------------------------------------------
+
+@admin_bp.route('/api/agenda-horistas/medicos', methods=['GET'])
+@_admin
+def api_agenda_horistas_medicos():
+    """Lista pro seletor de "Agendar para:" -- só médicos tipo 'avulso'
+    (os únicos que alugam consultório por essa agenda; 'fixo' e 'horista'
+    têm agendas próprias, ver _checar_pode_alugar_avulso)."""
+    todos = db.get_client().table('medicos').select('id,nome,telefone,tipo_vinculo').eq('ativo', True).execute().data
+    avulsos = [m for m in todos if (m.get('tipo_vinculo') or 'avulso') == 'avulso']
+    avulsos.sort(key=lambda m: (m.get('nome') or '').lower())
+    return {'medicos': avulsos}
+
+
+@admin_bp.route('/api/agenda-horistas/agendar', methods=['POST'])
+@_admin
+def api_agenda_horistas_agendar():
+    body = request.get_json(force=True)
+    medico_id = body.get('medico_id')
+    celulas = body.get('celulas') or []
+    if not medico_id or not celulas:
+        return {'erro': 'Selecione o profissional e pelo menos um horário.'}, 400
+
+    sucesso = []
+    erros = []
+    for c in celulas:
+        consultorio_id = c.get('consultorio_id')
+        data_str = c.get('data')
+        hora_inicio = c.get('hora_inicio')
+        if not all([consultorio_id, data_str, hora_inicio]):
+            erros.append({'consultorio_id': consultorio_id, 'data': data_str, 'hora_inicio': hora_inicio,
+                          'erro': 'Célula inválida.'})
+            continue
+        try:
+            resultado = reserva_service.reservar_por_hora(
+                medico_id, consultorio_id, data_str, hora_inicio, 1, criado_por_admin=True,
+            )
+            sucesso.append({'consultorio_id': consultorio_id, 'data': data_str, 'hora_inicio': hora_inicio,
+                            'reserva_id': resultado['reserva']['id']})
+        except Exception as e:
+            erros.append({'consultorio_id': consultorio_id, 'data': data_str, 'hora_inicio': hora_inicio,
+                          'erro': str(e)})
+
+    return {'sucesso': sucesso, 'erros': erros}
+
+
+@admin_bp.route('/api/agenda-horistas/cancelar', methods=['POST'])
+@_admin
+def api_agenda_horistas_cancelar():
+    """A tela de revisão (2º passo, com o nome de cada profissional antes
+    de confirmar de vez) é montada no próprio navegador a partir dos
+    dados que a grade já carregou -- não precisa de uma rota própria só
+    pra isso. Essa rota já é a confirmação FINAL: recebe os ids das
+    reservas escolhidas e cancela cada uma (com a mesma regra de
+    reembolso de 12h de sempre)."""
+    body = request.get_json(force=True)
+    reserva_ids = body.get('reserva_ids') or []
+    if not reserva_ids:
+        return {'erro': 'Selecione pelo menos um horário ocupado para cancelar.'}, 400
+
+    sucesso = []
+    erros = []
+    for reserva_id in reserva_ids:
+        try:
+            resultado = reserva_service.cancelar_reserva_admin(reserva_id)
+            sucesso.append({'reserva_id': reserva_id, **resultado})
+        except Exception as e:
+            erros.append({'reserva_id': reserva_id, 'erro': str(e)})
+
+    return {'sucesso': sucesso, 'erros': erros}

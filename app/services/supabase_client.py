@@ -58,6 +58,35 @@ def get_client() -> PgClient:
     return _client
 
 
+def _chave_ordenacao_natural(texto: str) -> list:
+    """Chave de ordenação 'natural' (numérica onde tem número, alfabética
+    no resto) -- pedido do Paulo em 21/09/2026 (2ª vez: primeiro foi o
+    consultório 402 aparecendo por último, depois o 403 fora de ordem).
+
+    O `.order("nome")` do banco ordena a string INTEIRA caractere por
+    caractere -- então "403" vem DEPOIS de "40" e de qualquer nome que
+    comece com dígito maior, mas também qualquer nome com espaço a mais
+    no início/fim, ou com quantidade diferente de dígitos ("4" vs "40"
+    vs "403"), sai fora da ordem esperada por um humano. Aqui a gente
+    quebra o nome em pedaços de dígitos e não-dígitos e compara os
+    pedaços numéricos como NÚMERO (não como texto), então "402" < "403"
+    < "404" sempre, esteja o nome sozinho ("403") ou com texto junto
+    ("Sala 403", "Consultório 4")."""
+    texto_normalizado = (texto or "").strip()
+    pedacos = re.split(r"(\d+)", texto_normalizado)
+    return [int(p) if p.isdigit() else p.lower() for p in pedacos]
+
+
+def ordenar_consultorios(consultorios: list[dict]) -> list[dict]:
+    """Reordena uma lista de consultórios (já buscada do banco) em ordem
+    natural crescente pelo campo 'nome' -- ver _chave_ordenacao_natural.
+    Usado em TODA lista de consultórios voltada pra grade/matriz (Grade
+    de Turnos do médico, Agenda Horistas do admin, Matriz de
+    Agendamento, tela de Consultórios do admin), pra manter a mesma
+    ordem visual nas quatro telas."""
+    return sorted(consultorios, key=lambda c: _chave_ordenacao_natural(c.get("nome")))
+
+
 def agora_iso() -> str:
     """Timestamp de agora, no formato que o Postgres aceita de verdade
     numa coluna timestamptz via update/insert do PostgREST.
@@ -83,26 +112,6 @@ def get_medico_by_telefone(telefone: str) -> dict | None:
     resp = get_client().table("medicos").select("*").eq("telefone", telefone).execute()
     data = resp.data
     return data[0] if data else None
-
-
-def get_medico_por_email(email: str) -> dict | None:
-    """Busca o médico pelo e-mail -- usado só pelo login com Google
-    (google_login_service.py). 'email' não é coluna única no banco (foi
-    acrescentada em duas migrações diferentes, sem constraint), então
-    aqui a gente se protege sozinho: se mais de um médico tiver
-    cadastrado exatamente o mesmo e-mail, não escolhe um dos dois --
-    devolve None (bloqueia o login), porque isso é sinal de um erro de
-    cadastro que precisa ser corrigido por alguém antes. Comparação é
-    sem diferenciar maiúsculas/minúsculas (ilike sem coringa = e-mail
-    exato, só ignorando caixa)."""
-    email_normalizado = (email or "").strip()
-    if not email_normalizado:
-        return None
-    resp = get_client().table("medicos").select("*").ilike("email", email_normalizado).execute()
-    candidatos = resp.data
-    if len(candidatos) != 1:
-        return None
-    return candidatos[0]
 
 
 def listar_consultorios_disponiveis(data: str, periodo: str) -> list[dict]:
@@ -151,10 +160,13 @@ def criar_reserva(consultorio_id: str, medico_id: str, data: str, periodo: str) 
 # Faixas de horário de cada turno — usadas para checar conflito com
 # reservas avulsas por hora. Ajuste aqui se os horários reais do
 # coworking forem diferentes.
+# "noite" começa às 17h30 (não 17h) -- pedido do Paulo em 21/09/2026:
+# pausa para limpeza das 17h às 17h30, mesma faixa que a agenda dos
+# médicos fixos já usava (agenda_fixos_service.TURNOS_HORARIOS).
 PERIODOS_HORARIOS = {
     "manha": ("08:00", "12:00"),
     "tarde": ("13:00", "17:00"),
-    "noite": ("17:00", "20:00"),
+    "noite": ("17:30", "20:30"),
 }
 
 
@@ -207,13 +219,19 @@ def _existe_conflito_horario(consultorio_id: str, data: str, hora_inicio: str, h
 
 
 def criar_reserva_por_hora(consultorio_id: str, medico_id: str, data: str,
-                            hora_inicio: str, quantidade_horas: int) -> dict:
+                            hora_inicio: str, quantidade_horas: int,
+                            criado_por_admin: bool = False) -> dict:
     """
     Cria uma reserva avulsa por hora. Levanta ValueError se o horário
     conflitar com outra reserva (turno ou hora) já existente — seja
     porque a checagem em Python encontrou o conflito, seja porque o
     banco de dados rejeitou por causa da trava de sobreposição (a
     proteção final contra dois médicos reservando no mesmo instante).
+
+    `criado_por_admin` -- pedido do Paulo em 21/09/2026, botão "Agendar
+    para:" na Agenda Horistas: marca que foi o ADMINISTRADOR quem criou
+    essa reserva em nome do médico (não o próprio médico), pra Grade de
+    Turnos / Minha Agenda / extrato avisarem isso claramente.
     """
     hora_fim = _somar_horas(hora_inicio, quantidade_horas)
 
@@ -234,6 +252,7 @@ def criar_reserva_por_hora(consultorio_id: str, medico_id: str, data: str,
                 "hora_fim": hora_fim,
                 "quantidade_horas": quantidade_horas,
                 "status": "pendente",
+                "criado_por_admin": criado_por_admin,
             })
             .execute()
         )
@@ -348,17 +367,21 @@ def marcar_email_agendamento_enviado(reserva_id: str, paciente_id: str):
     )
 
 
-def marcar_reserva_cancelada(reserva_id: str) -> dict:
+def marcar_reserva_cancelada(reserva_id: str, cancelado_por_admin: bool = False) -> dict:
     """Muda o status pra 'cancelada' e grava `cancelado_em` (ver
     migration_cancelado_em.sql) -- o reembolso (ou não, se dentro de 12h)
     é decidido e lançado à parte por reserva_service.cancelar_reserva.
     `cancelado_em` é o que permite o relatório de Agendamentos (admin)
     mostrar a ocorrência do cancelamento na linha do tempo certa, e não
-    só a data da reserva em si."""
+    só a data da reserva em si.
+
+    `cancelado_por_admin` -- pedido do Paulo em 21/09/2026, botão
+    "Cancelar agendamento" na Agenda Horistas: marca que foi o
+    ADMINISTRADOR quem cancelou (não o próprio médico)."""
     resp = (
         get_client()
         .table("reservas")
-        .update({"status": "cancelada", "cancelado_em": agora_iso()})
+        .update({"status": "cancelada", "cancelado_em": agora_iso(), "cancelado_por_admin": cancelado_por_admin})
         .eq("id", reserva_id)
         .execute()
     )
@@ -441,7 +464,7 @@ def listar_clientes_medico(medico_id: str) -> list[dict]:
 def listar_todos_consultorios() -> list[dict]:
     """Todos os consultórios ativos, para a página pública/admin."""
     resp = get_client().table("consultorios").select("*").eq("ativo", True).order("nome").execute()
-    return resp.data
+    return ordenar_consultorios(resp.data)
 
 
 def andar_a_partir_do_nome(nome: str) -> str | None:
@@ -687,7 +710,9 @@ def grade_de_turnos(data_inicio: str, data_fim: str) -> dict:
     já prontos para o frontend montar a grade.
     """
     client = get_client()
-    consultorios = client.table("consultorios").select("*").eq("ativo", True).execute().data
+    consultorios = ordenar_consultorios(
+        client.table("consultorios").select("*").eq("ativo", True).order("nome").execute().data
+    )
 
     reservas = (
         client.table("reservas")

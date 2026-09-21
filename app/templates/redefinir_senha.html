@@ -54,17 +54,30 @@
       <p class="aviso">{{ "Senha criada com sucesso! Já pode entrar com ela." if primeiro_acesso else "Senha redefinida com sucesso! Já pode entrar com a nova senha." }}</p>
       <div class="rodape"><a href="{{ rota_login }}">Ir para o login →</a></div>
     {% else %}
-      <p class="sub">{{ "Bem-vindo(a)! Escolha sua senha de acesso (mínimo 6 caracteres) para entrar pela primeira vez." if primeiro_acesso else "Escolha sua nova senha (mínimo 6 caracteres)." }}</p>
+      {% if primeiro_acesso %}
+        <p class="aviso">Esse link dá acesso à nova página de cadastro para agendamento de consultórios da Lifemax. Os seus dados e horas já estão cadastrados no novo sistema. Para ter acesso, por favor crie uma senha e, após entrar, consulte os seus dados. Qualquer divergência é só entrar em contato com a Sra. Patrícia pelo telefone (31) 99754-6473 ou com a Coralyne pelo telefone (31) 97207-8423.</p>
+      {% else %}
+        <p class="sub">Escolha sua nova senha (mínimo 6 caracteres).</p>
+      {% endif %}
       <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="token" value="{{ token }}">
-        <label for="senha">{{ "Sua senha" if primeiro_acesso else "Nova senha" }}</label>
+
+        {% if primeiro_acesso %}
+          <label for="telefone">Telefone (usado para entrar no sistema)</label>
+          <input type="text" id="telefone" name="telefone" value="{{ telefone_valor }}" required inputmode="numeric" placeholder="Ex: 5531999999999">
+
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" value="{{ email_valor }}" placeholder="seuemail@exemplo.com">
+        {% endif %}
+
+        <label for="senha">{{ "Crie sua senha" if primeiro_acesso else "Nova senha" }}</label>
         <input type="password" id="senha" name="senha" required autofocus>
 
         <label for="confirmar_senha">{{ "Confirmar senha" if primeiro_acesso else "Confirmar nova senha" }}</label>
         <input type="password" id="confirmar_senha" name="confirmar_senha" required>
 
-        <button type="submit">{{ "Criar minha senha" if primeiro_acesso else "Salvar nova senha" }}</button>
+        <button type="submit">{{ "Confirmar" if primeiro_acesso else "Salvar nova senha" }}</button>
       </form>
     {% endif %}
   </div>

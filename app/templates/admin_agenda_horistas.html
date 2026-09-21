@@ -69,7 +69,12 @@
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
   .grade-cabecalho .col-dia { text-align: center; padding: 3px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
   .grade-cabecalho .col-dia .numero { font-size: 14px; }
-  .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; }
+  /* padding vertical -- pedido do Paulo em 21/09/2026: sem isso, a marca
+     "08:00" (e a "20:00" no fim) ficava cortada pelo overflow, porque o
+     translateY(-50%) da .marca-hora empurra o texto pra cima/baixo da
+     própria linha da hora, e nas pontas isso ia parar fora da área
+     visível (scrollável) do próprio contêiner. */
+  .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; padding: 7px 0; }
   .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
   .coluna-horas { position: relative; border-right: 1px solid var(--line); }
   .coluna-horas .marca-hora { position: absolute; left: 0; right: 0; font-size: 8.5px; color: var(--muted); text-align: right; padding-right: 6px; transform: translateY(-50%); }
@@ -88,6 +93,42 @@
   .bloco-reserva.reservado { background: var(--azul-confirmado); }
   .bloco-reserva.bloqueado { background: var(--rosa); color: #8e2632; }
   .bloco-reserva .h { font-weight: 700; }
+
+  /* Item 6 (pedido do Paulo em 21/09/2026): botões "Agendar para:" e
+     "Cancelar agendamento", só pro admin. */
+  .btn-admin-acao { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff;
+    color: var(--navy); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .btn-admin-acao:hover { background: #F3F7F8; }
+  .btn-admin-acao.ativo { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  .banner-acao { display: none; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+    background: var(--coral-soft); color: var(--coral); border: 1px solid #f3c9b9; border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 10px; font-size: 13.5px; font-weight: 600; }
+  .banner-acao.visivel { display: flex; }
+  .banner-acao .texto { flex: 1; min-width: 220px; }
+  .banner-acao .botoes { display: flex; gap: 8px; }
+  .btn-confirmar { padding: 9px 16px; border: 0; border-radius: 8px; background: var(--coral); color: #fff;
+    font-weight: 700; font-size: 13px; cursor: pointer; }
+  .btn-cancelar-acao { padding: 9px 16px; border: 1px solid #d8b9ac; border-radius: 8px; background: #fff;
+    color: var(--coral); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .revisao-lista { list-style: none; margin: 8px 0 0; padding: 0; font-weight: 500; font-size: 13px; width: 100%; }
+  .revisao-lista li { padding: 4px 0; border-top: 1px dashed #f3c9b9; }
+
+  /* Célula selecionada (modo agendar ou cancelar) -- contorno teal
+     grosso, some ao clicar de novo. */
+  .slot-vago.selecionado { outline: 3px solid var(--teal); outline-offset: -3px; }
+  .bloco-reserva.selecionado-cancelar { outline: 3px solid var(--coral); outline-offset: -3px; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(14,42,59,.55); z-index: 50;
+    align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.visivel { display: flex; }
+  .modal-caixa { background: #fff; border-radius: 12px; max-width: 420px; width: 100%; max-height: 80vh;
+    overflow-y: auto; padding: 18px; }
+  .modal-caixa h2 { margin: 0 0 12px; font-size: 16px; color: var(--navy); }
+  .modal-lista-medicos { list-style: none; margin: 0; padding: 0; }
+  .modal-lista-medicos li { padding: 10px 8px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 14px; }
+  .modal-lista-medicos li:hover { background: var(--teal-soft); }
+  .modal-fechar { margin-top: 12px; background: none; border: 0; color: var(--muted); font-size: 13px; cursor: pointer; }
 
   @media (max-width: 760px) {
     .top, .nav { padding: 14px 16px; }
@@ -132,23 +173,49 @@
       <span><span class="dot bloqueado"></span> Bloqueado pelo administrador</span>
       <span><span class="dot bege"></span> Indisponível</span>
     </div>
+    <div style="display:flex; gap:8px;">
+      <button type="button" class="btn-admin-acao" id="btn-agendar-para" onclick="abrirModalMedicos()">Agendar para:</button>
+      <button type="button" class="btn-admin-acao" id="btn-cancelar-agendamento" onclick="iniciarModoCancelar()">Cancelar agendamento</button>
+    </div>
+  </div>
+
+  <div class="banner-acao" id="banner-acao">
+    <div class="texto" id="banner-texto"></div>
+    <div class="botoes" id="banner-botoes"></div>
   </div>
 
   <div id="lista-consultorios"></div>
 </div>
 
+<div class="modal-overlay" id="modal-medicos">
+  <div class="modal-caixa">
+    <h2>Agendar para qual profissional?</h2>
+    <ul class="modal-lista-medicos" id="modal-lista-medicos"></ul>
+    <button type="button" class="modal-fechar" onclick="fecharModalMedicos()">Cancelar</button>
+  </div>
+</div>
+
 <script>
-const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+// Horários da noite mudaram de 17:00/18:00/19:00 para 17:30/18:30/19:30
+// -- pedido do Paulo em 21/09/2026: pausa para limpeza das 17:00 às
+// 17:30, encerramento às 20:30 (mesma mudança feita em turnos.html).
+const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:30', '18:30', '19:30'];
 const GRID_INICIO_MIN = 8 * 60;
-const GRID_FIM_MIN = 20 * 60;
+const GRID_FIM_MIN = 20 * 60 + 30;
 const PX_POR_MIN = 0.36;
+
+// Marcas de horário mostradas na coluna da esquerda -- de hora em hora
+// das 08:00 às 17:00, depois de meia em meia hora (17:00, 17:30, 18:30,
+// 19:30, 20:30) porque os horários da noite não caem mais em hora cheia.
+const MARCAS_GRADE = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
+                       '17:00', '17:30', '18:30', '19:30', '20:30'];
 
 const HORARIOS_DO_TURNO = {
   manha: ['08:00', '09:00', '10:00', '11:00'],
   tarde: ['13:00', '14:00', '15:00', '16:00'],
-  noite: ['17:00', '18:00', '19:00'],
+  noite: ['17:30', '18:30', '19:30'],
 };
-const INICIO_DO_TURNO = { manha: '08:00', tarde: '13:00', noite: '17:00' };
+const INICIO_DO_TURNO = { manha: '08:00', tarde: '13:00', noite: '17:30' };
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -156,6 +223,180 @@ const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
 
 let dataInicioAtual = hojeISO();
 let gradeAtual = { consultorios: [], reservas: [], reservas_admin: [], bloqueios_template: [] };
+
+// Item 6 (pedido do Paulo em 21/09/2026): estado dos botões "Agendar
+// para:" e "Cancelar agendamento" -- só um modo ativo por vez.
+let modoAtual = null; // null | 'agendar' | 'cancelar'
+let medicoSelecionado = null; // {id, nome}
+let celulasSelecionadasAgendar = new Set(); // chaves "consultorioId|data|hora"
+let celulasSelecionadasCancelar = new Map(); // reservaId -> {medicoId, nome, data, hora, consultorioNome}
+let etapaCancelar = 'selecionando'; // 'selecionando' | 'revisao'
+
+function csrfHeader() {
+  return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
+}
+
+function resetarModoAcao() {
+  modoAtual = null;
+  medicoSelecionado = null;
+  celulasSelecionadasAgendar = new Set();
+  celulasSelecionadasCancelar = new Map();
+  etapaCancelar = 'selecionando';
+  document.getElementById('btn-agendar-para').classList.remove('ativo');
+  document.getElementById('btn-cancelar-agendamento').classList.remove('ativo');
+  const banner = document.getElementById('banner-acao');
+  banner.classList.remove('visivel');
+  document.getElementById('banner-texto').innerHTML = '';
+  document.getElementById('banner-botoes').innerHTML = '';
+}
+
+// ---- "Agendar para:" ----------------------------------------------
+
+async function abrirModalMedicos() {
+  const overlay = document.getElementById('modal-medicos');
+  const lista = document.getElementById('modal-lista-medicos');
+  lista.innerHTML = '<li style="cursor:default;color:var(--muted);">Carregando...</li>';
+  overlay.classList.add('visivel');
+  try {
+    const r = await fetch('/admin/api/agenda-horistas/medicos');
+    const x = await r.json();
+    const medicos = x.medicos || [];
+    lista.innerHTML = medicos.length
+      ? medicos.map(m => `<li onclick='escolherMedico(${JSON.stringify(m.id)}, ${JSON.stringify(m.nome)})'>${m.nome}</li>`).join('')
+      : '<li style="cursor:default;color:var(--muted);">Nenhum médico avulso cadastrado.</li>';
+  } catch (e) {
+    lista.innerHTML = '<li style="cursor:default;color:var(--coral);">Erro ao carregar médicos.</li>';
+  }
+}
+
+function fecharModalMedicos() {
+  document.getElementById('modal-medicos').classList.remove('visivel');
+}
+
+function escolherMedico(id, nome) {
+  fecharModalMedicos();
+  resetarModoAcao();
+  modoAtual = 'agendar';
+  medicoSelecionado = { id, nome };
+  document.getElementById('btn-agendar-para').classList.add('ativo');
+  mostrarBannerAgendar();
+  renderizarGrade();
+}
+
+function mostrarBannerAgendar() {
+  const banner = document.getElementById('banner-acao');
+  banner.classList.add('visivel');
+  document.getElementById('banner-texto').innerHTML =
+    `selecione os horários que deseja agendar para o profissional "${medicoSelecionado.nome}"` +
+    (celulasSelecionadasAgendar.size ? ` <strong>(${celulasSelecionadasAgendar.size} selecionado(s))</strong>` : '');
+  document.getElementById('banner-botoes').innerHTML =
+    `<button type="button" class="btn-confirmar" onclick="confirmarAgendamento()">Confirmar</button>` +
+    `<button type="button" class="btn-cancelar-acao" onclick="resetarModoAcao(); renderizarGrade();">Cancelar</button>`;
+}
+
+function toggleCelulaAgendar(consultorioId, dataIso, hora) {
+  const chave = `${consultorioId}|${dataIso}|${hora}`;
+  if (celulasSelecionadasAgendar.has(chave)) celulasSelecionadasAgendar.delete(chave);
+  else celulasSelecionadasAgendar.add(chave);
+  mostrarBannerAgendar();
+  renderizarGrade();
+}
+
+async function confirmarAgendamento() {
+  if (!celulasSelecionadasAgendar.size) { alert('Selecione pelo menos um horário.'); return; }
+  const celulas = Array.from(celulasSelecionadasAgendar).map(chave => {
+    const [consultorio_id, data, hora_inicio] = chave.split('|');
+    return { consultorio_id, data, hora_inicio };
+  });
+  try {
+    const r = await fetch('/admin/api/agenda-horistas/agendar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+      body: JSON.stringify({ medico_id: medicoSelecionado.id, celulas }),
+    });
+    const x = await r.json();
+    if (!r.ok) { alert(x.erro || 'Não consegui agendar.'); return; }
+    let msg = `${x.sucesso.length} horário(s) agendado(s) para ${medicoSelecionado.nome}.`;
+    if (x.erros && x.erros.length) {
+      msg += `\n\n${x.erros.length} não puderam ser agendados:\n` +
+        x.erros.map(e => `${e.data} ${e.hora_inicio}: ${e.erro}`).join('\n');
+    }
+    alert(msg);
+    resetarModoAcao();
+    carregarGrade();
+  } catch (e) {
+    alert('Erro ao agendar: ' + e);
+  }
+}
+
+// ---- "Cancelar agendamento" -----------------------------------------
+
+function iniciarModoCancelar() {
+  resetarModoAcao();
+  modoAtual = 'cancelar';
+  etapaCancelar = 'selecionando';
+  document.getElementById('btn-cancelar-agendamento').classList.add('ativo');
+  mostrarBannerCancelarSelecao();
+  renderizarGrade();
+}
+
+function mostrarBannerCancelarSelecao() {
+  const banner = document.getElementById('banner-acao');
+  banner.classList.add('visivel');
+  document.getElementById('banner-texto').innerHTML =
+    'Selecione os campos de horas para cancelamento' +
+    (celulasSelecionadasCancelar.size ? ` <strong>(${celulasSelecionadasCancelar.size} selecionado(s))</strong>` : '');
+  document.getElementById('banner-botoes').innerHTML =
+    `<button type="button" class="btn-confirmar" onclick="irParaRevisaoCancelar()">Confirmar</button>` +
+    `<button type="button" class="btn-cancelar-acao" onclick="resetarModoAcao(); renderizarGrade();">Cancelar</button>`;
+}
+
+function toggleCelulaCancelar(reservaId, medicoId, nomeMedico, dataIso, hora, consultorioNome) {
+  if (celulasSelecionadasCancelar.has(reservaId)) {
+    celulasSelecionadasCancelar.delete(reservaId);
+  } else {
+    celulasSelecionadasCancelar.set(reservaId, { medicoId, nome: nomeMedico, data: dataIso, hora, consultorioNome });
+  }
+  mostrarBannerCancelarSelecao();
+  renderizarGrade();
+}
+
+function irParaRevisaoCancelar() {
+  if (!celulasSelecionadasCancelar.size) { alert('Selecione pelo menos um horário ocupado.'); return; }
+  etapaCancelar = 'revisao';
+  const banner = document.getElementById('banner-acao');
+  const itens = Array.from(celulasSelecionadasCancelar.entries())
+    .map(([id, v]) => `<li>${v.consultorioNome} — ${v.data} ${v.hora} — <strong>${v.nome}</strong></li>`).join('');
+  document.getElementById('banner-texto').innerHTML =
+    `Confirma o cancelamento destes horários? A restituição de horas segue a regra de sempre ` +
+    `(reembolsa só se faltar 12h ou mais para o horário).<ul class="revisao-lista">${itens}</ul>`;
+  document.getElementById('banner-botoes').innerHTML =
+    `<button type="button" class="btn-confirmar" onclick="confirmarCancelamentoFinal()">Confirmar cancelamento</button>` +
+    `<button type="button" class="btn-cancelar-acao" onclick="etapaCancelar='selecionando'; mostrarBannerCancelarSelecao(); renderizarGrade();">Voltar</button>`;
+  renderizarGrade();
+}
+
+async function confirmarCancelamentoFinal() {
+  const reserva_ids = Array.from(celulasSelecionadasCancelar.keys());
+  try {
+    const r = await fetch('/admin/api/agenda-horistas/cancelar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+      body: JSON.stringify({ reserva_ids }),
+    });
+    const x = await r.json();
+    if (!r.ok) { alert(x.erro || 'Não consegui cancelar.'); return; }
+    const reembolsados = (x.sucesso || []).filter(s => s.reembolsado).length;
+    let msg = `${x.sucesso.length} agendamento(s) cancelado(s) (${reembolsados} com reembolso de horas, ` +
+      `${x.sucesso.length - reembolsados} sem reembolso por ser menos de 12h de antecedência).`;
+    if (x.erros && x.erros.length) {
+      msg += `\n\n${x.erros.length} não puderam ser cancelados:\n` + x.erros.map(e => e.erro).join('\n');
+    }
+    alert(msg);
+    resetarModoAcao();
+    carregarGrade();
+  } catch (e) {
+    alert('Erro ao cancelar: ' + e);
+  }
+}
 
 function hojeISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -189,6 +430,14 @@ async function carregarGrade() {
   renderizarGrade();
 }
 
+function _minutosDeHora(hora) {
+  const [hh, mm] = hora.split(':').map(Number);
+  return hh * 60 + mm;
+}
+
+// Reescrita em 21/09/2026 (pedido do Paulo: pausa para limpeza das 17h
+// às 17h30) pra trabalhar por MINUTO em vez de assumir que todo horário
+// reservável começa em hora cheia -- ver mesma função em turnos.html.
 function faixasBegeDoDia(consultorioId, dataIso) {
   const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
   const bloqueiosTemplate = gradeAtual.bloqueios_template || [];
@@ -196,18 +445,21 @@ function faixasBegeDoDia(consultorioId, dataIso) {
     b.consultorio_id === consultorioId && b.dia_semana === diaSemana && b.hora_inicio === hora
   );
 
+  const intervalosReservaveis = HORARIOS
+    .filter(hora => !bloqueadoNoHorario(hora))
+    .map(hora => { const inicio = _minutosDeHora(hora); return [inicio, inicio + 60]; })
+    .sort((a, b) => a[0] - b[0]);
+
   const faixas = [];
-  let inicioFaixaAberta = null;
-  for (let min = GRID_INICIO_MIN; min < GRID_FIM_MIN; min += 60) {
-    const hora = `${String(Math.floor(min / 60)).padStart(2, '0')}:00`;
-    const foraDeHorario = !HORARIOS.includes(hora) || bloqueadoNoHorario(hora);
-    if (foraDeHorario && inicioFaixaAberta === null) inicioFaixaAberta = min;
-    if (!foraDeHorario && inicioFaixaAberta !== null) {
-      faixas.push([inicioFaixaAberta, min]);
-      inicioFaixaAberta = null;
-    }
+  let cursor = GRID_INICIO_MIN;
+  for (const [inicio, fim] of intervalosReservaveis) {
+    const inicioClamp = Math.max(inicio, GRID_INICIO_MIN);
+    const fimClamp = Math.min(fim, GRID_FIM_MIN);
+    if (inicioClamp >= GRID_FIM_MIN || fimClamp <= GRID_INICIO_MIN) continue;
+    if (inicioClamp > cursor) faixas.push([cursor, inicioClamp]);
+    cursor = Math.max(cursor, fimClamp);
   }
-  if (inicioFaixaAberta !== null) faixas.push([inicioFaixaAberta, GRID_FIM_MIN]);
+  if (cursor < GRID_FIM_MIN) faixas.push([cursor, GRID_FIM_MIN]);
   return faixas;
 }
 
@@ -225,11 +477,10 @@ function renderizarGrade() {
   const alturaTotal = (GRID_FIM_MIN - GRID_INICIO_MIN) * PX_POR_MIN;
 
   let colunaHoras = `<div class="coluna-horas" style="height:${alturaTotal}px;">`;
-  for (let min = GRID_INICIO_MIN; min <= GRID_FIM_MIN; min += 60) {
-    const top = (min - GRID_INICIO_MIN) * PX_POR_MIN;
-    const h = `${String(Math.floor(min / 60)).padStart(2, '0')}:00`;
+  MARCAS_GRADE.forEach(h => {
+    const top = (_minutosDeHora(h) - GRID_INICIO_MIN) * PX_POR_MIN;
     colunaHoras += `<div class="marca-hora" style="top:${top}px;">${h}</div>`;
-  }
+  });
   colunaHoras += `</div>`;
 
   // ocupação: pra cada consultório+data+hora, o nome de quem reservou --
@@ -250,7 +501,12 @@ function renderizarGrade() {
       horariosOcupados = HORARIOS_DO_TURNO[r.periodo] || [];
     }
     for (const h of horariosOcupados) {
-      ocupacao[`${r.consultorio_id}|${r.data}|${h}`] = { nome: nomeMedico, bloqueado: false };
+      // reserva_id/medico_id entram aqui -- usados pelo botão "Cancelar
+      // agendamento" (item 6, pedido do Paulo em 21/09/2026) pra saber
+      // qual reserva cancelar e de quem, sem precisar de outra chamada.
+      ocupacao[`${r.consultorio_id}|${r.data}|${h}`] = {
+        nome: nomeMedico, bloqueado: false, reservaId: r.id, medicoId: r.medico_id,
+      };
     }
   }
 
@@ -279,13 +535,30 @@ function renderizarGrade() {
 
         if (ocupado) {
           const classe = ocupado.bloqueado ? 'bloqueado' : 'reservado';
-          html += `<div class="bloco-reserva ${classe}" style="top:${top}px; height:${altura}px;" title="${ocupado.nome}">
+          // Modo "Cancelar agendamento": só reserva de verdade (não
+          // bloqueio da Matriz) pode ser selecionada, e só enquanto
+          // ainda estamos escolhendo (não durante a tela de revisão).
+          const selecionavel = modoAtual === 'cancelar' && !ocupado.bloqueado && etapaCancelar === 'selecionando';
+          const chaveSel = ocupado.reservaId;
+          const selecionado = selecionavel && celulasSelecionadasCancelar.has(chaveSel);
+          const onclick = selecionavel
+            ? `onclick="toggleCelulaCancelar('${chaveSel}', '${ocupado.medicoId}', '${ocupado.nome.replace(/'/g, "&#39;")}', '${dataIso}', '${hora}', '${consultorio.nome.replace(/'/g, "&#39;")}')"`
+            : '';
+          html += `<div class="bloco-reserva ${classe}${selecionado ? ' selecionado-cancelar' : ''}" style="top:${top}px; height:${altura}px; ${selecionavel ? 'cursor:pointer;' : ''}" title="${ocupado.nome}" ${onclick}>
             <div class="h">${hora}</div><div>${ocupado.nome}</div>
           </div>`;
         } else if (indisponivel) {
           html += `<div class="slot-vago indisponivel" style="top:${top}px; height:${altura}px;" title="Indisponível"></div>`;
         } else {
-          html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;" title="Livre"></div>`;
+          // Modo "Agendar para:": qualquer horário livre pode ser
+          // selecionado pra reservar em nome do médico escolhido.
+          const chaveCel = `${consultorio.id}|${dataIso}|${hora}`;
+          const selecionavelAgendar = modoAtual === 'agendar';
+          const selecionadoAgendar = selecionavelAgendar && celulasSelecionadasAgendar.has(chaveCel);
+          const onclickAgendar = selecionavelAgendar
+            ? `onclick="toggleCelulaAgendar('${consultorio.id}', '${dataIso}', '${hora}')"`
+            : '';
+          html += `<div class="slot-vago${selecionadoAgendar ? ' selecionado' : ''}" style="top:${top}px; height:${altura}px; ${selecionavelAgendar ? 'cursor:pointer;' : ''}" title="${selecionavelAgendar ? 'Clique para selecionar' : 'Livre'}" ${onclickAgendar}></div>`;
         }
       });
 

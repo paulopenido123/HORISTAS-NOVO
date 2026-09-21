@@ -23,8 +23,11 @@
   header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px;
            background: var(--navy); position: sticky; top:0; z-index:100; }
   .brand { font-family: var(--display); font-weight:800; color:#fff; font-size:15px; }
-  header a.sair, header a.voltar { font-size:13px; color: var(--onnavy-muted); text-decoration:none; margin-left:16px; }
-  header a.sair:hover, header a.voltar:hover { color:#fff; }
+  header a.sair, header a.voltar {
+    font-size:13px; font-weight:700; color: var(--navy); text-decoration:none; margin-left:16px;
+    background:#fff; padding:8px 16px; border-radius:7px; display:inline-block; transition: background 0.15s;
+  }
+  header a.sair:hover, header a.voltar:hover { background:#DCEEEC; }
   .container { max-width: 760px; margin: 0 auto; padding: 32px 20px 80px; }
   .hero-txt { margin-bottom: 24px; }
   .hero-txt .eyebrow { font-family: var(--display); font-weight:700; font-size:12px; color: var(--cyan);

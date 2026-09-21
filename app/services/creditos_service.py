@@ -248,16 +248,25 @@ def registrar_transacao(medico_id: str, tipo: str, valor: float, descricao: str,
 
 
 def debitar_credito_por_reserva(medico_id: str, valor_turno: float, reserva_id: str,
-                                 quantidade_horas: int) -> dict:
-    """Debita o valor de uma reserva. Levanta ValueError se saldo insuficiente."""
+                                 quantidade_horas: int, criado_por_admin: bool = False) -> dict:
+    """Debita o valor de uma reserva. Levanta ValueError se saldo insuficiente.
+
+    `criado_por_admin` -- pedido do Paulo em 21/09/2026 (botão "Agendar
+    para:" da Agenda Horistas): só muda a descrição da transação no
+    extrato do médico, pra ficar claro que foi o admin quem agendou --
+    o débito em si é idêntico ao de uma reserva feita pelo próprio
+    médico."""
     saldo_atual = obter_saldo(medico_id)
     if saldo_atual < valor_turno:
         raise ValueError(
             f"Saldo insuficiente: você tem R$ {saldo_atual:.2f} e essa reserva custa R$ {valor_turno:.2f}."
         )
+    descricao = "Reserva de consultório" + (
+        " (agendada pelo administrador da Lifemax)" if criado_por_admin else ""
+    )
     return registrar_transacao(
         medico_id, tipo="consumo", valor=-valor_turno,
-        descricao="Reserva de consultório", reserva_id=reserva_id,
+        descricao=descricao, reserva_id=reserva_id,
         quantidade_horas=quantidade_horas,
     )
 

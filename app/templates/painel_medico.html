@@ -37,8 +37,11 @@
   .brand-logo { height: 66px; width: auto; display: block; }
   .hero-topo-direita { display: flex; align-items: center; gap: 16px; }
   .hero-nome { font-weight: 700; font-size: 14px; color: var(--onnavy-ink); }
-  .sair { font-size: 13px; color: var(--onnavy-muted); text-decoration: none; padding: 8px 14px; border-radius: 7px; transition: background 0.15s, color 0.15s; }
-  .sair:hover { color: var(--onnavy-ink); background: rgba(255,255,255,0.08); }
+  .sair {
+    font-size: 13px; font-weight: 700; color: var(--navy); text-decoration: none;
+    padding: 8px 16px; border-radius: 7px; background: #fff; transition: background 0.15s;
+  }
+  .sair:hover { background: #DCEEEC; }
 
   /* ---------- HERO (Área do cliente) ---------- */
   .hero { padding: 0 0 40px; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%); }
@@ -133,6 +136,11 @@
   /* ---------- Minha agenda (inline no topo do painel) ---------- */
   .status-tag { display:inline-block; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:20px; }
   .status-tag.cancelada { background: var(--coral-soft); color: var(--coral); }
+  /* Item 6 (pedido do Paulo em 21/09/2026): aviso quando foi o
+     administrador da Lifemax (não o próprio médico) quem agendou ou
+     cancelou um horário pela Agenda Horistas. */
+  .aviso-admin { display:block; margin-top:3px; font-size:11px; font-weight:600; color: var(--teal); }
+  .aviso-admin.cancelamento { color: var(--coral); }
   .btn-cancelar { background: var(--coral-soft); color: var(--coral); border:1px solid rgba(214,92,63,0.3); border-radius:6px; padding:4px 9px; font-family: var(--display); font-weight:600; font-size:11px; cursor:pointer; }
   .btn-cancelar:disabled { opacity:0.5; cursor:not-allowed; }
   .aviso-linha-12h { color: var(--coral); font-size:11px; font-weight:600; margin-top:4px; max-width:180px; }
@@ -269,7 +277,7 @@ if ("serviceWorker" in navigator) {
       <div class="hero-saldo-bloco">
         <div class="hero-saldo-titulo">Saldo de horas</div>
         <div class="hero-saldo-valor">{{ saldo_horas }}h</div>
-        <a class="btn-branco" href="{{ url_for('turnos.pagina_turnos') }}">🏥 Reservar consultórios</a>
+        <a class="btn-branco" href="{{ url_for('turnos.pagina_turnos') }}">Reservar consultórios</a>
       </div>
       {% endif %}
     </div>
@@ -308,14 +316,17 @@ if ("serviceWorker" in navigator) {
       <thead><tr><th>Data</th><th>Horário</th><th>Consultório</th><th>Paciente</th><th>Ações</th></tr></thead>
       <tbody id="corpo-tabela-agenda">
         {% for r in reservas %}
-        {% set hora_inicio_real = (r.hora_inicio[:5] if r.tipo_reserva == 'hora' else {'manha': '08:00', 'tarde': '13:00', 'noite': '17:00'}.get(r.periodo, '08:00')) %}
+        {% set hora_inicio_real = (r.hora_inicio[:5] if r.tipo_reserva == 'hora' else {'manha': '08:00', 'tarde': '13:00', 'noite': '17:30'}.get(r.periodo, '08:00')) %}
         <tr data-reserva-id="{{ r.id }}" data-data-iso="{{ r.data }}" data-hora-inicio="{{ hora_inicio_real }}">
-          <td>{{ r.data[8:10] }}/{{ r.data[5:7] }}/{{ r.data[0:4] }}</td>
+          <td>
+            {{ r.data[8:10] }}/{{ r.data[5:7] }}/{{ r.data[0:4] }}
+            {% if r.criado_por_admin %}<span class="aviso-admin">Agendado pelo administrador Lifemax</span>{% endif %}
+          </td>
           <td>
             {% if r.tipo_reserva == 'hora' %}
               {{ (r.hora_inicio or '')[:5] }} – {{ (r.hora_fim or '')[:5] }}
             {% else %}
-              {{ {'manha': 'Manhã (08:00–12:00)', 'tarde': 'Tarde (13:00–17:00)', 'noite': 'Noite (17:00–20:00)'}.get(r.periodo, r.periodo) }}
+              {{ {'manha': 'Manhã (08:00–12:00)', 'tarde': 'Tarde (13:00–17:00)', 'noite': 'Noite (17:30–20:30)'}.get(r.periodo, r.periodo) }}
             {% endif %}
           </td>
           <td>{{ r.consultorios.nome if r.consultorios else '—' }}</td>
@@ -341,6 +352,7 @@ if ("serviceWorker" in navigator) {
           <td>
             {% if r.status == 'cancelada' %}
               <span class="status-tag cancelada">Cancelada</span>
+              {% if r.cancelado_por_admin %}<span class="aviso-admin cancelamento">Cancelado pelo administrador Lifemax</span>{% endif %}
             {% else %}
               <button class="btn-cancelar" onclick="cancelarReserva(this)">Cancelar</button>
             {% endif %}
@@ -496,27 +508,7 @@ if ("serviceWorker" in navigator) {
      de IA) removido a pedido do Paulo em 15/09/2026 -- este pacote não
      vende mais crédito de IA pro médico, só horas pra reserva de sala. #}
 
-  <div class="painel">
-    <h2>Minhas notas fiscais</h2>
-    {% if notas_fiscais %}
-    <table>
-      <thead><tr><th>Data</th><th>NF</th><th>Valor</th><th>Status</th><th></th></tr></thead>
-      <tbody>
-        {% for nf in notas_fiscais %}
-        <tr>
-          <td>{{ (nf.nota_fiscal_emitida_em or nf.criado_em)[:10] }}</td>
-          <td>{{ nf.nota_fiscal_numero }}</td>
-          <td>R$ {{ "%.2f"|format(nf.valor) }}</td>
-          <td>{{ 'Enviada' if nf.nota_fiscal_status == 'enviada' else 'Emitida' }}</td>
-          <td><a href="{{ nf.nota_fiscal_url }}" target="_blank" style="color: var(--cyan); font-weight:600; text-decoration:none;">Abrir / Imprimir</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-      <div class="vazio">Nenhuma nota fiscal emitida ainda.</div>
-    {% endif %}
-  </div>
+  {# Bloco "Minhas notas fiscais" removido a pedido do Paulo em 15/09/2026. #}
 
   <div class="painel">
     <h2>Histórico</h2>

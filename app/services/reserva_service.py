@@ -180,7 +180,15 @@ def reservar_turno(medico_id: str, consultorio_id: str, data: str, periodo: str)
 
 
 def reservar_por_hora(medico_id: str, consultorio_id: str, data: str,
-                       hora_inicio: str, quantidade_horas: int) -> dict:
+                       hora_inicio: str, quantidade_horas: int,
+                       criado_por_admin: bool = False) -> dict:
+    """
+    `criado_por_admin` -- pedido do Paulo em 21/09/2026, botão "Agendar
+    para:" da Agenda Horistas: o administrador reserva EM NOME do
+    médico, debitando o saldo dele exatamente como se ele mesmo tivesse
+    reservado (mesmas checagens de saldo/conflito/autorização abaixo),
+    só marcando na reserva que foi o admin quem fez (ver
+    db.criar_reserva_por_hora)."""
     from app.services import template_service
 
     _checar_pode_alugar_avulso(medico_id)
@@ -219,12 +227,13 @@ def reservar_por_hora(medico_id: str, consultorio_id: str, data: str,
     _checar_conflito_google(medico, data, hora_inicio, hora_fim)
 
     try:
-        reserva = db.criar_reserva_por_hora(consultorio_id, medico_id, data, hora_inicio, quantidade_horas)
+        reserva = db.criar_reserva_por_hora(consultorio_id, medico_id, data, hora_inicio, quantidade_horas,
+                                             criado_por_admin=criado_por_admin)
     except ValueError as e:
         raise ConflitoDeReservaError(str(e))
 
     resultado = creditos_db.debitar_credito_por_reserva(
-        medico_id, preco, reserva["id"], quantidade_horas=quantidade_horas
+        medico_id, preco, reserva["id"], quantidade_horas=quantidade_horas, criado_por_admin=criado_por_admin
     )
     _rodar_em_segundo_plano(_finalizar_pos_reserva, medico, consultorio_id, reserva,
                              data, hora_inicio, hora_fim, medico_id)
@@ -317,20 +326,45 @@ def _quantidade_horas_da_reserva(reserva: dict) -> int:
 def cancelar_reserva(reserva_id: str, medico_id: str) -> dict:
     """Cancela uma reserva do próprio médico logado (nunca de outro --
     conferido aqui mesmo, defesa em profundidade além do que a rota já
-    faz). Se faltar 12h ou mais para o início da reserva, devolve as
-    horas gastas (reembolso); se faltar menos de 12h, o cancelamento
-    ainda é permitido, mas SEM reembolso -- pedido do Paulo em
-    10/09/2026.
-
-    O reembolso busca o valor EXATO da transação de consumo original
-    (creditos_transacoes ligada a essa reserva) em vez de recalcular no
-    preço atual -- protege contra o preço da hora ter mudado entre a
-    reserva e o cancelamento."""
+    faz)."""
     reserva = db.get_reserva_by_id(reserva_id)
     if not reserva:
         raise ValueError("Reserva não encontrada.")
     if reserva["medico_id"] != medico_id:
         raise ValueError("Essa reserva não é sua.")
+    return _efetivar_cancelamento(reserva, cancelado_por_admin=False)
+
+
+def cancelar_reserva_admin(reserva_id: str) -> dict:
+    """Pedido do Paulo em 21/09/2026: botão "Cancelar agendamento" da
+    Agenda Horistas (admin) -- cancela a reserva de QUALQUER médico (sem
+    checar dono, porque quem está cancelando aqui é o administrador),
+    com a MESMA regra de reembolso (12h) e os mesmos avisos que valem
+    pra um cancelamento feito pelo próprio médico."""
+    reserva = db.get_reserva_by_id(reserva_id)
+    if not reserva:
+        raise ValueError("Reserva não encontrada.")
+    return _efetivar_cancelamento(reserva, cancelado_por_admin=True)
+
+
+def _efetivar_cancelamento(reserva: dict, cancelado_por_admin: bool) -> dict:
+    """Lógica comum a cancelar_reserva e cancelar_reserva_admin -- extraída
+    em 21/09/2026 pra não duplicar a regra de reembolso de 12h (pedido do
+    Paulo em 10/09/2026) nem o e-mail de confirmação.
+
+    Se faltar 12h ou mais para o início da reserva, devolve as horas
+    gastas (reembolso, pro médico DONO da reserva, mesmo quando quem
+    cancelou foi o admin); se faltar menos de 12h, o cancelamento ainda
+    é permitido, mas SEM reembolso -- essa regra vale igual pros dois
+    casos.
+
+    O reembolso busca o valor EXATO da transação de consumo original
+    (creditos_transacoes ligada a essa reserva) em vez de recalcular no
+    preço atual -- protege contra o preço da hora ter mudado entre a
+    reserva e o cancelamento."""
+    reserva_id = reserva["id"]
+    medico_id = reserva["medico_id"]
+
     if reserva["status"] == "cancelada":
         raise ValueError("Essa reserva já está cancelada.")
 
@@ -346,7 +380,7 @@ def cancelar_reserva(reserva_id: str, medico_id: str) -> dict:
     agora = datetime.utcnow() - timedelta(hours=3)
     dentro_de_12h = inicio_dt is not None and (inicio_dt - agora) < timedelta(hours=HORAS_MINIMAS_PARA_REEMBOLSO)
 
-    db.marcar_reserva_cancelada(reserva_id)
+    db.marcar_reserva_cancelada(reserva_id, cancelado_por_admin=cancelado_por_admin)
 
     reembolsado = False
     horas_reembolsadas = 0
@@ -362,9 +396,12 @@ def cancelar_reserva(reserva_id: str, medico_id: str) -> dict:
             valor_reembolso = creditos_db.calcular_preco_horas(horas_reembolsadas) if horas_reembolsadas > 0 else 0.0
 
         if valor_reembolso > 0:
+            descricao = "Reembolso por cancelamento de reserva" + (
+                " (cancelada pelo administrador da Lifemax)" if cancelado_por_admin else ""
+            )
             resultado = creditos_db.registrar_transacao(
                 medico_id, tipo="ajuste", valor=valor_reembolso,
-                descricao="Reembolso por cancelamento de reserva", reserva_id=reserva_id,
+                descricao=descricao, reserva_id=reserva_id,
                 quantidade_horas=horas_reembolsadas, carteira="salas",
             )
             saldo_atual = resultado["saldo_novo"]
@@ -382,6 +419,7 @@ def cancelar_reserva(reserva_id: str, medico_id: str) -> dict:
         "saldo_atual": saldo_atual,
         "saldo_horas": creditos_db.saldo_em_horas_medico(medico_id),
         "dentro_de_12h": dentro_de_12h,
+        "medico_id": medico_id,
     }
 
 

@@ -52,6 +52,16 @@
   button.btn-nav { cursor: pointer; background: var(--teal-soft); border-color: var(--teal); color: var(--navy); font-weight: 700; }
   button.btn-nav:hover { background: #DCEEEC; }
 
+  /* Botão "Voltar ao painel" no header -- pedido do Paulo em 15/09/2026:
+     padrão de botão branco com letra da cor da faixa azul escura, igual
+     ao botão "Reservar consultórios" do painel do médico. */
+  .btn-voltar-header {
+    background: #fff; color: var(--navy); border: 1px solid #fff; text-decoration: none;
+    font-weight: 700; font-size: 13px; padding: 8px 16px; border-radius: 7px;
+    display: inline-block; transition: background 0.15s;
+  }
+  .btn-voltar-header:hover { background: #DCEEEC; }
+
   /* ---- botões "Reservar" / "Cancelar", no alto da página -- pedido do
      Paulo em 14/09/2026: em vez de preencher Data + Hora início +
      Quantidade de horas num formulário, o médico clica em "Reservar" e
@@ -108,7 +118,12 @@
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
   .grade-cabecalho .col-dia { text-align: center; padding: 3px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
   .grade-cabecalho .col-dia .numero { font-family: 'Manrope', sans-serif; font-size: 15px; }
-  .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; }
+  /* padding vertical -- pedido do Paulo em 21/09/2026: sem isso, a marca
+     "08:00" (e a "20:00" no fim) ficava cortada pelo overflow, porque o
+     translateY(-50%) da .marca-hora empurra o texto pra cima/baixo da
+     própria linha da hora, e nas pontas isso ia parar fora da área
+     visível (scrollável) do próprio contêiner. */
+  .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; padding: 7px 0; }
   .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
   .coluna-horas { position: relative; border-right: 1px solid var(--line); }
   .coluna-horas .marca-hora { position: absolute; left: 0; right: 0; font-size: 8.5px; color: var(--muted); text-align: right; padding-right: 6px; transform: translateY(-50%); }
@@ -198,8 +213,7 @@
     <p>Veja a disponibilidade de todos os consultórios da semana. Clique em "Reservar" e depois no horário verde que deseja ocupar (1h por clique). Para cancelar, clique em "Cancelar" e depois no horário reservado por você (azul).</p>
   </div>
   <div style="text-align:right;">
-    <div style="font-size:13px; color:#9FB8C4; margin-bottom:6px;">{{ medico.nome if medico else '' }}</div>
-    <a href="{{ url_for('medico_painel.painel') }}" style="color:#9FB8C4; font-size:13px; text-decoration:none;">← Voltar ao painel</a>
+    <a href="{{ url_for('medico_painel.painel') }}" class="btn-voltar-header">← Voltar ao painel</a>
   </div>
 </header>
 
@@ -269,9 +283,13 @@
 
 <script>
 const MEDICO_ATUAL_ID = {{ (medico.id if medico else '') | tojson }};
-const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
+// Horários da noite mudaram de 17:00/18:00/19:00 para 17:30/18:30/19:30
+// -- pedido do Paulo em 21/09/2026: pausa para limpeza das 17:00 às
+// 17:30 (mesma pausa que a agenda dos médicos fixos já tinha), e o
+// encerramento passa de 20:00 pra 20:30 (a última hora, 19:30-20:30).
+const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:30', '18:30', '19:30'];
 const GRID_INICIO_MIN = 8 * 60;
-const GRID_FIM_MIN = 20 * 60;
+const GRID_FIM_MIN = 20 * 60 + 30;
 // Reduzido em 70% (era 1.2) -- pedido do Paulo em 10/09/2026: compactar
 // as linhas de horário na vertical. Todo o resto do grid (altura das
 // colunas, posição das marcas de hora, dos blocos de reserva e das
@@ -279,19 +297,25 @@ const GRID_FIM_MIN = 20 * 60;
 // compacta a tela inteira de forma proporcional.
 const PX_POR_MIN = 0.36;
 
+// Marcas de horário mostradas na coluna da esquerda -- de hora em hora
+// das 08:00 às 17:00, depois de meia em meia hora (17:00, 17:30, 18:30,
+// 19:30, 20:30) porque os horários da noite não caem mais em hora cheia.
+const MARCAS_GRADE = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
+                       '17:00', '17:30', '18:30', '19:30', '20:30'];
+
 // Mesma faixa de horário de cada turno usada no backend
 // (app/services/supabase_client.py PERIODOS_HORARIOS) — usada aqui só
 // para saber quais horários um turno-inteiro reservado ocupa.
 const HORARIOS_DO_TURNO = {
   manha: ['08:00', '09:00', '10:00', '11:00'],
   tarde: ['13:00', '14:00', '15:00', '16:00'],
-  noite: ['17:00', '18:00', '19:00'],
+  noite: ['17:30', '18:30', '19:30'],
 };
 
 // Hora de INÍCIO de cada turno (mesma faixa do backend PERIODOS_HORARIOS)
 // -- usada só pra saber a partir de que horário conta o prazo de 12h de
 // cancelamento de uma reserva de turno (que não guarda hora_inicio).
-const INICIO_DO_TURNO = { manha: '08:00', tarde: '13:00', noite: '17:00' };
+const INICIO_DO_TURNO = { manha: '08:00', tarde: '13:00', noite: '17:30' };
 
 // Modo ativo da grade -- pedido do Paulo em 14/09/2026: 'reservar',
 // 'cancelar' ou null (nenhum). Clicar num horário só tem efeito quando
@@ -397,6 +421,17 @@ document.getElementById('foto-consultorio-proxima').addEventListener('click', ()
 // faixas (em minutos) fora do horário reservável -- almoço, fora do
 // expediente, ou bloqueado pelo admin na "Semana Padrão" -- pintadas de
 // bege, igual à agenda dos médicos fixos
+function _minutosDeHora(hora) {
+  const [hh, mm] = hora.split(':').map(Number);
+  return hh * 60 + mm;
+}
+
+// Faixas (em minutos) fora do horário reservável -- almoço (12h-13h),
+// pausa para limpeza (17h-17h30) ou bloqueado pelo admin na "Semana
+// Padrão" -- pintadas de bege. Reescrita em 21/09/2026 (pedido do Paulo:
+// pausa para limpeza das 17h às 17h30) pra trabalhar por MINUTO em vez
+// de assumir que todo horário reservável começa em hora cheia -- os
+// horários da noite agora começam às 17:30/18:30/19:30.
 function faixasBegeDoDia(consultorioId, dataIso) {
   const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
   const bloqueiosTemplate = gradeAtual.bloqueios_template || [];
@@ -404,18 +439,23 @@ function faixasBegeDoDia(consultorioId, dataIso) {
     b.consultorio_id === consultorioId && b.dia_semana === diaSemana && b.hora_inicio === hora
   );
 
+  // Intervalos [início,fim) em minutos cobertos por um horário
+  // reservável (que NÃO esteja bloqueado pelo admin), ordenados.
+  const intervalosReservaveis = HORARIOS
+    .filter(hora => !bloqueadoNoHorario(hora))
+    .map(hora => { const inicio = _minutosDeHora(hora); return [inicio, inicio + 60]; })
+    .sort((a, b) => a[0] - b[0]);
+
   const faixas = [];
-  let inicioFaixaAberta = null;
-  for (let min = GRID_INICIO_MIN; min < GRID_FIM_MIN; min += 60) {
-    const hora = `${String(Math.floor(min / 60)).padStart(2, '0')}:00`;
-    const foraDeHorario = !HORARIOS.includes(hora) || bloqueadoNoHorario(hora);
-    if (foraDeHorario && inicioFaixaAberta === null) inicioFaixaAberta = min;
-    if (!foraDeHorario && inicioFaixaAberta !== null) {
-      faixas.push([inicioFaixaAberta, min]);
-      inicioFaixaAberta = null;
-    }
+  let cursor = GRID_INICIO_MIN;
+  for (const [inicio, fim] of intervalosReservaveis) {
+    const inicioClamp = Math.max(inicio, GRID_INICIO_MIN);
+    const fimClamp = Math.min(fim, GRID_FIM_MIN);
+    if (inicioClamp >= GRID_FIM_MIN || fimClamp <= GRID_INICIO_MIN) continue;
+    if (inicioClamp > cursor) faixas.push([cursor, inicioClamp]);
+    cursor = Math.max(cursor, fimClamp);
   }
-  if (inicioFaixaAberta !== null) faixas.push([inicioFaixaAberta, GRID_FIM_MIN]);
+  if (cursor < GRID_FIM_MIN) faixas.push([cursor, GRID_FIM_MIN]);
   return faixas;
 }
 
@@ -436,11 +476,10 @@ function renderizarGrade() {
   const alturaTotal = (GRID_FIM_MIN - GRID_INICIO_MIN) * PX_POR_MIN;
 
   let colunaHoras = `<div class="coluna-horas" style="height:${alturaTotal}px;">`;
-  for (let min = GRID_INICIO_MIN; min <= GRID_FIM_MIN; min += 60) {
-    const top = (min - GRID_INICIO_MIN) * PX_POR_MIN;
-    const h = `${String(Math.floor(min / 60)).padStart(2, '0')}:00`;
+  MARCAS_GRADE.forEach(h => {
+    const top = (_minutosDeHora(h) - GRID_INICIO_MIN) * PX_POR_MIN;
     colunaHoras += `<div class="marca-hora" style="top:${top}px;">${h}</div>`;
-  }
+  });
   colunaHoras += `</div>`;
 
   // ocupação: pra cada consultório+data+hora, quem reservou (medico_id + nome)

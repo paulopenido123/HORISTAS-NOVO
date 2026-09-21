@@ -8,7 +8,6 @@ from app.services import supabase_client as db
 from app.services import creditos_service as creditos_db
 from app.services import auth_service
 from app.services import recuperacao_senha_service as rec_senha
-from app.services import google_login_service as glogin
 from app.services import agenda_fixos_service
 from app.extensions import limiter
 
@@ -149,68 +148,6 @@ def login():
     return render_template("login.html", erro=erro)
 
 
-@auth_bp.route("/login/google")
-def login_google():
-    """Botão "Entrar com Google" da tela de login -- manda o médico pro
-    Google escolher a conta. Não substitui o login por telefone/senha,
-    é só mais uma porta de entrada pra quem já é cadastrado."""
-    try:
-        url = glogin.gerar_url_autorizacao()
-    except glogin.GoogleLoginNaoConfiguradoError as e:
-        flash(str(e), "erro")
-        return redirect(url_for("auth.login"))
-    return redirect(url)
-
-
-@auth_bp.route("/login/google/callback")
-def login_google_callback():
-    """O Google chama essa URL de volta, com um 'code' de uso único.
-    Trocamos esse código só pela identidade da conta (e-mail/nome) --
-    nunca por acesso a nada mais -- e casamos com um médico já
-    cadastrado pelo e-mail. Não cadastra médico novo por aqui (ver
-    google_login_service.py para o motivo: falta o telefone, obrigatório
-    pro assistente de WhatsApp)."""
-    code = request.args.get("code")
-    if not code:
-        flash("Não consegui completar o login com o Google. Tente de novo.", "erro")
-        return redirect(url_for("auth.login"))
-
-    try:
-        identidade = glogin.obter_identidade_da_conta(code)
-    except glogin.GoogleLoginNaoConfiguradoError as e:
-        flash(str(e), "erro")
-        return redirect(url_for("auth.login"))
-    except Exception as e:
-        # Antes, esse erro sumia sem deixar rastro nenhum -- só a
-        # mensagem genérica na tela, sem dar pra saber o motivo real, e
-        # o log do Render era difícil de achar na prática. Agora mostra
-        # o tipo do erro direto na própria tela (mais fácil de me
-        # mandar um print) e ainda imprime o traceback completo no log,
-        # pra quando precisar do detalhe fino.
-        import traceback
-        traceback.print_exc()
-        flash(
-            f"Não consegui confirmar sua conta Google agora (erro técnico: {type(e).__name__}). "
-            "Tente de novo em instantes ou avise o suporte com esse código.",
-            "erro",
-        )
-        return redirect(url_for("auth.login"))
-
-    medico = db.get_medico_por_email(identidade["email"]) if identidade["email"] else None
-    if medico is None:
-        flash(
-            f"Não encontrei nenhum cadastro com o e-mail \"{identidade['email']}\" (o mesmo da "
-            "conta Google que você escolheu). Confirme com a secretária ou o administrador que "
-            "seu cadastro já foi feito e que esse é exatamente o e-mail cadastrado, ou entre com "
-            "telefone e senha.",
-            "erro",
-        )
-        return redirect(url_for("auth.login"))
-
-    auth_service.login_medico(medico["id"])
-    return redirect(url_for("medico_painel.painel"))
-
-
 @auth_bp.route("/logout")
 def logout():
     auth_service.logout_medico()
@@ -241,19 +178,57 @@ def redefinir_senha():
 
     registro = rec_senha.validar_token(token)
     primeiro_acesso = bool(registro) and registro.get("contexto") == "primeiro_acesso"
-    if registro is None:
+
+    # Pedido do Paulo em 21/09/2026: quem chega por um link de "primeiro
+    # acesso" (migração de clientes do sistema antigo) precisa poder
+    # conferir/corrigir o telefone (usado pra login em todo o sistema) e
+    # o e-mail cadastrados, sem perder nenhum dado -- por isso a tela
+    # mostra os dois campos já preenchidos, mas editáveis.
+    medico = None
+    telefone_valor = ""
+    email_valor = ""
+    if registro and primeiro_acesso and registro.get("tipo") == "medico":
+        medico = db.get_medico_by_id(registro["usuario_id"])
+        if medico is None:
+            erro = "Esse cadastro não foi encontrado. Fale com a Lifemax."
+            registro = None
+        else:
+            telefone_valor = medico.get("telefone", "")
+            email_valor = medico.get("email") or ""
+
+    if registro is None and erro is None:
         erro = "Esse link expirou ou já foi usado. Peça pra gerarem um novo."
-    elif request.method == "POST":
+    elif request.method == "POST" and registro is not None:
         senha = request.form.get("senha", "")
         confirmar = request.form.get("confirmar_senha", "")
+        telefone_form = request.form.get("telefone", telefone_valor)
+        email_form = request.form.get("email", email_valor)
+
+        if primeiro_acesso:
+            telefone_valor = agenda_fixos_service.normalizar_telefone(telefone_form) or ""
+            email_valor = (email_form or "").strip()
+
         if len(senha) < 6:
             erro = "A senha precisa ter pelo menos 6 caracteres."
         elif senha != confirmar:
             erro = "As senhas não coincidem."
+        elif primeiro_acesso and not telefone_valor.isdigit():
+            erro = "Telefone deve conter só números, com DDI e DDD (ex: 5531999999999)."
+        elif primeiro_acesso and email_valor and "@" not in email_valor:
+            erro = "Digite um e-mail válido (ou deixe em branco)."
+        elif primeiro_acesso and telefone_valor != medico.get("telefone") and \
+                db.get_medico_by_telefone(telefone_valor) is not None:
+            erro = "Esse telefone já está cadastrado para outro médico. Confira o número."
         elif not rec_senha.redefinir_senha(token, senha):
             erro = "Esse link expirou ou já foi usado. Peça pra gerarem um novo."
         else:
             sucesso = True
+            if primeiro_acesso:
+                db.atualizar_medico(
+                    medico["id"], medico["nome"], telefone_valor,
+                    medico.get("especialidade") or "", cpf_cnpj=medico.get("cpf_cnpj") or "",
+                    email=email_valor or None,
+                )
             # Pedido do Paulo em 11/09/2026: quem entra por um link de
             # "primeiro acesso" (mandado pelo admin pra um médico já
             # cadastrado -- ex: migração de clientes do sistema antigo)
@@ -267,5 +242,8 @@ def redefinir_senha():
                 auth_service.login_medico(registro["usuario_id"])
                 return redirect(url_for("medico_painel.painel"))
 
-    return render_template("redefinir_senha.html", erro=erro, sucesso=sucesso, token=token,
-                            rota_login=url_for("auth.login"), primeiro_acesso=primeiro_acesso)
+    return render_template(
+        "redefinir_senha.html", erro=erro, sucesso=sucesso, token=token,
+        rota_login=url_for("auth.login"), primeiro_acesso=primeiro_acesso,
+        telefone_valor=telefone_valor, email_valor=email_valor,
+    )

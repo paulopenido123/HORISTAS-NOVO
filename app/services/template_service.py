@@ -5,10 +5,13 @@ toda semana indefinidamente — no mesmo formato de grade por hora que o
 Lifemax já usa (não mais por turno inteiro).
 
 Grade de horários fixos usada em todo o sistema (11 horários por dia,
-com intervalo de almoço entre 12h e 13h):
+com intervalo de almoço entre 12h e 13h, e uma pausa para limpeza entre
+17h e 17h30 -- pedido do Paulo em 21/09/2026, mesma pausa que a agenda
+dos médicos fixos já usava, ver agenda_fixos_service.TURNOS_HORARIOS):
   Manhã: 08:00, 09:00, 10:00, 11:00
   Tarde: 13:00, 14:00, 15:00, 16:00
-  Noite: 17:00, 18:00, 19:00
+  (pausa para limpeza: 17:00–17:30)
+  Noite: 17:30, 18:30, 19:30 (a última vai até 20:30, horário de encerramento)
 
 Por padrão, tudo está disponível — só guardamos os BLOQUEIOS (o que o
 admin desmarcou).
@@ -21,12 +24,12 @@ from app.services.supabase_client import get_client
 
 HORARIOS_DO_DIA = ["08:00", "09:00", "10:00", "11:00",
                     "13:00", "14:00", "15:00", "16:00",
-                    "17:00", "18:00", "19:00"]
+                    "17:30", "18:30", "19:30"]
 
 HORARIOS_POR_PERIODO = {
     "manha": ["08:00", "09:00", "10:00", "11:00"],
     "tarde": ["13:00", "14:00", "15:00", "16:00"],
-    "noite": ["17:00", "18:00", "19:00"],
+    "noite": ["17:30", "18:30", "19:30"],
 }
 
 

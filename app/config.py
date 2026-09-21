@@ -137,12 +137,6 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
     GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")  # ex: http://localhost:5000/google/callback
 
-    # --- Login do médico com conta Google ---
-    # Reaproveita o MESMO Client ID/Secret do Google Calendar acima (mesmo
-    # projeto no Google Cloud Console) -- só o redirect_uri é diferente,
-    # porque é um fluxo separado (entrar no sistema, não conectar a agenda).
-    GOOGLE_LOGIN_REDIRECT_URI = os.getenv("GOOGLE_LOGIN_REDIRECT_URI")  # ex: http://localhost:5000/login/google/callback
-
     # --- Google Sheets (planilha de médicos, Módulo 2) — Conta de Serviço ---
     GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")  # caminho pro arquivo .json baixado
     PLANILHA_MEDICOS_ID = os.getenv("PLANILHA_MEDICOS_ID")  # o ID que aparece na URL da planilha

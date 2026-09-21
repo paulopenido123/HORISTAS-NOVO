@@ -1046,6 +1046,22 @@ comment on column precos.ia_usd_para_brl is 'Cotação do dólar usada pra conve
 
 
 -- ============================================================
+-- migration_ia_percentual_200.sql
+-- ============================================================
+
+-- Ajusta o percentual de aumento cobrado sobre o custo real da IA para
+-- 200% (pedido do Paulo em 21/09/2026, junto com a recriação da compra
+-- de créditos de IA): cobrar 200% em cima do que o GPT/Luna custou de
+-- verdade, ou seja, 3x o custo real (1 + 200/100). O valor anterior era
+-- o default de migration_ia_precos.sql (400 = 5x). A partir daqui isso
+-- também fica editável na tela admin "Controle de IA" (ver
+-- app/routes/admin.py / app/templates/admin_controle_ia.html), então
+-- essa atualização aqui é só o ponto de partida -- o Paulo pode mudar
+-- de novo a qualquer momento pela tela, sem precisar rodar SQL.
+update precos set ia_percentual_aumento = 200;
+
+
+-- ============================================================
 -- migration_ia_uso.sql
 -- ============================================================
 
@@ -2345,6 +2361,22 @@ alter table medicos add column if not exists termo_aceito_ip text;
 -- específico realmente aceitou no passado.
 
 alter table medicos add column if not exists termo_versao text;
+
+
+-- ============================================================
+-- migration_tryout_medico.sql
+-- ============================================================
+
+-- Pedido do Paulo em 21/09/2026: "tryout" pro médico avulso conhecer o
+-- sistema -- as 3 primeiras reservas de consultório (por hora) não
+-- debitam saldo, em qualquer canal (site ou assistente de WhatsApp
+-- Dora). Da 4ª reserva em diante, precisa ter crédito normalmente.
+-- `tryout=true` marca quais reservas usaram essa cortesia -- o "quanto
+-- ainda falta" é sempre CALCULADO contando reservas tryout NÃO
+-- canceladas desse médico (ver creditos_service.tryout_restante), não
+-- guardado num contador separado, pra cancelar uma reserva de teste
+-- devolver a cortesia automaticamente (mesma lógica de sempre).
+alter table reservas add column if not exists tryout boolean not null default false;
 
 
 -- ============================================================

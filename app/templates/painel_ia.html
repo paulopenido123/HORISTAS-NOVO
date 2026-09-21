@@ -42,6 +42,28 @@
   .status-trial.ativo { background: var(--cyan-soft); color: var(--cyan); }
   .status-trial.expirado { background: rgba(214,92,63,0.12); color: #D65C3F; }
   #status-msg { font-size:13px; margin-top:10px; min-height:18px; }
+  .btn-comprar-ia { font-family: var(--display); font-weight:700; font-size:13px; color:#fff;
+                     background: var(--cyan); border:0; border-radius:7px; padding:10px 16px; cursor:pointer; }
+  .btn-comprar-ia:hover { opacity:0.9; }
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(14,30,40,0.55);
+                    align-items:center; justify-content:center; z-index:200; padding:16px; }
+  .modal-overlay.aberto { display:flex; }
+  .modal { background:#fff; border-radius:12px; padding:26px 24px; max-width:420px; width:100%;
+           text-align:center; max-height:90vh; overflow-y:auto; }
+  .modal h3 { font-family: var(--display); font-size:17px; color: var(--navy); margin-bottom:14px; }
+  .opcao-valor-ia { display:flex; align-items:center; justify-content:space-between; gap:10px;
+                     border:1px solid var(--line-strong); border-radius:8px; padding:12px 14px;
+                     cursor:pointer; font-size:14px; margin-bottom:8px; text-align:left; }
+  .opcao-valor-ia input { accent-color: var(--cyan); }
+  .btn-gerar { width:100%; padding:12px; border:0; border-radius:8px; background: var(--cyan);
+               color:#fff; font-family: var(--display); font-weight:700; font-size:14px; cursor:pointer; margin-top:6px; }
+  .btn-fechar { width:100%; padding:10px; border:0; border-radius:8px; background:transparent;
+                color: var(--ink-muted); font-weight:600; font-size:13px; cursor:pointer; margin-top:8px; }
+  .qrcode-area img { max-width:220px; width:100%; margin:14px 0; }
+  .copia-cola { font-size:11px; background:#F5F8F9; border:1px solid var(--line); border-radius:6px;
+                padding:10px; word-break:break-all; margin-bottom:12px; }
+  .status-aguardando { color: var(--ink-muted); }
+  .status-pago { color:#1C8A4C; font-weight:700; }
 </style>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
@@ -79,6 +101,7 @@
   <div class="saldo-card">
     <div>Saldo para IA</div>
     <div class="valor">R$ {{ "%.2f"|format(status_ia.saldo) }}</div>
+    <button class="btn-comprar-ia" onclick="abrirModalCompraIA()">+ Comprar créditos de IA</button>
   </div>
 
   {% for slug, m in status_ia.modulos.items() %}
@@ -97,6 +120,38 @@
   {% endfor %}
 
   <div id="status-msg"></div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay-ia">
+  <div class="modal" id="modal-conteudo-ia">
+    <div class="passo-modal-ia" id="passo-valor-ia">
+      <h3>Comprar créditos de IA</h3>
+      <p style="font-size:13px; color:var(--ink-muted); margin-bottom:16px;">
+        Escolha um valor fechado em PIX ou cartão — o crédito cai direto no seu Saldo para IA e vai sendo abatido a cada uso, mostrando sempre o saldo atual.
+      </p>
+      <div id="lista-valores-ia">
+        {% for v in [20, 40, 60, 80, 100] %}
+        <label class="opcao-valor-ia">
+          <span style="display:flex; align-items:center; gap:8px;">
+            <input type="radio" name="valor-ia" value="{{ v }}">
+            <strong>R$ {{ v }},00</strong>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+      <button class="btn-gerar" onclick="irParaConfirmacaoIA()">Continuar</button>
+      <button class="btn-fechar" onclick="fecharModalIA()">Cancelar</button>
+    </div>
+
+    <div class="passo-modal-ia" id="passo-confirmacao-ia" hidden>
+      <h3>Confirme a compra</h3>
+      <p id="resumo-confirmacao-ia" style="font-size:14px; color: var(--ink); line-height:1.6; margin-bottom:18px; text-align:left;"></p>
+      <button class="btn-gerar" onclick="gerarPixIA()">Confirmar e pagar com PIX</button>
+      <button class="btn-gerar" style="background:transparent; color: var(--ink); border:1px solid var(--line-strong); margin-top:8px;" onclick="gerarCobrancaCartaoIA()">Confirmar e pagar com cartão</button>
+      <button class="btn-fechar" type="button" onclick="voltarDaConfirmacaoIA()">← Voltar e escolher outro valor</button>
+      <button class="btn-fechar" onclick="fecharModalIA()">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -141,6 +196,143 @@ async function salvarModulo(checkbox) {
   } finally {
     checkbox.disabled = false;
   }
+}
+</script>
+
+<script>
+// Compra de créditos de IA (pedido do Paulo em 21/09/2026 -- recriação
+// da opção "inserir créditos para IA", valores fechados em PIX/cartão
+// que caem no Saldo para IA, reaproveitando as mesmas rotas de compra
+// já usadas em "Comprar horas" no painel principal, só que aqui manda
+// `valor_ia` em vez de `pacote_horas`).
+const HTML_MODAL_COMPRA_IA_ORIGINAL = document.getElementById('modal-conteudo-ia').innerHTML;
+let estadoCompraIA = { valor: 0 };
+let intervaloPollingIA = null;
+
+function mostrarPassoIA(idPasso) {
+  document.querySelectorAll('#modal-conteudo-ia .passo-modal-ia').forEach(el => { el.hidden = true; });
+  const alvo = document.getElementById(idPasso);
+  if (alvo) alvo.hidden = false;
+}
+
+function abrirModalCompraIA() {
+  document.getElementById('modal-conteudo-ia').innerHTML = HTML_MODAL_COMPRA_IA_ORIGINAL;
+  estadoCompraIA = { valor: 0 };
+  mostrarPassoIA('passo-valor-ia');
+  document.getElementById('modal-overlay-ia').classList.add('aberto');
+}
+
+function fecharModalIA() {
+  document.getElementById('modal-overlay-ia').classList.remove('aberto');
+  pararPollingIA();
+}
+
+function irParaConfirmacaoIA() {
+  const el = document.querySelector('input[name="valor-ia"]:checked');
+  if (!el) { alert('Escolha um valor para continuar.'); return; }
+  estadoCompraIA.valor = parseFloat(el.value);
+  document.getElementById('resumo-confirmacao-ia').innerHTML =
+    `Você está adicionando <strong>R$ ${estadoCompraIA.valor.toFixed(2)}</strong> ao seu Saldo para IA.<br><br>
+     Confirma que é esse o valor que você quer adicionar?`;
+  mostrarPassoIA('passo-confirmacao-ia');
+}
+
+function voltarDaConfirmacaoIA() {
+  mostrarPassoIA('passo-valor-ia');
+}
+
+async function gerarPixIA() {
+  const modal = document.getElementById('modal-conteudo-ia');
+  modal.innerHTML = '<p>Gerando PIX...</p>';
+
+  try {
+    const resp = await fetch('{{ url_for("medico_painel.comprar_creditos") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valor_ia: estadoCompraIA.valor }),
+    });
+    const dados = await resp.json();
+
+    if (!resp.ok) {
+      modal.innerHTML = `<p style="color:#D65C3F;">${dados.erro || 'Erro ao gerar PIX.'}</p>
+        <button class="btn-fechar" onclick="fecharModalIA()">Fechar</button>`;
+      return;
+    }
+
+    modal.innerHTML = `
+      <h3>Escaneie o QR Code</h3>
+      <p>R$ ${dados.valor.toFixed(2)}</p>
+      <div class="qrcode-area">
+        <img src="data:image/png;base64,${dados.qr_code_base64}" alt="QR Code PIX">
+      </div>
+      <div class="copia-cola">${dados.copia_e_cola}</div>
+      <p class="status-aguardando" id="status-pix-ia">Aguardando pagamento...</p>
+      <button class="btn-fechar" onclick="fecharModalIA()">Fechar</button>
+    `;
+
+    iniciarPollingIA(dados.pagamento_id);
+  } catch (e) {
+    modal.innerHTML = `<p style="color:#D65C3F;">Erro de conexão.</p>
+      <button class="btn-fechar" onclick="fecharModalIA()">Fechar</button>`;
+  }
+}
+
+async function gerarCobrancaCartaoIA() {
+  const modal = document.getElementById('modal-conteudo-ia');
+  modal.innerHTML = '<p>Preparando pagamento com cartão...</p>';
+
+  try {
+    const resp = await fetch('{{ url_for("medico_painel.comprar_creditos_cartao") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ valor_ia: estadoCompraIA.valor, parcelas: 1 }),
+    });
+    const dados = await resp.json();
+
+    if (!resp.ok) {
+      modal.innerHTML = `<p style="color:#D65C3F;">${dados.erro || 'Erro ao gerar cobrança.'}</p>
+        <button class="btn-fechar" onclick="fecharModalIA()">Fechar</button>`;
+      return;
+    }
+
+    window.open(dados.invoice_url, '_blank');
+
+    modal.innerHTML = `
+      <h3>Pagamento com cartão</h3>
+      <p>R$ ${dados.valor.toFixed(2)}</p>
+      <p style="font-size:13px; color: var(--ink-muted);">
+        Abrimos uma nova aba para você digitar os dados do cartão numa página
+        segura do Asaas. Se não abriu, <a href="${dados.invoice_url}" target="_blank" style="color:var(--cyan);">clique aqui</a>.
+      </p>
+      <p class="status-aguardando" id="status-pix-ia">Aguardando pagamento...</p>
+      <button class="btn-fechar" onclick="fecharModalIA()">Fechar</button>
+    `;
+
+    iniciarPollingIA(dados.pagamento_id);
+  } catch (e) {
+    modal.innerHTML = `<p style="color:#D65C3F;">Erro de conexão.</p>
+      <button class="btn-fechar" onclick="fecharModalIA()">Fechar</button>`;
+  }
+}
+
+function iniciarPollingIA(pagamentoId) {
+  intervaloPollingIA = setInterval(async () => {
+    try {
+      const resp = await fetch(`/api/creditos/status/${pagamentoId}`);
+      const dados = await resp.json();
+      if (dados.status === 'pago') {
+        document.getElementById('status-pix-ia').textContent = '✅ Pagamento confirmado!';
+        document.getElementById('status-pix-ia').className = 'status-pago';
+        pararPollingIA();
+        setTimeout(() => location.reload(), 1500);
+      }
+    } catch (e) { /* silencioso, tenta de novo no próximo ciclo */ }
+  }, 4000);
+}
+
+function pararPollingIA() {
+  if (intervaloPollingIA) clearInterval(intervaloPollingIA);
+  intervaloPollingIA = null;
 }
 </script>
 

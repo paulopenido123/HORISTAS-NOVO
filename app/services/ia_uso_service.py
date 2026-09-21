@@ -669,3 +669,63 @@ def estatisticas_uso_ia_diario(dias: int = 30) -> list[dict]:
         }
         for data_str in sorted(por_dia.keys())
     ]
+
+
+def estatisticas_uso_ia_por_medico(mes: int | None = None, ano: int | None = None) -> list[dict]:
+    """Pra tela admin "Controle de IA" (pedido do Paulo em 21/09/2026):
+    quanto CADA médico gastou de IA (tokens e R$) num período, junto com
+    o saldo de IA atual dele -- diferente de estatisticas_uso_ia(), que
+    só devolve o total agregado de todo mundo junto. Ordenado do médico
+    que mais gastou (valor_cobrado) pro que menos gastou; médico sem
+    nenhum uso no período não aparece na lista."""
+    registros = (
+        get_client().table("ia_uso_log")
+        .select("medico_id, tokens_entrada, tokens_saida, custo_real, custo_cobrado, gratuito, criado_em")
+        .execute()
+        .data
+    )
+    filtrados = _filtrar_por_mes_ano(registros, mes, ano)
+
+    por_medico: dict[str, dict] = {}
+    for r in filtrados:
+        medico_id = r.get("medico_id")
+        if not medico_id:
+            continue
+        acumulado = por_medico.setdefault(medico_id, {
+            "tokens_entrada": 0, "tokens_saida": 0, "custo_real": 0.0,
+            "valor_cobrado": 0.0, "total_chamadas": 0, "chamadas_gratuitas": 0,
+        })
+        acumulado["tokens_entrada"] += int(r.get("tokens_entrada") or 0)
+        acumulado["tokens_saida"] += int(r.get("tokens_saida") or 0)
+        acumulado["custo_real"] += float(r.get("custo_real") or 0)
+        acumulado["valor_cobrado"] += float(r.get("custo_cobrado") or 0)
+        acumulado["total_chamadas"] += 1
+        if r.get("gratuito"):
+            acumulado["chamadas_gratuitas"] += 1
+
+    if not por_medico:
+        return []
+
+    medicos = (
+        get_client().table("medicos").select("id, nome")
+        .in_("id", list(por_medico.keys())).execute().data
+    )
+    nomes = {m["id"]: m["nome"] for m in medicos}
+    saldos_ia = {medico_id: creditos_service.obter_saldo_ia(medico_id) for medico_id in por_medico}
+
+    linhas = [
+        {
+            "medico_id": medico_id,
+            "medico_nome": nomes.get(medico_id, "(médico removido)"),
+            "tokens_total": dados["tokens_entrada"] + dados["tokens_saida"],
+            "custo_real": round(dados["custo_real"], 2),
+            "valor_cobrado": round(dados["valor_cobrado"], 2),
+            "lucro": round(dados["valor_cobrado"] - dados["custo_real"], 2),
+            "total_chamadas": dados["total_chamadas"],
+            "chamadas_gratuitas": dados["chamadas_gratuitas"],
+            "saldo_ia_atual": saldos_ia.get(medico_id, 0),
+        }
+        for medico_id, dados in por_medico.items()
+    ]
+    linhas.sort(key=lambda linha: linha["valor_cobrado"], reverse=True)
+    return linhas

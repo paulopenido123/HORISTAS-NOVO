@@ -46,6 +46,13 @@ EXTRA_DEPS = [
     ("migration_secretarias.sql", "migration_recuperacao_senha.sql"),
     ("migration_recuperacao_senha.sql", "migration_primeiro_acesso_admin.sql"),
     ("migration_prontuarios.sql", "migration_prontuario_melhorias.sql"),
+    # migration_ia_percentual_200.sql faz "update precos set
+    # ia_percentual_aumento = 200" -- essa coluna só existe depois que
+    # migration_ia_precos.sql roda (ela que cria a coluna com "alter
+    # table ... add column"). Sem essa dependência explícita, a ordem
+    # alfabética colocaria "ia_percentual_200" ANTES de "ia_precos"
+    # (por causa do "e" < "r"), o que quebraria o UPDATE.
+    ("migration_ia_precos.sql", "migration_ia_percentual_200.sql"),
 ]
 
 DELIM = "-- " + "=" * 60

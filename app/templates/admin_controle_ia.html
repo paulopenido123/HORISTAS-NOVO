@@ -1,0 +1,173 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Controle de IA — Lifemax Admin</title><style>
+body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
+.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between}
+.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}
+.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}
+.nav a.active{color:#10AFA9}
+.wrap{max-width:1180px;margin:auto;padding:28px 24px}
+.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px;margin-bottom:22px}
+.filtro{display:flex;align-items:flex-end;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.filtro label{display:block;font-size:12.5px;font-weight:700;color:#62788A;margin-bottom:6px}
+.filtro input{padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px}
+.filtro button{padding:10px 16px;border:0;border-radius:8px;background:#10AFA9;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:10px}
+.kpi{border-radius:14px;padding:22px;color:#fff}
+.kpi.green{background:linear-gradient(135deg,#1FA35A,#1C8A4C)}
+.kpi.navy{background:linear-gradient(135deg,#0E3A52,#082A3D)}
+.kpi.coral{background:linear-gradient(135deg,#D9634F,#B94B3A)}
+.kpi.cinza{background:linear-gradient(135deg,#5C7080,#3F5060)}
+.kpi .rotulo{font-size:13.5px;font-weight:700;margin-bottom:2px}
+.kpi .sub{font-size:11.5px;opacity:0.85;margin-bottom:10px}
+.kpi .num{font-size:28px;font-weight:800}
+.nota{color:#62788A;font-size:12.5px;margin-top:-6px;margin-bottom:8px}
+.titulo-acumulado{font-size:13.5px;font-weight:800;color:#0B3A52;text-transform:uppercase;letter-spacing:.03em;margin-bottom:14px;padding-top:10px;border-top:1px solid #e3ebef}
+@media(max-width:900px){.kpis{grid-template-columns:1fr 1fr}}
+table{width:100%;border-collapse:collapse;margin-top:6px}
+th,td{padding:11px;border-bottom:1px solid #e3ebef;text-align:left;font-size:13px}
+th{color:#62788A;font-weight:700}
+td.num,th.num{text-align:right}
+.card h2{margin-top:0;font-size:16px}
+.card p.explica{color:#62788A;font-size:12.5px;margin-top:-6px;margin-bottom:18px}
+.linha-preco{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.linha-preco label{display:block;font-size:12px;font-weight:700;color:#62788A;margin-bottom:6px}
+.linha-preco input{width:100%;box-sizing:border-box;padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px}
+.card-preco button{padding:10px 18px;border:0;border-radius:8px;background:#082A3D;color:#fff;font-weight:700;font-size:13px;cursor:pointer;margin-top:6px}
+.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}
+.flash.ok{background:#E3F7EE;color:#0B7B45}
+.flash.erro{background:#FBEAE6;color:#B33}
+@media(max-width:700px){.linha-preco{grid-template-columns:1fr 1fr}}
+</style></head><body>
+<div class="top"><strong>LIFEMAX ADMIN · CONTROLE DE IA</strong><span>Administrador</span></div>
+<div class="nav">
+  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a><a href="{{ url_for('admin.agenda_horistas') }}">Agenda Horistas</a>
+  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
+  <a href="{{ url_for('admin.clientes') }}">Clientes</a>
+  <a href="{{ url_for('admin.horas') }}">Horas</a>
+  <a href="{{ url_for('admin.relatorios') }}">Relatórios</a>
+  <a href="{{ url_for('admin.controle_ia') }}" class="active">Controle de IA</a>
+  <a href="{{ url_for('admin.admin_logout') }}">Sair</a>
+</div>
+<div class="wrap">
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% for categoria, texto in mensagens %}
+      <div class="flash {{ categoria }}">{{ texto }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="card">
+    <form class="filtro" method="get">
+      <div>
+        <label>Filtre por mês</label>
+        <input type="month" name="mes" value="{{ mes_valor }}">
+      </div>
+      <button type="submit">Aplicar</button>
+    </form>
+
+    <div class="kpis">
+      <div class="kpi navy">
+        <div class="rotulo">Custo real (GPT/Luna)</div>
+        <div class="sub">Pago de verdade à OpenAI em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }}</div>
+        <div class="num">R$ {{ "%.2f"|format(stats.custo_real) }}</div>
+      </div>
+      <div class="kpi green">
+        <div class="rotulo">Cobrado dos médicos</div>
+        <div class="sub">Débito de saldo de IA em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }}</div>
+        <div class="num">R$ {{ "%.2f"|format(stats.valor_cobrado) }}</div>
+      </div>
+      <div class="kpi green">
+        <div class="rotulo">Lucro da operação</div>
+        <div class="sub">Cobrado menos custo real em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }}</div>
+        <div class="num">R$ {{ "%.2f"|format(stats.lucro) }}</div>
+      </div>
+      <div class="kpi cinza">
+        <div class="rotulo">Chamadas de IA</div>
+        <div class="sub">{{ stats.chamadas_pagas }} cobradas, {{ stats.chamadas_gratuitas }} grátis</div>
+        <div class="num">{{ stats.total_chamadas }}</div>
+      </div>
+    </div>
+    <p class="nota">"Lucro" é o que foi cobrado dos médicos menos o que a chamada custou de verdade nos provedores de IA — a margem que sobra de verdade, não a receita bruta.</p>
+
+    <div class="titulo-acumulado">Total acumulado (sem filtro de mês)</div>
+    <div class="kpis">
+      <div class="kpi cinza">
+        <div class="rotulo">Custo real total</div>
+        <div class="sub">Desde sempre</div>
+        <div class="num">R$ {{ "%.2f"|format(stats_total.custo_real) }}</div>
+      </div>
+      <div class="kpi cinza">
+        <div class="rotulo">Cobrado total</div>
+        <div class="sub">Desde sempre</div>
+        <div class="num">R$ {{ "%.2f"|format(stats_total.valor_cobrado) }}</div>
+      </div>
+      <div class="kpi cinza">
+        <div class="rotulo">Lucro total</div>
+        <div class="sub">Desde sempre</div>
+        <div class="num">R$ {{ "%.2f"|format(stats_total.lucro) }}</div>
+      </div>
+      <div class="kpi cinza">
+        <div class="rotulo">Tokens totais</div>
+        <div class="sub">Entrada + saída, desde sempre</div>
+        <div class="num">{{ "{:,}".format(stats_total.tokens_total).replace(',', '.') }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Gasto por médico</h2>
+    <p class="explica">Quanto cada médico consumiu de IA (GPT/Luna) e quanto foi cobrado dele, em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }}. Médico sem nenhum uso no mês não aparece aqui.</p>
+    <table>
+      <tr>
+        <th>Médico</th>
+        <th class="num">Tokens</th>
+        <th class="num">Custo real</th>
+        <th class="num">Cobrado</th>
+        <th class="num">Lucro</th>
+        <th class="num">Chamadas (grátis)</th>
+        <th class="num">Saldo de IA atual</th>
+      </tr>
+      {% for linha in por_medico %}
+      <tr>
+        <td>{{ linha.medico_nome }}</td>
+        <td class="num">{{ "{:,}".format(linha.tokens_total).replace(',', '.') }}</td>
+        <td class="num">R$ {{ "%.2f"|format(linha.custo_real) }}</td>
+        <td class="num">R$ {{ "%.2f"|format(linha.valor_cobrado) }}</td>
+        <td class="num">R$ {{ "%.2f"|format(linha.lucro) }}</td>
+        <td class="num">{{ linha.total_chamadas }} ({{ linha.chamadas_gratuitas }})</td>
+        <td class="num">R$ {{ "%.2f"|format(linha.saldo_ia_atual) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7">Nenhum uso de IA registrado nesse mês.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="card card-preco">
+    <h2>Precificação da IA</h2>
+    <p class="explica">O que o admin edita aqui vale pra TODAS as chamadas de IA a partir de agora (não muda cobranças já feitas). "Percentual de aumento" é a margem em cima do custo real — 200 = cobra 3x o custo (1 + 200/100).</p>
+    <form method="post" action="{{ url_for('admin.atualizar_precificacao_ia') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="mes_valor" value="{{ mes_valor }}">
+      <div class="linha-preco">
+        <div>
+          <label for="percentual_aumento">Percentual de aumento (%)</label>
+          <input type="text" id="percentual_aumento" name="percentual_aumento" value="{{ config.percentual_aumento }}">
+        </div>
+        <div>
+          <label for="preco_entrada_usd_1k">Preço entrada (USD/1k tokens)</label>
+          <input type="text" id="preco_entrada_usd_1k" name="preco_entrada_usd_1k" value="{{ config.preco_entrada_usd_1k }}">
+        </div>
+        <div>
+          <label for="preco_saida_usd_1k">Preço saída (USD/1k tokens)</label>
+          <input type="text" id="preco_saida_usd_1k" name="preco_saida_usd_1k" value="{{ config.preco_saida_usd_1k }}">
+        </div>
+        <div>
+          <label for="usd_para_brl">Cotação do dólar (R$)</label>
+          <input type="text" id="usd_para_brl" name="usd_para_brl" value="{{ config.usd_para_brl }}">
+        </div>
+      </div>
+      <button type="submit">Salvar precificação</button>
+    </form>
+  </div>
+</div>
+</body></html>

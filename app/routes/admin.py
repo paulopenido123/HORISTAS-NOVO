@@ -10,6 +10,7 @@ from app.services import recuperacao_senha_service as rec_senha
 from app.services import nfe_service
 from app.services import template_service
 from app.services import reserva_service
+from app.services import ia_uso_service as ia_uso
 from app.extensions import csrf
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -930,6 +931,61 @@ def api_agenda_horistas_agendar():
                           'erro': str(e)})
 
     return {'sucesso': sucesso, 'erros': erros}
+
+
+@admin_bp.route('/controle-ia')
+@_admin
+def controle_ia():
+    """"Controle de IA" (pedido do Paulo em 21/09/2026): quanto cada
+    médico gastou de IA (GPT/Luna), o custo real total pago pra OpenAI e
+    o lucro da operação (o que foi cobrado dos médicos menos esse custo
+    real) num mês escolhido -- mesmo filtro de mês/ano da tela "Horas".
+    Também é aqui que o admin edita a margem cobrada em cima do custo
+    real (ver ia_uso_service.atualizar_config_precificacao_ia)."""
+    hoje = date.today()
+    mes_valor = request.args.get('mes') or f"{hoje.year:04d}-{hoje.month:02d}"
+    try:
+        ano, mes = (int(p) for p in mes_valor.split('-', 1))
+        if not (1 <= mes <= 12):
+            raise ValueError
+    except ValueError:
+        ano, mes = hoje.year, hoje.month
+        mes_valor = f"{ano:04d}-{mes:02d}"
+
+    stats = ia_uso.estatisticas_uso_ia(mes, ano)
+    stats_total = ia_uso.estatisticas_uso_ia()
+    por_medico = ia_uso.estatisticas_uso_ia_por_medico(mes, ano)
+    config_precificacao = ia_uso.obter_config_precificacao_ia()
+    return render_template(
+        'admin_controle_ia.html', stats=stats, stats_total=stats_total, por_medico=por_medico,
+        config=config_precificacao, mes=mes, ano=ano, mes_valor=mes_valor, mes_nome=_NOMES_MESES[mes],
+    )
+
+
+@admin_bp.route('/controle-ia/precificacao', methods=['POST'])
+@_admin
+def atualizar_precificacao_ia():
+    """Salva o percentual de aumento e os preços por 1.000 tokens
+    editados na tela "Controle de IA"."""
+    try:
+        percentual_aumento = float((request.form.get('percentual_aumento') or '0').replace(',', '.'))
+        preco_entrada_usd_1k = float((request.form.get('preco_entrada_usd_1k') or '0').replace(',', '.'))
+        preco_saida_usd_1k = float((request.form.get('preco_saida_usd_1k') or '0').replace(',', '.'))
+        usd_para_brl = float((request.form.get('usd_para_brl') or '0').replace(',', '.'))
+    except ValueError:
+        flash('Valores inválidos -- confira os campos numéricos.', 'erro')
+        return redirect(url_for('admin.controle_ia', mes=request.form.get('mes_valor')))
+
+    try:
+        ia_uso.atualizar_config_precificacao_ia(
+            percentual_aumento, preco_entrada_usd_1k, preco_saida_usd_1k, usd_para_brl,
+        )
+    except ValueError as e:
+        flash(str(e), 'erro')
+        return redirect(url_for('admin.controle_ia', mes=request.form.get('mes_valor')))
+
+    flash('Precificação de IA atualizada.', 'ok')
+    return redirect(url_for('admin.controle_ia', mes=request.form.get('mes_valor')))
 
 
 @admin_bp.route('/api/agenda-horistas/cancelar', methods=['POST'])

@@ -631,7 +631,9 @@ async function clicarSlotLivre(consultorioId, dataIso, hora) {
       return;
     }
 
-    statusEl.textContent = `Reservado! Saldo atual: ${resultado.saldo_horas}h.`;
+    statusEl.textContent = resultado.tryout
+      ? `Reservado! Essa foi uma reserva de teste grátis (cortesia de boas-vindas). Saldo atual: ${resultado.saldo_horas}h.`
+      : `Reservado! Saldo atual: ${resultado.saldo_horas}h.`;
     statusEl.style.color = '#1F8F5C';
     // Atualiza a grade na hora, sem recarregar do servidor -- pedido do
     // Paulo em 15/09/2026: recarregar a semana inteira (todos os

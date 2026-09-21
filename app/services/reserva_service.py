@@ -153,29 +153,34 @@ def reservar_turno(medico_id: str, consultorio_id: str, data: str, periodo: str)
     # fixo separado, é sempre derivado do mesmo preço-base de hora avulsa.
     preco = creditos_db.calcular_preco_horas(len(horarios_do_turno))
 
-    saldo_atual = creditos_db.obter_saldo(medico_id)
-    if saldo_atual < preco:
-        raise SaldoInsuficienteError(
-            saldo_atual, preco,
-            horas_disponiveis=creditos_db.estimar_horas_compraveis(saldo_atual),
-            horas_necessarias=len(horarios_do_turno),
-        )
+    # Pedido do Paulo em 21/09/2026: as 3 primeiras reservas do médico
+    # (qualquer canal) são de graça (tryout) -- só exige saldo se a
+    # cortesia já acabou.
+    usa_tryout = creditos_db.tryout_restante(medico_id) > 0
+    if not usa_tryout:
+        saldo_atual = creditos_db.obter_saldo(medico_id)
+        if saldo_atual < preco:
+            raise SaldoInsuficienteError(
+                saldo_atual, preco,
+                horas_disponiveis=creditos_db.estimar_horas_compraveis(saldo_atual),
+                horas_necessarias=len(horarios_do_turno),
+            )
 
     hora_inicio_periodo, hora_fim_periodo = db.PERIODOS_HORARIOS[periodo]
     medico = db.get_medico_by_id(medico_id)
     _checar_conflito_google(medico, data, hora_inicio_periodo, hora_fim_periodo)
 
     try:
-        reserva = db.criar_reserva(consultorio_id, medico_id, data, periodo)
+        reserva = db.criar_reserva(consultorio_id, medico_id, data, periodo, tryout=usa_tryout)
     except Exception:
         raise ConflitoDeReservaError("Esse turno já foi reservado por outra pessoa. Atualize a página.")
 
     resultado = creditos_db.debitar_credito_por_reserva(
-        medico_id, preco, reserva["id"], quantidade_horas=len(horarios_do_turno)
+        medico_id, preco, reserva["id"], quantidade_horas=len(horarios_do_turno), tryout=usa_tryout
     )
     _rodar_em_segundo_plano(_finalizar_pos_reserva, medico, consultorio_id, reserva,
                              data, hora_inicio_periodo, hora_fim_periodo, medico_id)
-    return {"reserva": reserva, "preco": preco, "saldo_atual": resultado["saldo_novo"],
+    return {"reserva": reserva, "preco": preco, "tryout": usa_tryout, "saldo_atual": resultado["saldo_novo"],
             "saldo_horas": creditos_db.saldo_em_horas_medico(medico_id)}
 
 
@@ -214,13 +219,18 @@ def reservar_por_hora(medico_id: str, consultorio_id: str, data: str,
 
     preco = creditos_db.calcular_preco_horas(quantidade_horas, precos)
 
-    saldo_atual = creditos_db.obter_saldo(medico_id)
-    if saldo_atual < preco:
-        raise SaldoInsuficienteError(
-            saldo_atual, preco,
-            horas_disponiveis=creditos_db.estimar_horas_compraveis(saldo_atual),
-            horas_necessarias=quantidade_horas,
-        )
+    # Pedido do Paulo em 21/09/2026: as 3 primeiras reservas do médico
+    # (qualquer canal -- site ou Dora) são de graça (tryout) -- só exige
+    # saldo se a cortesia já acabou.
+    usa_tryout = creditos_db.tryout_restante(medico_id) > 0
+    if not usa_tryout:
+        saldo_atual = creditos_db.obter_saldo(medico_id)
+        if saldo_atual < preco:
+            raise SaldoInsuficienteError(
+                saldo_atual, preco,
+                horas_disponiveis=creditos_db.estimar_horas_compraveis(saldo_atual),
+                horas_necessarias=quantidade_horas,
+            )
 
     hora_fim = db.somar_horas(hora_inicio, quantidade_horas)
     medico = db.get_medico_by_id(medico_id)
@@ -228,16 +238,17 @@ def reservar_por_hora(medico_id: str, consultorio_id: str, data: str,
 
     try:
         reserva = db.criar_reserva_por_hora(consultorio_id, medico_id, data, hora_inicio, quantidade_horas,
-                                             criado_por_admin=criado_por_admin)
+                                             criado_por_admin=criado_por_admin, tryout=usa_tryout)
     except ValueError as e:
         raise ConflitoDeReservaError(str(e))
 
     resultado = creditos_db.debitar_credito_por_reserva(
-        medico_id, preco, reserva["id"], quantidade_horas=quantidade_horas, criado_por_admin=criado_por_admin
+        medico_id, preco, reserva["id"], quantidade_horas=quantidade_horas,
+        criado_por_admin=criado_por_admin, tryout=usa_tryout,
     )
     _rodar_em_segundo_plano(_finalizar_pos_reserva, medico, consultorio_id, reserva,
                              data, hora_inicio, hora_fim, medico_id)
-    return {"reserva": reserva, "preco": preco, "saldo_atual": resultado["saldo_novo"],
+    return {"reserva": reserva, "preco": preco, "tryout": usa_tryout, "saldo_atual": resultado["saldo_novo"],
             "saldo_horas": creditos_db.saldo_em_horas_medico(medico_id)}
 
 

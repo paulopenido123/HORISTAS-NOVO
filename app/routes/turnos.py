@@ -111,6 +111,7 @@ def api_reservar():
     return jsonify({
         "reserva": resultado["reserva"],
         "preco": resultado["preco"],
+        "tryout": resultado.get("tryout", False),
         "saldo_atual": resultado["saldo_atual"],
         "saldo_horas": resultado["saldo_horas"],
     }), 201
@@ -152,6 +153,7 @@ def api_reservar_horas():
     return jsonify({
         "reserva": resultado["reserva"],
         "preco": resultado["preco"],
+        "tryout": resultado.get("tryout", False),
         "saldo_atual": resultado["saldo_atual"],
         "saldo_horas": resultado["saldo_horas"],
     }), 201

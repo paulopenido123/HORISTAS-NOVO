@@ -11,6 +11,7 @@ from app.routes.medico_painel import medico_painel_bp
 from app.routes.webhooks_asaas import webhooks_asaas_bp
 from app.routes.admin import admin_bp
 from app.routes.termos import termos_bp
+from app.routes.api_dora import api_dora_bp
 
 
 def create_app():
@@ -50,12 +51,18 @@ def create_app():
     app.register_blueprint(webhooks_asaas_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(termos_bp)
+    app.register_blueprint(api_dora_bp)
 
     socketio.init_app(app)
     limiter.init_app(app)
     csrf.init_app(app)
 
     csrf.exempt(webhooks_asaas_bp)
+    # A Dora (assistente de WhatsApp, projeto separado) chama esses
+    # endpoints como servidor pra servidor, sem sessão de navegador --
+    # quem autentica é a API key (X-API-Key), não o token CSRF (ver
+    # app/routes/api_dora.py _exigir_api_key).
+    csrf.exempt(api_dora_bp)
 
     from flask import render_template
 

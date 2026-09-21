@@ -139,8 +139,13 @@ def listar_consultorios_disponiveis(data: str, periodo: str) -> list[dict]:
     return disponiveis
 
 
-def criar_reserva(consultorio_id: str, medico_id: str, data: str, periodo: str) -> dict:
-    """Cria a reserva com status pendente (confirma depois do pagamento)."""
+def criar_reserva(consultorio_id: str, medico_id: str, data: str, periodo: str,
+                   tryout: bool = False) -> dict:
+    """Cria a reserva com status pendente (confirma depois do pagamento).
+
+    `tryout` -- pedido do Paulo em 21/09/2026: marca que essa reserva
+    usou a cortesia das 3 primeiras reservas grátis do médico (ver
+    creditos_service.tryout_restante)."""
     resp = (
         get_client()
         .table("reservas")
@@ -151,6 +156,7 @@ def criar_reserva(consultorio_id: str, medico_id: str, data: str, periodo: str) 
             "periodo": periodo,
             "status": "pendente",
             "tipo_reserva": "turno",
+            "tryout": tryout,
         })
         .execute()
     )
@@ -220,7 +226,7 @@ def _existe_conflito_horario(consultorio_id: str, data: str, hora_inicio: str, h
 
 def criar_reserva_por_hora(consultorio_id: str, medico_id: str, data: str,
                             hora_inicio: str, quantidade_horas: int,
-                            criado_por_admin: bool = False) -> dict:
+                            criado_por_admin: bool = False, tryout: bool = False) -> dict:
     """
     Cria uma reserva avulsa por hora. Levanta ValueError se o horário
     conflitar com outra reserva (turno ou hora) já existente — seja
@@ -253,6 +259,7 @@ def criar_reserva_por_hora(consultorio_id: str, medico_id: str, data: str,
                 "quantidade_horas": quantidade_horas,
                 "status": "pendente",
                 "criado_por_admin": criado_por_admin,
+                "tryout": tryout,
             })
             .execute()
         )

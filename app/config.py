@@ -29,6 +29,17 @@ class Config:
     WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN")
     WHATSAPP_API_VERSION = os.getenv("WHATSAPP_API_VERSION", "v21.0")
 
+    # --- API pro assistente de WhatsApp "Dora" (pedido do Paulo em
+    # 21/09/2026) -- a Dora roda num projeto Flask SEPARADO deste (o do
+    # Lifemax/Lifedoctor) e chama os endpoints /api/dora/* deste sistema
+    # de horistas pra: identificar se quem está falando é médico
+    # cadastrado aqui (por telefone), consultar saldo/tryout, reservar
+    # horário de consultório em nome do médico, e listar fotos de
+    # consultório. Toda chamada precisa do header "X-API-Key" batendo
+    # com essa variável -- sem ela configurada, os endpoints recusam
+    # QUALQUER chamada (ver app/routes/api_dora.py _exigir_api_key).
+    DORA_API_KEY = os.getenv("DORA_API_KEY")
+
     # --- Claude API (Anthropic) ---
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
     CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")

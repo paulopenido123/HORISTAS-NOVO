@@ -178,6 +178,25 @@ def obter_saldo(medico_id: str) -> float:
     return float(resp.data[0]["saldo_creditos"]) if resp.data else 0.0
 
 
+TRYOUT_TOTAL = 3
+
+
+def tryout_restante(medico_id: str) -> int:
+    """Pedido do Paulo em 21/09/2026: as 3 primeiras reservas de
+    consultório do médico (por hora, em qualquer canal -- site ou
+    assistente Dora) são de graça, sem debitar saldo. Conta quantas
+    reservas com `tryout=true` esse médico já tem NÃO canceladas -- se
+    ele cancelar uma reserva de teste, a cortesia volta a ficar
+    disponível automaticamente (mesmo espírito do reembolso normal)."""
+    resp = (
+        get_client().table("reservas").select("id")
+        .eq("medico_id", medico_id).eq("tryout", True).neq("status", "cancelada")
+        .execute()
+    )
+    usadas = len(resp.data or [])
+    return max(0, TRYOUT_TOTAL - usadas)
+
+
 def obter_saldo_ia(medico_id: str) -> float:
     """Se a migração que criou a coluna saldo_ia ainda não rodou no banco
     (ex: código já foi publicado, mas a migração SQL ainda não), devolve
@@ -248,14 +267,29 @@ def registrar_transacao(medico_id: str, tipo: str, valor: float, descricao: str,
 
 
 def debitar_credito_por_reserva(medico_id: str, valor_turno: float, reserva_id: str,
-                                 quantidade_horas: int, criado_por_admin: bool = False) -> dict:
+                                 quantidade_horas: int, criado_por_admin: bool = False,
+                                 tryout: bool = False) -> dict:
     """Debita o valor de uma reserva. Levanta ValueError se saldo insuficiente.
 
     `criado_por_admin` -- pedido do Paulo em 21/09/2026 (botão "Agendar
     para:" da Agenda Horistas): só muda a descrição da transação no
     extrato do médico, pra ficar claro que foi o admin quem agendou --
     o débito em si é idêntico ao de uma reserva feita pelo próprio
-    médico."""
+    médico.
+
+    `tryout` -- pedido do Paulo em 21/09/2026: uma das 3 primeiras
+    reservas grátis do médico (ver tryout_restante) -- não debita nada,
+    só registra a transação (valor 0) pra aparecer no extrato normal."""
+    if tryout:
+        descricao = "Reserva de teste grátis (cortesia de boas-vindas)" + (
+            " (agendada pelo administrador da Lifemax)" if criado_por_admin else ""
+        )
+        return registrar_transacao(
+            medico_id, tipo="consumo", valor=0.0,
+            descricao=descricao, reserva_id=reserva_id,
+            quantidade_horas=quantidade_horas,
+        )
+
     saldo_atual = obter_saldo(medico_id)
     if saldo_atual < valor_turno:
         raise ValueError(

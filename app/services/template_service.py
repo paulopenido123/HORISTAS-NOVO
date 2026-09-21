@@ -61,8 +61,8 @@ def listar_bloqueios() -> list[dict]:
 # em verificar_disponibilidade (então o horário fica de fato indisponível
 # pra reservar, não só visualmente cinza) -- e a Matriz de Agendamento
 # também passa a refletir isso automaticamente (ver app/routes/admin.py
-# api_matriz, que agora busca os bloqueios daqui em vez de ler a tabela
-# direto).
+# api_matriz_template, que agora busca os bloqueios daqui em vez de ler
+# a tabela direto).
 _DIAS_FIM_DE_SEMANA = (0, 6)  # 0=domingo, 6=sábado (mesma convenção do dia_semana_de)
 _HORARIOS_BLOQUEADOS_FIM_DE_SEMANA = HORARIOS_POR_PERIODO["tarde"] + HORARIOS_POR_PERIODO["noite"]
 

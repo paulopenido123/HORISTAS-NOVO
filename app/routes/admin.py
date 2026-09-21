@@ -642,9 +642,10 @@ def excluir_foto(consultorio_id):
 @admin_bp.route('/matriz')
 @_admin
 def matriz():
-    # Pedido do Paulo em 21/09/2026: não seleciona mais um consultório por
-    # vez -- a tela já busca todos via /admin/api/matriz (ver rota
-    # api_matriz abaixo), então não precisa mais montar a lista aqui.
+    # Pedido do Paulo em 21/09/2026: deixou de ser uma grade por semana
+    # (setas "<" ">") e virou um padrão semanal único, sem data -- a tela
+    # busca tudo via /admin/api/matriz/template (ver api_matriz_template
+    # abaixo), então não precisa montar nada aqui.
     return render_template('admin_matriz.html')
 
 
@@ -686,152 +687,195 @@ def api_agenda_horistas_grade():
     return grade
 
 
-@admin_bp.route('/api/matriz', methods=['GET'])
+def _data_str(v):
+    """'data'/'horario' voltam como datetime.date/time (RealDictCursor do
+    psycopg2, ver pg_query.py) -- não são strings, então normaliza antes
+    de comparar/montar chave."""
+    return v.isoformat() if hasattr(v, "isoformat") else str(v)[:10]
+
+
+def _hora_str(v):
+    return v.strftime("%H:%M") if hasattr(v, "strftime") else str(v)[:5]
+
+
+def _dia_semana(d: date) -> int:
+    """0=domingo...6=sábado -- mesma convenção de template_service.dia_semana_de."""
+    return (d.weekday() + 1) % 7
+
+
+@admin_bp.route('/api/matriz/template', methods=['GET'])
 @_admin
-def api_matriz():
-    # Pedido do Paulo em 21/09/2026: a Matriz deixou de mostrar um
-    # consultório por vez (com um seletor "Consultório") e passou a
-    # mostrar TODOS os consultórios de uma vez, um bloco embaixo do
-    # outro em ordem crescente -- mesmo formato visual da Agenda
-    # Horistas (ver admin_agenda_horistas.html / api_agenda_horistas_grade
-    # acima). Por isso essa rota não filtra mais por consultorio_id: ela
-    # devolve a semana inteira, de todos os consultórios, de uma vez.
-    inicio = date.fromisoformat(request.args.get('data_inicio', date.today().isoformat()))
-    fim = inicio + timedelta(days=6)
+def api_matriz_template():
+    """Pedido do Paulo em 21/09/2026: a Matriz deixou de ser editada
+    semana a semana (setas "<" ">") e passou a ser um ÚNICO padrão
+    semanal (sem data), igual à Semana Padrão -- só que aqui marca
+    "reservado" em vez de "bloqueado". Esse padrão depois é REPLICADO em
+    cima de datas reais pelos botões "Replicar por período"/"por mês"."""
     client = db.get_client()
     consultorios = db.ordenar_consultorios(client.table('consultorios').select('*').execute().data)
-    holds = client.table('matriz_reservas_admin').select('*').gte('data', inicio.isoformat()).lte('data', fim.isoformat()).execute().data
-    reservas = client.table('reservas').select('*,medicos(nome)').gte('data', inicio.isoformat()).lte('data', fim.isoformat()).neq('status','cancelada').execute().data
-    # Busca os bloqueios via template_service em vez de ler a tabela
-    # direto -- pedido do Paulo em 15/09/2026: assim a Matriz já reflete
-    # AUTOMATICAMENTE a regra fixa de sábado/domingo a partir de 12h
-    # bloqueados (ver template_service._bloqueios_fixos_fim_de_semana),
-    # sem precisar duplicar essa regra aqui.
+    template = client.table('matriz_template').select('*').execute().data
+    # Mesmos bloqueios da Semana Padrão (inclui a regra fixa de fim de
+    # semana) -- pra Matriz não deixar marcar como "reservado" um
+    # horário que já está bloqueado pra reserva em qualquer consultório.
     bloqueios = template_service.listar_bloqueios()
-    return {'data_inicio':inicio.isoformat(),'data_fim':fim.isoformat(),'consultorios':consultorios,
-            'holds':holds,'reservas':reservas,'bloqueios':bloqueios}
+    return {'consultorios': consultorios, 'template': template, 'bloqueios': bloqueios}
 
 
-@admin_bp.route('/api/matriz/toggle', methods=['POST'])
+@admin_bp.route('/api/matriz/template/toggle', methods=['POST'])
 @_admin
-def toggle_matriz():
+def api_matriz_template_toggle():
     body = request.get_json(force=True)
-    consultorio_id = body.get('consultorio_id'); data = body.get('data'); horario = body.get('horario')
-    if not all([consultorio_id,data,horario]):
-        return {'erro':'consultorio_id, data e horario são obrigatórios'},400
+    consultorio_id = body.get('consultorio_id')
+    dia_semana = body.get('dia_semana')
+    horario = body.get('horario')
+    if consultorio_id is None or dia_semana is None or not horario:
+        return {'erro': 'consultorio_id, dia_semana e horario são obrigatórios'}, 400
     client = db.get_client()
-    existing = client.table('matriz_reservas_admin').select('*').eq('consultorio_id',consultorio_id).eq('data',data).eq('horario',horario).execute().data
-    if existing:
-        client.table('matriz_reservas_admin').delete().eq('id',existing[0]['id']).execute()
-        return {'status':'disponivel'}
-    client.table('matriz_reservas_admin').insert({'consultorio_id':consultorio_id,'data':data,'horario':horario,'descricao':body.get('descricao','').strip(),'criado_por': 'admin'}).execute()
-    return {'status':'reservado'}
+    existente = (client.table('matriz_template').select('id')
+                 .eq('consultorio_id', consultorio_id).eq('dia_semana', dia_semana).eq('horario', horario)
+                 .execute().data)
+    if existente:
+        client.table('matriz_template').delete().eq('id', existente[0]['id']).execute()
+        return {'status': 'removido'}
+    client.table('matriz_template').insert(
+        {'consultorio_id': consultorio_id, 'dia_semana': dia_semana, 'horario': horario}
+    ).execute()
+    return {'status': 'adicionado'}
 
 
-@admin_bp.route('/api/matriz/replicar', methods=['POST'])
-@_admin
-def replicar_matriz():
-    """Botão "Replicar última matriz para próxima semana" -- pedido do
-    Paulo em 10/09/2026: em vez de marcar de novo, turno por turno,
-    consultório por consultório, toda vez que a semana muda, esse botão
-    copia TODOS os horários marcados como reservados pelo admin
-    (matriz_reservas_admin -- as células rosa "Reservado", não as reservas
-    de verdade feitas por médico) da semana ANTERIOR à semana que está
-    sendo exibida agora na tela, pra semana atual, em TODOS os
-    consultórios de uma vez (não só o que está selecionado no seletor).
-
-    Fluxo pensado pelo Paulo: clica em ">" pra ir pra próxima semana,
-    depois clica em "Replicar última matriz" -- e dá pra repetir isso
-    semana em semana, encadeado, porque a origem é sempre "a semana
-    imediatamente anterior à que a tela está mostrando agora", não uma
-    semana fixa.
-    """
-    body = request.get_json(force=True)
-    data_inicio_destino_str = body.get('data_inicio')
-    if not data_inicio_destino_str:
-        return {'erro': 'data_inicio é obrigatório'}, 400
-    try:
-        destino_inicio = date.fromisoformat(data_inicio_destino_str)
-    except ValueError:
-        return {'erro': 'data_inicio inválida'}, 400
-
-    origem_inicio = destino_inicio - timedelta(days=7)
-    origem_fim = origem_inicio + timedelta(days=6)
-    destino_fim = destino_inicio + timedelta(days=6)
-    deslocamento = timedelta(days=7)
-
+def _aplicar_template_no_periodo(data_inicio: date, data_fim: date, tipo: str, confirmar: bool):
+    """Lógica comum aos botões "Replicar matriz por período" e "Replicar
+    matriz por mês" -- pedido do Paulo em 21/09/2026: pega o padrão
+    semanal marcado em matriz_template e cria os registros de verdade
+    (matriz_reservas_admin) pra cada data do período que cai no dia da
+    semana certo. Se algum desses horários já tiver uma reserva de
+    VERDADE de um médico, não aplica de cara -- devolve a lista de
+    conflitos pra tela de revisão confirmar (`confirmar=True` reenvia
+    depois de o admin já ter visto e confirmado, ciente de que precisa
+    avisar os médicos envolvidos)."""
     client = db.get_client()
-    holds_origem = (
-        client.table('matriz_reservas_admin').select('*')
-        .gte('data', origem_inicio.isoformat()).lte('data', origem_fim.isoformat())
-        .execute().data
+    template = client.table('matriz_template').select('*').execute().data
+    if not template:
+        return {'erro': 'A matriz ainda não tem nenhum horário marcado no padrão semanal. '
+                         'Marque os horários na tela antes de replicar.'}, 400
+
+    consultorios_nome = {c['id']: c['nome'] for c in client.table('consultorios').select('id,nome').execute().data}
+
+    # Todas as células-alvo (consultorio, data, horario) que o padrão
+    # gera dentro do período pedido.
+    alvo = []
+    d = data_inicio
+    while d <= data_fim:
+        dw = _dia_semana(d)
+        for t in template:
+            if t['dia_semana'] == dw:
+                alvo.append((t['consultorio_id'], d.isoformat(), t['horario']))
+        d += timedelta(days=1)
+
+    if not alvo:
+        return {'erro': 'Nenhum dia do período escolhido cai nos dias da semana marcados na matriz.'}, 400
+
+    # Reservas de VERDADE (médico) dentro do período -- essas geram
+    # conflito e precisam de confirmação + aviso pra contatar o médico.
+    reservas_reais = (
+        client.table('reservas').select('consultorio_id,data,hora_inicio,medicos(nome)')
+        .gte('data', data_inicio.isoformat()).lte('data', data_fim.isoformat())
+        .neq('status', 'cancelada').execute().data
     )
-    if not holds_origem:
-        return {
-            'replicados': 0, 'pulados': 0,
-            'data_inicio_origem': origem_inicio.isoformat(),
-            'data_inicio_destino': destino_inicio.isoformat(),
-            'aviso': 'Não tem nenhum horário marcado como reservado pelo admin na semana anterior pra replicar.',
-        }
+    nome_por_chave = {}
+    for r in reservas_reais:
+        if not r.get('hora_inicio'):
+            continue
+        chave = (r['consultorio_id'], _data_str(r['data']), _hora_str(r['hora_inicio']))
+        nome_por_chave[chave] = (r.get('medicos') or {}).get('nome') or 'Médico'
 
-    # "data" volta como datetime.date e "horario"/"hora_inicio" como
-    # datetime.time (RealDictCursor do psycopg2, ver pg_query.py) -- não
-    # são strings, então normaliza os dois pra string ("YYYY-MM-DD" e
-    # "HH:MM") antes de comparar/montar chave, senão quebra tentando
-    # fatiar ou usar date.fromisoformat em cima de um objeto que já é
-    # date/time.
-    def _data_str(v):
-        return v.isoformat() if hasattr(v, "isoformat") else str(v)[:10]
+    conflitos = [
+        {'consultorio_nome': consultorios_nome.get(c, '—'), 'data': dt, 'horario': h, 'medico_nome': nome_por_chave[(c, dt, h)]}
+        for (c, dt, h) in alvo if (c, dt, h) in nome_por_chave
+    ]
 
-    def _hora_str(v):
-        return v.strftime("%H:%M") if hasattr(v, "strftime") else str(v)[:5]
+    if conflitos and not confirmar:
+        return {'precisa_confirmar': True, 'conflitos': conflitos, 'total_alvo': len(alvo)}
 
-    # Já existentes no destino (holds + reservas de verdade de médico) --
-    # pra não duplicar toggle nem sobrepor um horário que já tem médico
-    # de verdade reservado ali. Reserva por TURNO (periodo) não tem
-    # hora_inicio preenchido (fica NULL -- ver criar_reserva em
-    # supabase_client.py) e por isso não dá pra comparar 1:1 com um
-    # horário específico da grade; só entra na comparação quem reservou
-    # hora avulsa mesmo (que é o que a grade de fato mostra como
-    # "confirmed", igual já era antes dessa mudança).
-    holds_destino_existentes = {
+    # Já existentes no período -- pra não tentar inserir duplicado (a
+    # unique constraint de matriz_reservas_admin rejeitaria) e pra
+    # "prevalecer sempre a última matriz aplicada" sem precisar apagar e
+    # recriar tudo -- as que já existem simplesmente continuam.
+    existentes = {
         (h['consultorio_id'], _data_str(h['data']), _hora_str(h['horario']))
         for h in client.table('matriz_reservas_admin').select('consultorio_id,data,horario')
-        .gte('data', destino_inicio.isoformat()).lte('data', destino_fim.isoformat()).execute().data
-    }
-    reservas_destino_existentes = {
-        (r['consultorio_id'], _data_str(r['data']), _hora_str(r['hora_inicio']))
-        for r in client.table('reservas').select('consultorio_id,data,hora_inicio')
-        .gte('data', destino_inicio.isoformat()).lte('data', destino_fim.isoformat())
-        .neq('status', 'cancelada').execute().data
-        if r.get('hora_inicio')
+        .gte('data', data_inicio.isoformat()).lte('data', data_fim.isoformat()).execute().data
     }
 
-    replicados = 0
-    pulados = 0
     novos = []
-    for h in holds_origem:
-        nova_data_str = (date.fromisoformat(_data_str(h['data'])) + deslocamento).isoformat()
-        hora_str = _hora_str(h['horario'])
-        chave = (h['consultorio_id'], nova_data_str, hora_str)
-        if chave in holds_destino_existentes or chave in reservas_destino_existentes:
-            pulados += 1
+    vistos = set()
+    for (c, dt, h) in alvo:
+        chave = (c, dt, h)
+        if chave in existentes or chave in vistos:
             continue
-        novos.append({
-            'consultorio_id': h['consultorio_id'], 'data': nova_data_str, 'horario': hora_str,
-            'descricao': h.get('descricao') or '', 'criado_por': 'admin',
-        })
-        holds_destino_existentes.add(chave)  # evita duplicar se a origem tiver 2x a mesma célula
+        vistos.add(chave)
+        novos.append({'consultorio_id': c, 'data': dt, 'horario': h, 'descricao': '', 'criado_por': 'admin'})
 
     if novos:
         client.table('matriz_reservas_admin').insert(novos).execute()
-        replicados = len(novos)
 
-    return {
-        'replicados': replicados, 'pulados': pulados,
-        'data_inicio_origem': origem_inicio.isoformat(),
-        'data_inicio_destino': destino_inicio.isoformat(),
-    }
+    client.table('matriz_replicacoes').insert({
+        'tipo': tipo, 'data_inicio': data_inicio.isoformat(), 'data_fim': data_fim.isoformat(),
+        'aplicados': len(novos), 'conflitos': len(conflitos),
+    }).execute()
+
+    return {'aplicados': len(novos), 'conflitos': len(conflitos),
+            'data_inicio': data_inicio.isoformat(), 'data_fim': data_fim.isoformat()}
+
+
+@admin_bp.route('/api/matriz/replicar-periodo', methods=['POST'])
+@_admin
+def api_matriz_replicar_periodo():
+    """Botão "Replicar matriz por período" -- pedido do Paulo em
+    21/09/2026: admin escolhe data de início e fim, o sistema aplica o
+    padrão semanal da matriz em cima de todas as datas do período
+    (respeitando o dia da semana de cada horário marcado)."""
+    body = request.get_json(force=True)
+    try:
+        data_inicio = date.fromisoformat(body.get('data_inicio', ''))
+        data_fim = date.fromisoformat(body.get('data_fim', ''))
+    except ValueError:
+        return {'erro': 'Datas inválidas.'}, 400
+    if data_fim < data_inicio:
+        return {'erro': 'A data final não pode ser antes da data inicial.'}, 400
+    resultado = _aplicar_template_no_periodo(data_inicio, data_fim, 'periodo', bool(body.get('confirmar')))
+    return resultado
+
+
+@admin_bp.route('/api/matriz/replicar-mes', methods=['POST'])
+@_admin
+def api_matriz_replicar_mes():
+    """Botão "Replicar matriz por mês" -- pedido do Paulo em 21/09/2026:
+    admin escolhe um mês/ano, o sistema aplica o padrão semanal da
+    matriz em todas as datas daquele mês."""
+    import calendar
+    body = request.get_json(force=True)
+    try:
+        mes = int(body.get('mes'))
+        ano = int(body.get('ano'))
+    except (TypeError, ValueError):
+        return {'erro': 'Mês/ano inválidos.'}, 400
+    if not (1 <= mes <= 12):
+        return {'erro': 'Mês inválido.'}, 400
+    data_inicio = date(ano, mes, 1)
+    data_fim = date(ano, mes, calendar.monthrange(ano, mes)[1])
+    resultado = _aplicar_template_no_periodo(data_inicio, data_fim, 'mes', bool(body.get('confirmar')))
+    return resultado
+
+
+@admin_bp.route('/api/matriz/relatorio', methods=['GET'])
+@_admin
+def api_matriz_relatorio():
+    """Botão "Relatório" -- histórico de todas as vezes que a matriz foi
+    replicada, mais recente primeiro."""
+    resp = (db.get_client().table('matriz_replicacoes').select('*')
+            .order('criado_em', desc=True).limit(200).execute())
+    return {'replicacoes': resp.data}
 
 
 # ---------------------------------------------------------------------

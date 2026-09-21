@@ -10,7 +10,6 @@
     --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --teal-soft: #EAF4F3;
     --line: #DCE6E8; --muted: #55707C; --coral: #D65C3F; --coral-soft: #fbeae6;
     --bege: #C8CDD1; --verde: #9BE79A; --rosa: #FFB8C0;
-    --azul-confirmado: #22A7C5;
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: Inter, Arial, sans-serif; background: #F5F8F9; color: #10222E; }
@@ -23,21 +22,6 @@
   h1 { font-size: 19px; margin: 0 0 4px; }
   .subtitulo { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
 
-  .cabecalho-calendario {
-    display: flex; align-items: center; justify-content: space-between;
-    background: white; border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; margin-bottom: 10px;
-  }
-  .nav-semana { display: flex; align-items: center; gap: 10px; }
-  .nav-semana.direita { flex-direction: row-reverse; }
-  .nav-semana .rotulo-semana { font-size: 12.5px; font-weight: 700; color: var(--navy); }
-  .btn-seta {
-    cursor: pointer; background: var(--teal-soft); border: 1px solid var(--teal); color: var(--navy);
-    font-weight: 700; font-size: 18px; width: 36px; height: 36px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0;
-  }
-  .btn-seta:hover { background: #DCEEEC; }
-  .mes-ano-atual { font-size: 16px; font-weight: 700; color: var(--navy); text-transform: capitalize; text-align: center; flex: 1; }
-
   .barra-controles {
     display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between;
     background: white; border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; margin-bottom: 10px;
@@ -47,12 +31,12 @@
   .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .dot.livre { background: var(--verde); }
   .dot.reservado { background: var(--rosa); }
-  .dot.confirmado { background: var(--azul-confirmado); }
   .dot.bege { background: var(--bege); }
-  .btn-replicar { padding: 10px 14px; border: 0; border-radius: 8px; background: var(--navy); color: white; font-weight: 700; cursor: pointer; font-size: 13px; }
-  .status-replicar { font-size: 12.5px; margin-bottom: 10px; padding: 10px 12px; border-radius: 8px; }
-  .status-replicar.ok { background: #E3F7EE; color: #0B7B45; }
-  .status-replicar.aviso { background: #FFF4E0; color: #8a5a00; }
+  .botoes-topo { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-admin-acao { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff;
+    color: var(--navy); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .btn-admin-acao:hover { background: #F3F7F8; }
+  .btn-admin-acao.destaque { background: var(--navy); color: #fff; border-color: var(--navy); }
 
   #lista-consultorios { display: flex; flex-direction: column; gap: 3px; }
   .bloco-consultorio { background: white; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
@@ -63,8 +47,7 @@
 
   .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
-  .grade-cabecalho .col-dia { text-align: center; padding: 3px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
-  .grade-cabecalho .col-dia .numero { font-size: 14px; }
+  .grade-cabecalho .col-dia { text-align: center; padding: 6px 4px; font-size: 12.5px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
   .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; padding: 7px 0; }
   .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
   .coluna-horas { position: relative; border-right: 1px solid var(--line); }
@@ -77,19 +60,40 @@
   .slot-vago { position: absolute; left: 2px; right: 2px; border-radius: 3px; border: 1px dashed #e3e8ea; box-sizing: border-box; background: var(--verde); cursor: pointer; }
   .slot-vago:hover { filter: brightness(0.95); }
   .slot-vago.indisponivel { background: var(--bege); border: 1px solid #b9c0c4; cursor: not-allowed; }
-  .bloco-reserva {
-    position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 0 4px; overflow: hidden;
-    color: white; font-size: 8px; line-height: 1.05; box-shadow: 0 1px 3px rgba(0,0,0,.15);
-    display: flex; align-items: center; gap: 4px; white-space: nowrap;
+  .slot-reservado {
+    position: absolute; left: 2px; right: 2px; border-radius: 4px; box-sizing: border-box; cursor: pointer;
+    background: var(--rosa); color: #8e2632; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;
   }
-  .bloco-reserva.reservado { background: var(--rosa); color: #8e2632; cursor: pointer; }
-  .bloco-reserva.confirmado { background: var(--azul-confirmado); cursor: not-allowed; }
-  .bloco-reserva .h { font-weight: 700; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(14,42,59,.55); z-index: 50;
+    align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.visivel { display: flex; }
+  .modal-caixa { background: #fff; border-radius: 12px; max-width: 480px; width: 100%; max-height: 84vh;
+    overflow-y: auto; padding: 20px; }
+  .modal-caixa h2 { margin: 0 0 6px; font-size: 16px; color: var(--navy); }
+  .modal-caixa p.ajuda { font-size: 12.5px; color: var(--muted); margin: 0 0 14px; }
+  .modal-caixa label { display: block; font-size: 12.5px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+  .modal-caixa input, .modal-caixa select { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 14px; font-family: inherit; font-size: 14px; }
+  .linha-campos { display: flex; gap: 10px; }
+  .linha-campos > div { flex: 1; }
+  .modal-botoes { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+  .btn-confirmar { padding: 9px 16px; border: 0; border-radius: 8px; background: var(--teal); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .btn-confirmar.perigo { background: var(--coral); }
+  .btn-fechar-modal { padding: 9px 16px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--muted); font-weight: 700; font-size: 13px; cursor: pointer; }
+
+  .grade-meses { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .btn-mes { padding: 10px 6px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--navy); }
+  .btn-mes.selecionado { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  .lista-conflitos, .lista-relatorio { list-style: none; margin: 0 0 14px; padding: 0; font-size: 12.5px; max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+  .lista-conflitos li, .lista-relatorio li { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  .lista-conflitos li:last-child, .lista-relatorio li:last-child { border-bottom: none; }
+  .aviso-conflito { background: var(--coral-soft); color: var(--coral); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; margin-bottom: 12px; font-weight: 600; }
 
   @media (max-width: 760px) {
     .top, .nav { padding: 14px 16px; }
     .container { padding: 14px 12px 50px; }
-    .nav-semana .rotulo-semana { display: none; }
+    .grade-meses { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
@@ -108,83 +112,85 @@
 
 <div class="container">
   <h1>Matriz de Agendamento</h1>
-  <p class="subtitulo">Todos os consultórios da semana, um embaixo do outro em ordem crescente (mesmo formato da Agenda Horistas). Clique num horário verde para marcá-lo como reservado; clique num horário rosa para liberá-lo de novo.</p>
-
-  <div class="cabecalho-calendario">
-    <div class="nav-semana">
-      <button class="btn-seta" id="btn-anterior" title="Semana anterior">&larr;</button>
-      <span class="rotulo-semana">Semana anterior</span>
-    </div>
-    <div class="mes-ano-atual" id="mes-ano-atual">—</div>
-    <div class="nav-semana direita">
-      <button class="btn-seta" id="btn-proxima" title="Próxima semana">&rarr;</button>
-      <span class="rotulo-semana">Próxima semana</span>
-    </div>
-  </div>
+  <p class="subtitulo">Essa é a matriz-padrão (sem data) de todos os consultórios: marque aqui os horários da semana que costumam ficar reservados. Depois, use "Replicar" para aplicar esse padrão em cima de datas reais do calendário.</p>
 
   <div class="barra-controles">
     <div class="legenda">
-      <span><span class="dot livre"></span> Disponível</span>
-      <span><span class="dot reservado"></span> Reservado (pela Matriz)</span>
-      <span><span class="dot confirmado"></span> Reserva confirmada (médico)</span>
+      <span><span class="dot livre"></span> Disponível (clique para reservar no padrão)</span>
+      <span><span class="dot reservado"></span> Reservado no padrão (clique para liberar)</span>
       <span><span class="dot bege"></span> Indisponível</span>
     </div>
-    <button type="button" class="btn-replicar" onclick="replicarUltimaMatriz()">Replicar última matriz para próxima semana</button>
+    <div class="botoes-topo">
+      <button type="button" class="btn-admin-acao destaque" onclick="abrirModalPeriodo()">Replicar matriz por período</button>
+      <button type="button" class="btn-admin-acao destaque" onclick="abrirModalMes()">Replicar matriz por mês</button>
+      <button type="button" class="btn-admin-acao" onclick="abrirModalRelatorio()">Relatório</button>
+    </div>
   </div>
-  <div id="status-replicar"></div>
 
   <div id="lista-consultorios"></div>
 </div>
 
+<!-- Modal: Replicar por período -->
+<div class="modal-overlay" id="modal-periodo">
+  <div class="modal-caixa">
+    <h2>Replicar matriz por período</h2>
+    <p class="ajuda">Escolha a data de início e fim. O padrão semanal da matriz será aplicado em todas as datas do período (respeitando o dia da semana de cada horário marcado).</p>
+    <div class="linha-campos">
+      <div><label for="periodo-inicio">De</label><input type="date" id="periodo-inicio"></div>
+      <div><label for="periodo-fim">Até</label><input type="date" id="periodo-fim"></div>
+    </div>
+    <div id="periodo-aviso-conflito"></div>
+    <div class="modal-botoes">
+      <button type="button" class="btn-fechar-modal" onclick="fecharModais()">Cancelar</button>
+      <button type="button" class="btn-confirmar" id="btn-aplicar-periodo" onclick="aplicarPeriodo()">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Replicar por mês -->
+<div class="modal-overlay" id="modal-mes">
+  <div class="modal-caixa">
+    <h2>Replicar matriz por mês</h2>
+    <p class="ajuda">Escolha o mês. O padrão semanal da matriz será aplicado em todas as datas daquele mês.</p>
+    <div class="linha-campos">
+      <div><label for="mes-ano">Ano</label><input type="number" id="mes-ano" min="2024" max="2100"></div>
+    </div>
+    <div class="grade-meses" id="grade-meses"></div>
+    <div id="mes-aviso-conflito"></div>
+    <div class="modal-botoes">
+      <button type="button" class="btn-fechar-modal" onclick="fecharModais()">Cancelar</button>
+      <button type="button" class="btn-confirmar" id="btn-aplicar-mes" onclick="aplicarMes()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Relatório -->
+<div class="modal-overlay" id="modal-relatorio">
+  <div class="modal-caixa">
+    <h2>Relatório de matrizes aplicadas</h2>
+    <p class="ajuda">Histórico de cada vez que a matriz foi replicada, mais recente primeiro.</p>
+    <ul class="lista-relatorio" id="lista-relatorio"></ul>
+    <div class="modal-botoes">
+      <button type="button" class="btn-fechar-modal" onclick="fecharModais()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// Mesmos horários/constantes da Agenda Horistas (app/templates/
-// admin_agenda_horistas.html) -- pedido do Paulo em 21/09/2026: a Matriz
-// passou a usar o MESMO formato visual (um bloco por consultório, em
-// ordem crescente, todos de uma vez), em vez do seletor "Consultório"
-// + grade única de antes.
 const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:30', '18:30', '19:30'];
 const GRID_INICIO_MIN = 8 * 60;
 const GRID_FIM_MIN = 20 * 60 + 30;
 const PX_POR_MIN = 0.36;
 const MARCAS_GRADE = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
                        '17:00', '17:30', '18:30', '19:30', '20:30'];
-const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-let dataInicioAtual = hojeISO();
-let gradeAtual = { consultorios: [], holds: [], reservas: [], bloqueios: [] };
+let templateAtual = { consultorios: [], template: [] };
 
-function hojeISO() { return new Date().toISOString().slice(0, 10); }
-
-function formatarDataCurta(iso) {
-  const d = new Date(iso + 'T00:00:00');
-  return { dia: DIAS_SEMANA[d.getDay()], numero: String(d.getDate()).padStart(2, '0') };
-}
-
-function somarDias(iso, n) {
-  const d = new Date(iso + 'T00:00:00');
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
-function atualizarMesAno(dataInicioIso, dataFimIso) {
-  const inicio = new Date(dataInicioIso + 'T00:00:00');
-  const fim = new Date(dataFimIso + 'T00:00:00');
-  const el = document.getElementById('mes-ano-atual');
-  if (inicio.getMonth() === fim.getMonth() && inicio.getFullYear() === fim.getFullYear()) {
-    el.textContent = `${MESES[inicio.getMonth()]} ${inicio.getFullYear()}`;
-  } else if (inicio.getFullYear() === fim.getFullYear()) {
-    el.textContent = `${MESES[inicio.getMonth()]} / ${MESES[fim.getMonth()]} ${inicio.getFullYear()}`;
-  } else {
-    el.textContent = `${MESES[inicio.getMonth()]} ${inicio.getFullYear()} / ${MESES[fim.getMonth()]} ${fim.getFullYear()}`;
-  }
-}
-
-async function carregarGrade() {
-  const resp = await fetch(`/admin/api/matriz?data_inicio=${dataInicioAtual}`);
-  gradeAtual = await resp.json();
-  renderizarGrade();
+function csrfHeader() {
+  return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
 }
 
 function _minutosDeHora(hora) {
@@ -192,61 +198,31 @@ function _minutosDeHora(hora) {
   return hh * 60 + mm;
 }
 
-function faixasBegeDoDia(consultorioId, dataIso) {
-  const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
-  const bloqueios = gradeAtual.bloqueios || [];
-  const bloqueadoNoHorario = (hora) => bloqueios.some(b =>
-    b.consultorio_id === consultorioId && b.dia_semana === diaSemana && b.hora_inicio === hora
-  );
-
-  const intervalosReservaveis = HORARIOS
-    .filter(hora => !bloqueadoNoHorario(hora))
-    .map(hora => { const inicio = _minutosDeHora(hora); return [inicio, inicio + 60]; })
-    .sort((a, b) => a[0] - b[0]);
-
-  const faixas = [];
-  let cursor = GRID_INICIO_MIN;
-  for (const [inicio, fim] of intervalosReservaveis) {
-    const inicioClamp = Math.max(inicio, GRID_INICIO_MIN);
-    const fimClamp = Math.min(fim, GRID_FIM_MIN);
-    if (inicioClamp >= GRID_FIM_MIN || fimClamp <= GRID_INICIO_MIN) continue;
-    if (inicioClamp > cursor) faixas.push([cursor, inicioClamp]);
-    cursor = Math.max(cursor, fimClamp);
-  }
-  if (cursor < GRID_FIM_MIN) faixas.push([cursor, GRID_FIM_MIN]);
-  return faixas;
+async function carregarTemplate() {
+  const resp = await fetch('/admin/api/matriz/template');
+  templateAtual = await resp.json();
+  renderizarGrade();
 }
 
-function csrfHeader() {
-  return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
-}
-
-async function alternarCelula(consultorioId, dataIso, hora, el) {
+async function alternarCelula(consultorioId, diaSemana, hora, el) {
   if (el.dataset.travado === '1') return;
   el.dataset.travado = '1';
   try {
-    const r = await fetch('/admin/api/matriz/toggle', {
+    const r = await fetch('/admin/api/matriz/template/toggle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...csrfHeader() },
-      body: JSON.stringify({ consultorio_id: consultorioId, data: dataIso, horario: hora }),
+      body: JSON.stringify({ consultorio_id: consultorioId, dia_semana: diaSemana, horario: hora }),
     });
     if (!r.ok) { alert('Não consegui atualizar esse horário. Tente de novo.'); return; }
-    await carregarGrade();
+    await carregarTemplate();
   } finally {
     el.dataset.travado = '0';
   }
 }
 
 function renderizarGrade() {
-  const dias = [];
-  for (let i = 0; i < 7; i++) dias.push(somarDias(dataInicioAtual, i));
-  atualizarMesAno(dias[0], dias[dias.length - 1]);
-
   const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
-    dias.map(d => {
-      const { dia, numero } = formatarDataCurta(d);
-      return `<div class="col-dia">${dia}<div class="numero">${numero}</div></div>`;
-    }).join('');
+    DIAS_SEMANA.map(d => `<div class="col-dia">${d.slice(0, 3)}</div>`).join('');
 
   const alturaTotal = (GRID_FIM_MIN - GRID_INICIO_MIN) * PX_POR_MIN;
 
@@ -257,67 +233,27 @@ function renderizarGrade() {
   });
   colunaHoras += `</div>`;
 
-  // ocupação: reserva confirmada (feita por médico de verdade) tem
-  // prioridade sobre um "hold" da Matriz -- se por algum motivo os dois
-  // existirem pro mesmo horário, mostra a reserva de verdade (não dá pra
-  // desmarcar um médico já reservado por aqui, só pela Agenda Horistas /
-  // Grade de Turnos do próprio médico).
-  const confirmadas = {};
-  for (const r of (gradeAtual.reservas || [])) {
-    const nomeMedico = (r.medicos && r.medicos.nome) || 'Reservado';
-    let horariosOcupados;
-    if (r.tipo_reserva === 'hora' && r.hora_inicio) {
-      const horaInicioReal = r.hora_inicio.slice(0, 5);
-      const idxInicio = HORARIOS.indexOf(horaInicioReal);
-      const qtd = r.quantidade_horas || 1;
-      horariosOcupados = idxInicio >= 0 ? HORARIOS.slice(idxInicio, idxInicio + qtd) : [horaInicioReal];
-    } else {
-      horariosOcupados = HORARIOS;
-    }
-    for (const h of horariosOcupados) {
-      confirmadas[`${r.consultorio_id}|${r.data}|${h}`] = nomeMedico;
-    }
-  }
-  const holds = {};
-  for (const h of (gradeAtual.holds || [])) {
-    holds[`${h.consultorio_id}|${h.data}|${h.horario.slice(0, 5)}`] = h.descricao || 'Reservado';
-  }
+  const marcados = new Set((templateAtual.template || []).map(t => `${t.consultorio_id}|${t.dia_semana}|${t.horario}`));
 
-  const blocosHtml = (gradeAtual.consultorios || []).map(consultorio => {
-    const colunasDias = dias.map(dataIso => {
+  const blocosHtml = (templateAtual.consultorios || []).map(consultorio => {
+    const colunasDias = DIAS_SEMANA.map((_, diaSemana) => {
       let html = `<div class="coluna-dia" style="height:${alturaTotal}px;">`;
-
-      faixasBegeDoDia(consultorio.id, dataIso).forEach(([inicio, fim]) => {
-        const top = (inicio - GRID_INICIO_MIN) * PX_POR_MIN;
-        const altura = (fim - inicio) * PX_POR_MIN;
-        html += `<div class="faixa-bege" style="top:${top}px; height:${altura}px;"></div>`;
-      });
 
       HORARIOS.forEach(hora => {
         const minutos = _minutosDeHora(hora);
         if (minutos < GRID_INICIO_MIN || minutos >= GRID_FIM_MIN) return;
         const top = (minutos - GRID_INICIO_MIN) * PX_POR_MIN;
         const altura = 60 * PX_POR_MIN;
-        const chave = `${consultorio.id}|${dataIso}|${hora}`;
-        const nomeConfirmado = confirmadas[chave];
-        const holdDescricao = holds[chave];
-        const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
-        const indisponivel = (gradeAtual.bloqueios || []).some(b =>
+        const marcado = marcados.has(`${consultorio.id}|${diaSemana}|${hora}`);
+        const indisponivel = (templateAtual.bloqueios || []).some(b =>
           b.consultorio_id === consultorio.id && b.dia_semana === diaSemana && b.hora_inicio === hora
         );
-
-        if (nomeConfirmado) {
-          html += `<div class="bloco-reserva confirmado" style="top:${top}px; height:${altura}px;" title="Reserva confirmada de ${nomeConfirmado}">
-            <div class="h">${hora}</div><div>${nomeConfirmado}</div>
-          </div>`;
-        } else if (holdDescricao) {
-          html += `<div class="bloco-reserva reservado" style="top:${top}px; height:${altura}px;" title="Clique para liberar" onclick="alternarCelula('${consultorio.id}','${dataIso}','${hora}',this)">
-            <div class="h">${hora}</div><div>${holdDescricao}</div>
-          </div>`;
+        if (marcado) {
+          html += `<div class="slot-reservado" style="top:${top}px; height:${altura}px;" title="Clique para liberar" onclick="alternarCelula('${consultorio.id}', ${diaSemana}, '${hora}', this)">${hora}</div>`;
         } else if (indisponivel) {
-          html += `<div class="slot-vago indisponivel" style="top:${top}px; height:${altura}px;" title="Indisponível"></div>`;
+          html += `<div class="slot-vago indisponivel" style="top:${top}px; height:${altura}px;" title="Indisponível (bloqueado na Semana Padrão)"></div>`;
         } else {
-          html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;" title="Clique para marcar como reservado" onclick="alternarCelula('${consultorio.id}','${dataIso}','${hora}',this)"></div>`;
+          html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;" title="Clique para marcar como reservado" onclick="alternarCelula('${consultorio.id}', ${diaSemana}, '${hora}', this)"></div>`;
         }
       });
 
@@ -336,40 +272,117 @@ function renderizarGrade() {
     '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum consultório cadastrado ainda.</div>';
 }
 
-document.getElementById('btn-anterior').addEventListener('click', () => {
-  dataInicioAtual = somarDias(dataInicioAtual, -7);
-  carregarGrade();
-});
-document.getElementById('btn-proxima').addEventListener('click', () => {
-  dataInicioAtual = somarDias(dataInicioAtual, 7);
-  carregarGrade();
-});
+function fecharModais() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('visivel'));
+  document.getElementById('periodo-aviso-conflito').innerHTML = '';
+  document.getElementById('mes-aviso-conflito').innerHTML = '';
+}
 
-// "Replicar última matriz para próxima semana" -- pedido do Paulo em
-// 10/09/2026 (mantido igual): copia os horários marcados como
-// reservados pela Matriz (holds) da semana ANTERIOR à que está sendo
-// exibida agora pra semana atual, em todos os consultórios.
-async function replicarUltimaMatriz() {
-  const statusEl = document.getElementById('status-replicar');
-  statusEl.className = 'status-replicar'; statusEl.textContent = 'Replicando...';
+// ---- Replicar por período --------------------------------------------
+
+function abrirModalPeriodo() {
+  document.getElementById('periodo-inicio').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('periodo-fim').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('periodo-aviso-conflito').innerHTML = '';
+  document.getElementById('modal-periodo').classList.add('visivel');
+}
+
+function renderizarConflitos(container, conflitos, totalAlvo, onConfirmar) {
+  const itens = conflitos.map(c =>
+    `<li>${c.consultorio_nome} — ${c.data} ${c.horario} — já reservado por <strong>${c.medico_nome}</strong></li>`
+  ).join('');
+  container.innerHTML = `
+    <div class="aviso-conflito">${conflitos.length} horário(s) desse período já têm reserva confirmada de um médico. Confira antes de aplicar mesmo assim -- depois será preciso avisar esses profissionais.</div>
+    <ul class="lista-conflitos">${itens}</ul>
+    <div class="modal-botoes">
+      <button type="button" class="btn-fechar-modal" onclick="fecharModais()">Cancelar</button>
+      <button type="button" class="btn-confirmar perigo" id="btn-confirmar-conflito">Aplicar mesmo assim e avisar os médicos</button>
+    </div>`;
+  document.getElementById('btn-confirmar-conflito').onclick = onConfirmar;
+}
+
+async function aplicarPeriodo(confirmar) {
+  const data_inicio = document.getElementById('periodo-inicio').value;
+  const data_fim = document.getElementById('periodo-fim').value;
+  if (!data_inicio || !data_fim) { alert('Escolha as duas datas.'); return; }
   try {
-    const r = await fetch('/admin/api/matriz/replicar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...csrfHeader() },
-      body: JSON.stringify({ data_inicio: dataInicioAtual }),
+    const r = await fetch('/admin/api/matriz/replicar-periodo', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+      body: JSON.stringify({ data_inicio, data_fim, confirmar: !!confirmar }),
     });
     const x = await r.json();
-    if (!r.ok) { statusEl.className = 'status-replicar aviso'; statusEl.textContent = x.erro || 'Não consegui replicar a matriz.'; return; }
-    if (x.aviso) { statusEl.className = 'status-replicar aviso'; statusEl.textContent = x.aviso; return; }
-    statusEl.className = 'status-replicar ok';
-    statusEl.textContent = `${x.replicados} horário(s) replicado(s) da semana de ${x.data_inicio_origem} pra semana de ${x.data_inicio_destino}` + (x.pulados ? ` (${x.pulados} já existiam e foram pulados).` : '.');
-    carregarGrade();
+    if (!r.ok) { alert(x.erro || 'Não consegui replicar a matriz.'); return; }
+    if (x.precisa_confirmar) {
+      renderizarConflitos(document.getElementById('periodo-aviso-conflito'), x.conflitos, x.total_alvo, () => aplicarPeriodo(true));
+      return;
+    }
+    alert(`${x.aplicados} horário(s) aplicado(s) de ${x.data_inicio} até ${x.data_fim}.` + (x.conflitos ? ` (${x.conflitos} já tinham reserva de médico -- lembre de avisá-los.)` : ''));
+    fecharModais();
   } catch (e) {
-    statusEl.className = 'status-replicar aviso'; statusEl.textContent = 'Erro ao replicar: ' + e;
+    alert('Erro ao replicar: ' + e);
   }
 }
 
-carregarGrade();
+// ---- Replicar por mês --------------------------------------------------
+
+function abrirModalMes() {
+  const hoje = new Date();
+  document.getElementById('mes-ano').value = hoje.getFullYear();
+  const grade = document.getElementById('grade-meses');
+  grade.innerHTML = MESES.map((m, i) => `<button type="button" class="btn-mes" data-mes="${i + 1}" onclick="selecionarMes(this)">${m}</button>`).join('');
+  document.getElementById('mes-aviso-conflito').innerHTML = '';
+  document.getElementById('modal-mes').classList.add('visivel');
+}
+
+let mesSelecionado = null;
+function selecionarMes(el) {
+  document.querySelectorAll('#grade-meses .btn-mes').forEach(b => b.classList.remove('selecionado'));
+  el.classList.add('selecionado');
+  mesSelecionado = Number(el.dataset.mes);
+}
+
+async function aplicarMes(confirmar) {
+  const ano = Number(document.getElementById('mes-ano').value);
+  if (!mesSelecionado || !ano) { alert('Escolha o mês e o ano.'); return; }
+  try {
+    const r = await fetch('/admin/api/matriz/replicar-mes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+      body: JSON.stringify({ mes: mesSelecionado, ano, confirmar: !!confirmar }),
+    });
+    const x = await r.json();
+    if (!r.ok) { alert(x.erro || 'Não consegui replicar a matriz.'); return; }
+    if (x.precisa_confirmar) {
+      renderizarConflitos(document.getElementById('mes-aviso-conflito'), x.conflitos, x.total_alvo, () => aplicarMes(true));
+      return;
+    }
+    alert(`${x.aplicados} horário(s) aplicado(s) em ${MESES[mesSelecionado - 1]}/${ano}.` + (x.conflitos ? ` (${x.conflitos} já tinham reserva de médico -- lembre de avisá-los.)` : ''));
+    fecharModais();
+  } catch (e) {
+    alert('Erro ao replicar: ' + e);
+  }
+}
+
+// ---- Relatório -----------------------------------------------------
+
+async function abrirModalRelatorio() {
+  const lista = document.getElementById('lista-relatorio');
+  lista.innerHTML = '<li>Carregando...</li>';
+  document.getElementById('modal-relatorio').classList.add('visivel');
+  try {
+    const r = await fetch('/admin/api/matriz/relatorio');
+    const x = await r.json();
+    const itens = x.replicacoes || [];
+    lista.innerHTML = itens.length ? itens.map(rp => {
+      const dataAplicacao = (rp.criado_em || '').slice(0, 16).replace('T', ' ');
+      const tipoLabel = rp.tipo === 'mes' ? 'por mês' : 'por período';
+      return `<li><strong>${dataAplicacao}</strong> — replicada ${tipoLabel}, cobrindo ${rp.data_inicio} até ${rp.data_fim} — ${rp.aplicados} horário(s) aplicado(s)${rp.conflitos ? `, ${rp.conflitos} conflito(s) com médico` : ''}</li>`;
+    }).join('') : '<li>Nenhuma matriz replicada ainda.</li>';
+  } catch (e) {
+    lista.innerHTML = '<li>Erro ao carregar o relatório.</li>';
+  }
+}
+
+carregarTemplate();
 </script>
 </body>
 </html>

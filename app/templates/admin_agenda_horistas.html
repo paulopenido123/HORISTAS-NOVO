@@ -67,32 +67,41 @@
 
   .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
-  .grade-cabecalho .col-dia { text-align: center; padding: 3px 4px; font-size: 12px; font-weight: 700; color: var(--navy); border-right: 1px solid var(--line); }
-  .grade-cabecalho .col-dia .numero { font-size: 14px; }
+  /* Fonte dos dias da semana/números e das horas aumentada bastante,
+     e negrito preto -- pedido do Paulo em 22/09/2026: a grade estava
+     difícil de ler à distância. */
+  .grade-cabecalho .col-dia { text-align: center; padding: 5px 4px; font-size: 15px; font-weight: 800; color: #10222E; border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia .numero { font-size: 17px; font-weight: 800; }
   /* padding vertical -- pedido do Paulo em 21/09/2026: sem isso, a marca
      "08:00" (e a "20:00" no fim) ficava cortada pelo overflow, porque o
      translateY(-50%) da .marca-hora empurra o texto pra cima/baixo da
      própria linha da hora, e nas pontas isso ia parar fora da área
      visível (scrollável) do próprio contêiner. */
-  .grade-scroll-vertical { max-height: 420px; overflow-y: auto; overflow-x: auto; padding: 7px 0; }
+  .grade-scroll-vertical { max-height: 520px; overflow-y: auto; overflow-x: auto; padding: 7px 0; }
   .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
   .coluna-horas { position: relative; border-right: 1px solid var(--line); }
-  .coluna-horas .marca-hora { position: absolute; left: 0; right: 0; font-size: 8.5px; color: var(--muted); text-align: right; padding-right: 6px; transform: translateY(-50%); }
+  .coluna-horas .marca-hora { position: absolute; left: 0; right: 0; font-size: 12px; font-weight: 700; color: #10222E; text-align: right; padding-right: 6px; transform: translateY(-50%); }
   .coluna-dia {
     border-right: 1px solid var(--line); position: relative;
-    background-image: repeating-linear-gradient(to bottom, #f1f4f5 0, #f1f4f5 1px, transparent 1px, transparent 21.6px);
+    /* altura da linha acompanha a constante PX_POR_MIN lá embaixo no
+       JavaScript (60min * PX_POR_MIN = 36px) -- se mudar uma, muda a outra. */
+    background-image: repeating-linear-gradient(to bottom, #f1f4f5 0, #f1f4f5 1px, transparent 1px, transparent 36px);
   }
   .faixa-bege { position: absolute; left: 0; right: 0; background: var(--bege); pointer-events: none; z-index: 0; }
   .slot-vago { position: absolute; left: 2px; right: 2px; border-radius: 3px; border: 1px dashed #e3e8ea; box-sizing: border-box; background: var(--verde); }
   .slot-vago.indisponivel { background: var(--bege); border: 1px solid #b9c0c4; }
   .bloco-reserva {
-    position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 0 4px; overflow: hidden;
-    color: white; font-size: 8px; line-height: 1.05; box-shadow: 0 1px 3px rgba(0,0,0,.15);
-    display: flex; align-items: center; gap: 4px; white-space: nowrap;
+    position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 0 5px; overflow: hidden;
+    font-size: 11.5px; line-height: 1.15; box-shadow: 0 1px 3px rgba(0,0,0,.15); box-sizing: border-box;
+    display: flex; align-items: center; gap: 5px; white-space: nowrap;
   }
-  .bloco-reserva.reservado { background: var(--azul-confirmado); }
-  .bloco-reserva.bloqueado { background: var(--rosa); color: #8e2632; }
-  .bloco-reserva .h { font-weight: 700; }
+  /* Bordas delineadas nas células reservadas -- pedido do Paulo em
+     22/09/2026 -- e nome do profissional sempre em negrito preto, em
+     vez de branco (ficava difícil de ler em cima do azul/rosa claro). */
+  .bloco-reserva.reservado { background: var(--azul-confirmado); border: 1.5px solid #0E6B7D; }
+  .bloco-reserva.bloqueado { background: var(--rosa); border: 1.5px solid #C24A63; }
+  .bloco-reserva .h { font-weight: 800; color: #10222E; }
+  .bloco-reserva .nome { font-weight: 800; color: #10222E; overflow: hidden; text-overflow: ellipsis; }
 
   /* Item 6 (pedido do Paulo em 21/09/2026): botões "Agendar para:" e
      "Cancelar agendamento", só pro admin. */
@@ -202,7 +211,12 @@
 const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:30', '18:30', '19:30'];
 const GRID_INICIO_MIN = 8 * 60;
 const GRID_FIM_MIN = 20 * 60 + 30;
-const PX_POR_MIN = 0.36;
+// Aumentado de 0.36 pra 0.6 (pedido do Paulo em 22/09/2026, junto com a
+// fonte maior) -- célula de 1h passa de 21.6px pra 36px de altura, pra
+// caber texto maior sem cortar. Se mudar esse valor, mude também o
+// "36px" do repeating-linear-gradient de .coluna-dia no <style> acima
+// (60 * PX_POR_MIN).
+const PX_POR_MIN = 0.6;
 
 // Marcas de horário mostradas na coluna da esquerda -- de hora em hora
 // das 08:00 às 17:00, depois de meia em meia hora (17:00, 17:30, 18:30,
@@ -545,7 +559,7 @@ function renderizarGrade() {
             ? `onclick="toggleCelulaCancelar('${chaveSel}', '${ocupado.medicoId}', '${ocupado.nome.replace(/'/g, "&#39;")}', '${dataIso}', '${hora}', '${consultorio.nome.replace(/'/g, "&#39;")}')"`
             : '';
           html += `<div class="bloco-reserva ${classe}${selecionado ? ' selecionado-cancelar' : ''}" style="top:${top}px; height:${altura}px; ${selecionavel ? 'cursor:pointer;' : ''}" title="${ocupado.nome}" ${onclick}>
-            <div class="h">${hora}</div><div>${ocupado.nome}</div>
+            <div class="h">${hora}</div><div class="nome">${ocupado.nome}</div>
           </div>`;
         } else if (indisponivel) {
           html += `<div class="slot-vago indisponivel" style="top:${top}px; height:${altura}px;" title="Indisponível"></div>`;

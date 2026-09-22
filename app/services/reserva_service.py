@@ -262,31 +262,70 @@ def _para_iso_com_fuso(data: str, hora: str) -> str:
     return f"{data}T{hora}:00-03:00"
 
 
+# Tempo máximo que a checagem no Google Agenda pode levar ANTES de
+# devolver a resposta pro médico -- pedido do Paulo em 22/09/2026:
+# reclamou que clicar em "Reservar" ainda demorava muito pra "marcar" a
+# célula. O envio de e-mail e a criação do evento já rodavam em
+# background desde 15/09/2026 (ver _rodar_em_segundo_plano), mas essa
+# checagem de CONFLITO precisa de uma resposta antes de criar a reserva
+# (senão não dá pra bloquear o conflito) -- então ela continuava
+# travando a resposta inteira, às vezes por vários segundos, quando o
+# Google demorava pra renovar o token/responder. Com o timeout abaixo,
+# se o Google não responder rápido, a reserva segue em frente sem essa
+# checagem extra (mesmo comportamento de "não bloquear por causa
+# disso" que já existia pra qualquer outro erro do Google, só que agora
+# também vale para "demorou demais", não só para "deu erro").
+GOOGLE_CALENDAR_TIMEOUT_SEGUNDOS = 2.5
+
+
 def _checar_conflito_google(medico: dict | None, data: str, hora_inicio: str, hora_fim: str):
     """
     Checagem EXTRA (além da trava própria do sistema): se o médico
     conectou o Google Agenda dele, também olha lá para evitar marcar
     um turno em cima de um compromisso pessoal. Se ele não conectou,
-    essa checagem é pulada silenciosamente — não é obrigatória.
+    essa checagem é pulada silenciosamente — não é obrigatória. Roda
+    numa thread à parte com um teto de tempo (GOOGLE_CALENDAR_TIMEOUT_SEGUNDOS)
+    -- se o Google não responder a tempo, seguimos sem bloquear a
+    reserva por causa disso (é um bônus, não uma dependência crítica).
     """
-    if not medico:
+    if not medico or not medico.get("google_calendar_conectado"):
         return
     from app.services import google_calendar_service as gcal
 
-    try:
-        inicio_iso = _para_iso_com_fuso(data, hora_inicio)
-        fim_iso = _para_iso_com_fuso(data, hora_fim)
-        if gcal.verificar_conflito(medico, inicio_iso, fim_iso):
-            raise ConflitoDeReservaError(
-                "Esse horário conflita com um compromisso na sua Google Agenda pessoal."
-            )
-    except ConflitoDeReservaError:
-        raise
-    except Exception as e:
+    inicio_iso = _para_iso_com_fuso(data, hora_inicio)
+    fim_iso = _para_iso_com_fuso(data, hora_fim)
+    resultado: dict = {}
+
+    def _checar():
+        try:
+            resultado["tem_conflito"] = gcal.verificar_conflito(medico, inicio_iso, fim_iso)
+        except Exception as e:
+            resultado["erro"] = e
+
+    thread = threading.Thread(target=_checar, daemon=True)
+    thread.start()
+    thread.join(timeout=GOOGLE_CALENDAR_TIMEOUT_SEGUNDOS)
+
+    if thread.is_alive():
+        # ainda rodando depois do teto de tempo -- não travamos a
+        # reserva esperando, a thread termina sozinha em background
+        # (não faz nada além de ler a agenda, então não tem efeito
+        # colateral seguir sem o resultado dela)
+        print(f"[reserva_service] Checagem do Google Agenda passou de {GOOGLE_CALENDAR_TIMEOUT_SEGUNDOS}s, "
+              f"seguindo sem bloquear a reserva.")
+        return
+
+    if "erro" in resultado:
         # se a checagem no Google falhar por qualquer motivo (token
         # vencido, API fora do ar, etc), não travamos a reserva por
         # causa disso — é uma checagem extra, não uma dependência crítica
-        print(f"[reserva_service] Não consegui checar conflito no Google Agenda: {e}")
+        print(f"[reserva_service] Não consegui checar conflito no Google Agenda: {resultado['erro']}")
+        return
+
+    if resultado.get("tem_conflito"):
+        raise ConflitoDeReservaError(
+            "Esse horário conflita com um compromisso na sua Google Agenda pessoal."
+        )
 
 
 def _criar_evento_google(medico: dict | None, consultorio_id: str, reserva: dict,

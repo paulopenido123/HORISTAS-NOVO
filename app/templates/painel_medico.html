@@ -440,6 +440,15 @@ if ("serviceWorker" in navigator) {
           atendimento (CRM, CPF/CNPJ, valor da consulta, convênios) ficam em uma tela só.</p>
         <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" class="btn-ghost" style="width:100%;">✎ Editar dados pessoais</a>
       </div>
+
+      <div class="cell">
+        <div class="cell-label">Saldo para IA</div>
+        <div class="total">R$ {{ "%.2f"|format(status_ia.saldo) }}</div>
+        <p class="muted-cell">Crédito pra usar o assistente de IA (secretária, análise de prontuário, contábil).
+          Cada uso desconta direto daqui, mostrando sempre o saldo atual.</p>
+        <button class="btn-cyan" style="margin-top:16px;" onclick="abrirModalCompra('ia')">+ Comprar créditos IA</button>
+        <a href="{{ url_for('medico_painel.pagina_painel_ia') }}" class="btn-ghost" style="width:100%; margin-top:8px; display:block; text-align:center;">Ver Painel de IA</a>
+      </div>
     </div>
   </div>
   {# As seções "Agenda" (Google Agenda) e "Ferramentas" (Agenda de Pacientes,
@@ -580,6 +589,21 @@ if ("serviceWorker" in navigator) {
       <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
     </div>
     {% endif %}
+
+    <div class="passo-modal" id="passo-ia" hidden>
+      <h3>Comprar créditos de IA</h3>
+      <p style="margin-bottom:16px;">Escolha um valor fechado — o crédito cai direto no seu Saldo para IA e vai sendo abatido a cada uso do assistente.</p>
+      <div id="lista-valores-ia" style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+        {% for v in [20, 40, 60, 80, 100] %}
+        <label class="opcao-pacote" style="display:flex; align-items:center; gap:8px; border:1px solid var(--line-strong); border-radius:8px; padding:10px 12px; cursor:pointer; font-size:13px;">
+          <input type="radio" name="valor-ia" value="{{ v }}">
+          <strong>R$ {{ v }},00</strong>
+        </label>
+        {% endfor %}
+      </div>
+      <button class="btn-gerar" onclick="irParaConfirmacaoIA()">Continuar</button>
+      <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
+    </div>
 
     <div class="passo-modal" id="passo-confirmacao" hidden>
       <h3>Confirme o destino</h3>
@@ -930,7 +954,7 @@ const HTML_MODAL_COMPRA_ORIGINAL = document.getElementById('modal-conteudo').inn
 // do pacote de horas -> confirmação -> pagamento. Guardado aqui (não só em
 // campos escondidos) porque o passo de confirmação precisa mostrar um
 // resumo em texto antes de deixar o médico seguir pro Asaas.
-let estadoCompra = { destino: null, pacoteHoras: null, valorSalas: 0, parcelas: 1 };
+let estadoCompra = { destino: null, pacoteHoras: null, valorSalas: 0, valorIA: 0, parcelas: 1 };
 
 function mostrarPasso(idPasso) {
   document.querySelectorAll('#modal-conteudo .passo-modal').forEach(el => { el.hidden = true; });
@@ -969,7 +993,7 @@ function abrirModalCompra(destino) {
   // reabria mostrando o conteúdo "sujo" da última tentativa (ex: só a
   // tela de status do cartão, sem a opção de PIX)
   document.getElementById('modal-conteudo').innerHTML = HTML_MODAL_COMPRA_ORIGINAL;
-  estadoCompra = { destino: null, pacoteHoras: null, valorSalas: 0, parcelas: 1 };
+  estadoCompra = { destino: null, pacoteHoras: null, valorSalas: 0, valorIA: 0, parcelas: 1 };
   mostrarPasso('passo-' + (destino || 'horas'));
   document.getElementById('modal-overlay').classList.add('aberto');
 }
@@ -998,6 +1022,18 @@ function irParaConfirmacao(destino) {
   mostrarPasso('passo-confirmacao');
 }
 
+function irParaConfirmacaoIA() {
+  const resumoEl = document.getElementById('resumo-confirmacao');
+  const el = document.querySelector('input[name="valor-ia"]:checked');
+  if (!el) { alert('Escolha um valor para continuar.'); return; }
+  estadoCompra.destino = 'ia';
+  estadoCompra.valorIA = parseFloat(el.value) || 0;
+  resumoEl.innerHTML = `Você está adicionando <strong>R$ ${estadoCompra.valorIA.toFixed(2)}</strong> ao seu
+    Saldo para IA.<br><br>
+    Confirma que é esse o valor que você quer adicionar?`;
+  mostrarPasso('passo-confirmacao');
+}
+
 function voltarDaConfirmacao() {
   mostrarPasso('passo-' + (estadoCompra.destino || 'horas'));
 }
@@ -1007,10 +1043,13 @@ async function gerarPix() {
   modal.innerHTML = '<p>Gerando PIX...</p>';
 
   try {
+    const corpo = estadoCompra.destino === 'ia'
+      ? { valor_ia: estadoCompra.valorIA }
+      : { pacote_horas: estadoCompra.pacoteHoras };
     const resp = await fetch('/api/creditos/comprar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pacote_horas: estadoCompra.pacoteHoras }),
+      body: JSON.stringify(corpo),
     });
     const dados = await resp.json();
 
@@ -1043,13 +1082,13 @@ async function gerarCobrancaCartao() {
   modal.innerHTML = '<p>Preparando pagamento com cartão...</p>';
 
   try {
+    const corpo = estadoCompra.destino === 'ia'
+      ? { valor_ia: estadoCompra.valorIA, parcelas: 1 }
+      : { pacote_horas: estadoCompra.pacoteHoras, parcelas: estadoCompra.parcelas };
     const resp = await fetch('/api/creditos/comprar-cartao', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        pacote_horas: estadoCompra.pacoteHoras,
-        parcelas: estadoCompra.parcelas,
-      }),
+      body: JSON.stringify(corpo),
     });
     const dados = await resp.json();
 

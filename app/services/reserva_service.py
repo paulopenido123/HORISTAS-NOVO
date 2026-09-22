@@ -489,6 +489,8 @@ def _notificar_cancelamento_por_email(medico_id: str, reserva: dict):
                 data=reserva["data"],
                 horario=descricao_periodo,
                 destinatario=medico["email"],
+                saldo_horas=creditos_db.saldo_em_horas_medico(medico_id),
+                saldo_ia=creditos_db.obter_saldo_ia(medico_id),
             )
     except Exception as e:
         print(f"[reserva_service] Erro ao mandar confirmação de cancelamento pro médico: {e}")
@@ -664,6 +666,8 @@ def _pos_reserva(medico_id: str, consultorio_id: str, reserva: dict):
                 data=reserva["data"],
                 horario=descricao_periodo,
                 destinatario=medico["email"],
+                saldo_horas=creditos_db.saldo_em_horas_medico(medico_id),
+                saldo_ia=creditos_db.obter_saldo_ia(medico_id),
             )
         except Exception as e:
             print(f"[reserva_service] Erro ao mandar confirmação de agendamento pro médico: {e}")

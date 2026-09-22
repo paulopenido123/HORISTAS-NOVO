@@ -348,11 +348,38 @@ def notificar_recibo_compra_horas(nome: str, valor: float, horas: float | None,
     return enviar_email([destinatario], assunto, corpo_html)
 
 
+def _bloco_saldos_html(saldo_horas: float | None, saldo_ia: float | None) -> str:
+    """Bloco com o saldo atual de horas e de IA do médico -- pedido do
+    Paulo em 22/09/2026: todo e-mail de agendamento/cancelamento passou a
+    mostrar os dois saldos atualizados, pra ele não precisar entrar no
+    painel só pra conferir. `None` (chamador não conseguiu buscar o
+    saldo por algum motivo) simplesmente omite a linha correspondente,
+    em vez de mostrar "None" ou quebrar o e-mail."""
+    linhas = ""
+    if saldo_horas is not None:
+        linhas += (f'<tr><td style="padding:6px 0; color:#555;">Saldo de horas:</td>'
+                   f'<td style="padding:6px 0; font-weight:bold;">{saldo_horas}h</td></tr>')
+    if saldo_ia is not None:
+        linhas += (f'<tr><td style="padding:6px 0; color:#555;">Saldo para IA:</td>'
+                   f'<td style="padding:6px 0; font-weight:bold;">R$ {saldo_ia:.2f}</td></tr>')
+    if not linhas:
+        return ""
+    return f"""
+        <table style="width: 100%; border-collapse: collapse; margin-top: 14px; border-top: 1px solid #e3ebef; padding-top: 6px;">
+            {linhas}
+        </table>
+    """
+
+
 def notificar_agendamento_medico(nome_medico: str, consultorio_nome: str, data: str, horario: str,
-                                  destinatario: str) -> bool:
+                                  destinatario: str, saldo_horas: float | None = None,
+                                  saldo_ia: float | None = None) -> bool:
     """Item 5 (lado do médico): confirma que uma reserva foi feita --
     mandado direto pro e-mail do PRÓPRIO médico (diferente de
-    notificar_turno_escolhido, que avisa a recepção/funcionários)."""
+    notificar_turno_escolhido, que avisa a recepção/funcionários).
+    `saldo_horas`/`saldo_ia` (pedido do Paulo em 22/09/2026) mostram o
+    saldo JÁ ATUALIZADO depois dessa reserva -- opcionais pra não quebrar
+    quem já chamava essa função sem eles."""
     assunto = f"Agendamento confirmado — {data}"
     corpo_html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px;">
@@ -366,6 +393,7 @@ def notificar_agendamento_medico(nome_medico: str, consultorio_nome: str, data: 
             <tr><td style="padding:6px 0; color:#555;">Horário:</td>
                 <td style="padding:6px 0; font-weight:bold;">{_esc(horario)}</td></tr>
         </table>
+        {_bloco_saldos_html(saldo_horas, saldo_ia)}
         <p style="color: #888; font-size: 12px; margin-top: 20px;">
             Notificação automática — Sistema Lifemax
         </p>
@@ -375,8 +403,13 @@ def notificar_agendamento_medico(nome_medico: str, consultorio_nome: str, data: 
 
 
 def notificar_cancelamento_medico(nome_medico: str, consultorio_nome: str, data: str, horario: str,
-                                   destinatario: str) -> bool:
-    """Item 5 (lado do médico): confirma que uma reserva foi cancelada."""
+                                   destinatario: str, saldo_horas: float | None = None,
+                                   saldo_ia: float | None = None) -> bool:
+    """Item 5 (lado do médico): confirma que uma reserva foi cancelada.
+    `saldo_horas`/`saldo_ia` (pedido do Paulo em 22/09/2026) mostram o
+    saldo JÁ ATUALIZADO depois desse cancelamento (com o reembolso de
+    horas já aplicado, se houve) -- opcionais pra não quebrar quem já
+    chamava essa função sem eles."""
     assunto = f"Agendamento cancelado — {data}"
     corpo_html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px;">
@@ -390,6 +423,7 @@ def notificar_cancelamento_medico(nome_medico: str, consultorio_nome: str, data:
             <tr><td style="padding:6px 0; color:#555;">Horário:</td>
                 <td style="padding:6px 0; font-weight:bold;">{_esc(horario)}</td></tr>
         </table>
+        {_bloco_saldos_html(saldo_horas, saldo_ia)}
         <p style="color: #888; font-size: 12px; margin-top: 20px;">
             Notificação automática — Sistema Lifemax
         </p>

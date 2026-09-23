@@ -18,6 +18,17 @@ palavra por palavra contra o .docx original enviado pelo Paulo). Também
 ganhou a rota /contrato/baixar, que gera esse mesmo contrato em PDF a
 qualquer momento pelo painel do médico (botão no fim do dashboard),
 preenchido com os dados reais do aceite de cada um.
+
+Atualizado de novo em 23/09/2026 (pedido do Paulo, item 10): o texto do
+contrato em si trocou pro "Contrato de Prestação de Serviços de Coworking
+e Cessão de Infraestrutura" (modelo Biomax, novo .docx enviado --
+CONTRATO_VERSAO subiu pra "2.0"). Médicos que já tinham aceitado a versão
+anterior (termo_aceito=True) NÃO são obrigados a aceitar de novo -- essa
+tela só é mostrada a quem ainda não aceitou nenhuma versão (mesmo
+comportamento de sempre, ver `tela_termo` abaixo). Se no futuro for
+necessário forçar todo mundo a reaceitar o contrato atualizado, seria
+preciso um novo comportamento aqui (ex: comparar termo_versao com
+CONTRATO_VERSAO), que não foi pedido desta vez.
 """
 from flask import Blueprint, render_template, redirect, url_for, request, send_file
 from app.services.auth_service import requer_login_medico, medico_logado_id

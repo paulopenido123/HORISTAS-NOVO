@@ -114,7 +114,17 @@
      posicionamento por minuto (não uma tabela com células soltas), pra
      o horista ver exatamente as mesmas proporções de horário que a
      recepção/secretária vê na agenda dos mensalistas ---- */
-  .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
+  /* Pedido do Paulo em 23/09/2026 (item 4): no celular, ao rolar a
+     planilha horizontalmente, os dias do cabeçalho ficavam ESTÁTICOS
+     enquanto as colunas de horário embaixo se moviam -- porque o
+     cabeçalho (.grade-cabecalho) era um elemento IRMÃO de fora do
+     contêiner com rolagem horizontal (.grade-scroll-vertical), então só
+     o corpo rolava. Agora o cabeçalho mora DENTRO do mesmo contêiner
+     rolável (ver o HTML montado em `renderizarConsultorio` mais abaixo),
+     com min-width igual ao do corpo (pra não ficar comprimido diferente,
+     que era a causa do desalinhamento de colunas) e `position: sticky`
+     pra continuar visível ao rolar verticalmente. */
+  .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); min-width: 760px; position: sticky; top: 0; z-index: 2; background: #fff; }
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
   /* Fonte dos dias/números e das horas aumentada bastante, e negrito
      preto -- pedido do Paulo em 22/09/2026 (mesma mudança já feita na
@@ -554,7 +564,13 @@ function renderizarGrade() {
             <div class="h">${hora}</div><div class="nome">${ocupado.admin ? 'Reservado' : (minha ? 'Você' : ocupado.nome)}</div>
           </div>`;
         } else if (indisponivel) {
-          html += `<div class="slot-vago indisponivel" style="top:${top}px; height:${altura}px;" title="Indisponível"></div>`;
+          // Pedido do Paulo em 23/09/2026 (item 5): não desenha mais uma
+          // caixinha cinza por horário bloqueado aqui -- a faixa-bege
+          // (ver faixasBegeDoDia acima) já cobre esse intervalo inteiro
+          // com UM retângulo cinza contínuo (ex: sábado/domingo à tarde
+          // inteiro), então desenhar também as caixinhas individuais
+          // deixava um efeito "listrado" (várias bordas cinzas
+          // empilhadas) em vez de um único campo cinza.
         } else {
           html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;"
             onclick="clicarSlotLivre('${consultorio.id}', '${dataIso}', '${hora}')"></div>`;
@@ -570,8 +586,10 @@ function renderizarGrade() {
         <div class="bloco-consultorio-nome">${consultorio.nome}</div>
         <button type="button" class="btn-ver-foto" onclick="abrirFotoConsultorio('${consultorio.id}')">📷 Ver foto</button>
       </div>
-      <div class="grade-cabecalho">${cabecalhoDiasHtml}</div>
-      <div class="grade-scroll-vertical"><div class="grade-corpo">${colunaHoras + colunasDias}</div></div>
+      <div class="grade-scroll-vertical">
+        <div class="grade-cabecalho">${cabecalhoDiasHtml}</div>
+        <div class="grade-corpo">${colunaHoras + colunasDias}</div>
+      </div>
     </div>`;
   }).join('');
 

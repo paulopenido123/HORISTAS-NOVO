@@ -55,6 +55,37 @@ class ConflitoDeReservaError(Exception):
     pass
 
 
+class DadosPessoaisIncompletosError(Exception):
+    """Pedido do Paulo em 23/09/2026: substituiu a espera pela liberação
+    manual do admin (NaoAutorizadoError, abaixo) como o requisito real
+    pra um médico novo poder reservar -- agora o único requisito (além
+    de ter saldo) é ter completado o cadastro. Lista os campos que
+    faltam pra dar um aviso específico (não um genérico "complete seu
+    cadastro"), e a rota devolve isso pro médico junto com um link pra
+    "Meus dados"."""
+    def __init__(self, campos_faltando: list[str]):
+        self.campos_faltando = campos_faltando
+        lista = ", ".join(campos_faltando)
+        super().__init__(
+            f"Complete seu cadastro em \"Meus dados\" antes de reservar um consultório -- "
+            f"falta preencher: {lista}."
+        )
+
+
+class MatrizNaoGeradaError(Exception):
+    """Pedido do Paulo em 23/09/2026: uma data que o admin nunca preparou
+    (nunca "replicou" a Matriz pra ela -- ver
+    template_service.data_tem_matriz_gerada) não pode ser reservada por
+    um médico, mesmo que os horários apareçam "livres" na grade (a
+    Matriz só BLOQUEIA o que foi marcado, não "abre" o resto -- sem essa
+    checagem, qualquer data futura era reservável por padrão)."""
+    def __init__(self):
+        super().__init__(
+            "Não há agenda disponível para esse período por enquanto -- favor entrar em "
+            "contato com o administrador do sistema por telefone ou e-mail."
+        )
+
+
 class NaoAutorizadoError(Exception):
     """Médico se cadastrou sozinho (auto-cadastro em /primeiro-acesso) mas
     o admin ainda não liberou o acesso dele -- pedido do Paulo em
@@ -125,20 +156,70 @@ def _checar_data_nao_passada(data: str, hora_inicio: str | None = None):
         raise ValueError("Não é possível reservar uma data/horário que já passou. Escolha um horário futuro.")
 
 
-def _checar_pode_alugar_avulso(medico_id: str):
-    medico = db.get_medico_by_id(medico_id)
+# Campos exigidos pra completar o cadastro antes de poder reservar --
+# pedido do Paulo em 23/09/2026 (item 2): "endereço, telefone, e-mail,
+# especialidade, cpf e data de nascimento". Endereço conta como completo
+# com rua/número/bairro/cidade/estado/cep preenchidos (complemento
+# continua opcional). (rótulo, campo no banco)
+_CAMPOS_OBRIGATORIOS_PARA_RESERVAR = [
+    ("telefone", "telefone"),
+    ("e-mail", "email"),
+    ("especialidade", "especialidade"),
+    ("CPF", "cpf_cnpj"),
+    ("data de nascimento", "data_nascimento"),
+    ("CEP", "endereco_cep"),
+    ("rua/avenida", "endereco_rua"),
+    ("número do endereço", "endereco_numero"),
+    ("bairro", "endereco_bairro"),
+    ("cidade", "endereco_cidade"),
+    ("estado (UF)", "endereco_estado"),
+]
+
+
+def _campos_pessoais_faltando(medico: dict) -> list[str]:
+    return [rotulo for rotulo, campo in _CAMPOS_OBRIGATORIOS_PARA_RESERVAR if not medico.get(campo)]
+
+
+def _checar_pode_alugar_avulso(medico: dict | None, criado_por_admin: bool = False):
+    """Recebe o médico JÁ carregado (pedido do Paulo em 23/09/2026, item 8:
+    antes essa função buscava o médico no banco de novo, e quem chamava
+    também buscava o médico de novo logo depois pra checagem do Google
+    Agenda -- duas idas ao banco pra pegar o mesmo registro, em toda
+    reserva. Agora busca-se o médico uma vez só, no início de
+    reservar_turno/reservar_por_hora, e passa pra cá e pro resto da
+    função reaproveitando o mesmo dict.)"""
     if medico and not medico.get("autorizado", True):
         raise NaoAutorizadoError()
     if medico and medico.get("tipo_vinculo") in ("fixo", "horista"):
         raise MedicoFixoNaoPodeAlugarError(medico.get("tipo_vinculo"))
+    # Pedido do Paulo em 23/09/2026 (itens 1 e 2): médico novo não espera
+    # mais liberação manual do admin (ver NaoAutorizadoError acima, que
+    # continua existindo só como bloqueio manual EXCEPCIONAL que o admin
+    # pode acionar em /admin/clientes) -- o requisito real agora é ter
+    # completado o cadastro. Reserva feita pelo próprio admin (Agenda
+    # Horistas "Agendar para:") não passa por essa checagem -- é o admin
+    # resolvendo manualmente, não faz sentido travar por um campo que o
+    # médico ainda não preencheu.
+    if medico and not criado_por_admin:
+        faltando = _campos_pessoais_faltando(medico)
+        if faltando:
+            raise DadosPessoaisIncompletosError(faltando)
 
 
-def reservar_turno(medico_id: str, consultorio_id: str, data: str, periodo: str) -> dict:
+def reservar_turno(medico_id: str, consultorio_id: str, data: str, periodo: str,
+                    criado_por_admin: bool = False) -> dict:
     from app.services import template_service
     from app.services import google_calendar_service as gcal
 
-    _checar_pode_alugar_avulso(medico_id)
+    # Busca o médico uma vez só e reaproveita em tudo abaixo (checagem de
+    # autorização/cadastro, e depois a checagem do Google Agenda) -- pedido
+    # do Paulo em 23/09/2026 (item 8, acelerar a reserva): antes eram duas
+    # idas ao banco pro mesmo registro.
+    medico = db.get_medico_by_id(medico_id)
+    _checar_pode_alugar_avulso(medico, criado_por_admin=criado_por_admin)
     _checar_data_nao_passada(data, db.PERIODOS_HORARIOS[periodo][0])
+    if not criado_por_admin and not template_service.data_tem_matriz_gerada(data):
+        raise MatrizNaoGeradaError()
 
     horarios_do_turno = template_service.HORARIOS_POR_PERIODO[periodo]
     if not template_service.verificar_disponibilidade(consultorio_id, data, horarios_do_turno):
@@ -167,7 +248,6 @@ def reservar_turno(medico_id: str, consultorio_id: str, data: str, periodo: str)
             )
 
     hora_inicio_periodo, hora_fim_periodo = db.PERIODOS_HORARIOS[periodo]
-    medico = db.get_medico_by_id(medico_id)
     _checar_conflito_google(medico, data, hora_inicio_periodo, hora_fim_periodo)
 
     try:
@@ -196,8 +276,14 @@ def reservar_por_hora(medico_id: str, consultorio_id: str, data: str,
     db.criar_reserva_por_hora)."""
     from app.services import template_service
 
-    _checar_pode_alugar_avulso(medico_id)
+    # Busca o médico uma vez só e reaproveita (ver comentário em
+    # _checar_pode_alugar_avulso) -- pedido do Paulo em 23/09/2026 (item
+    # 8, acelerar a reserva).
+    medico = db.get_medico_by_id(medico_id)
+    _checar_pode_alugar_avulso(medico, criado_por_admin=criado_por_admin)
     _checar_data_nao_passada(data, hora_inicio)
+    if not criado_por_admin and not template_service.data_tem_matriz_gerada(data):
+        raise MatrizNaoGeradaError()
 
     precos = creditos_db.obter_precos()
     horas_minimas = int(precos.get("horas_minimas", 1))
@@ -209,13 +295,17 @@ def reservar_por_hora(medico_id: str, consultorio_id: str, data: str,
         raise ConflitoDeReservaError(
             "Um ou mais desses horários está indisponível na Semana Padrão."
         )
-    # Bloqueios/reservas manuais da Matriz do administrador.
+    # Bloqueios/reservas manuais da Matriz do administrador -- pedido do
+    # Paulo em 23/09/2026 (item 8, acelerar a reserva): antes era uma
+    # query por horário ocupado (pra reserva de 1h só, sem diferença, mas
+    # pra reservas de várias horas seguidas isso virava várias idas ao
+    # banco em série); agora é uma query só, com "in".
     client = db.get_client()
-    for h in horarios_ocupados:
-        existe = (client.table("matriz_reservas_admin").select("id")
-                  .eq("consultorio_id", consultorio_id).eq("data", data).eq("horario", h).execute().data)
-        if existe:
-            raise ConflitoDeReservaError("Um ou mais desses horários já foi reservado pelo administrador.")
+    conflitos_admin = (client.table("matriz_reservas_admin").select("id,horario")
+                        .eq("consultorio_id", consultorio_id).eq("data", data)
+                        .in_("horario", horarios_ocupados).execute().data)
+    if conflitos_admin:
+        raise ConflitoDeReservaError("Um ou mais desses horários já foi reservado pelo administrador.")
 
     preco = creditos_db.calcular_preco_horas(quantidade_horas, precos)
 
@@ -233,7 +323,6 @@ def reservar_por_hora(medico_id: str, consultorio_id: str, data: str,
             )
 
     hora_fim = db.somar_horas(hora_inicio, quantidade_horas)
-    medico = db.get_medico_by_id(medico_id)
     _checar_conflito_google(medico, data, hora_inicio, hora_fim)
 
     try:

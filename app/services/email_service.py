@@ -11,6 +11,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+from email.mime.image import MIMEImage
 from app.config import Config
 
 # Vários dos e-mails abaixo interpolam nome de médico/paciente direto no
@@ -25,7 +26,8 @@ _esc = html.escape
 
 
 def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
-                  anexos: list[tuple] | None = None) -> bool:
+                  anexos: list[tuple] | None = None,
+                  imagens_inline: list[tuple] | None = None) -> bool:
     """
     Envia um email para uma lista de destinatários.
     Retorna True se enviou com sucesso, False se as credenciais SMTP
@@ -35,6 +37,14 @@ def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
     ex: [("recibo.pdf", pdf_bytes, "application/pdf")] — usado, por
     exemplo, para mandar o recibo em PDF (Módulo 4) ou a planilha de
     exportação para a contabilidade direto por email.
+
+    imagens_inline: lista opcional de tuplas (cid, bytes, mimetype) pra
+    imagem(ns) EMBUTIDA(S) no corpo do e-mail (não como anexo pra
+    baixar) -- o `corpo_html` referencia cada uma com
+    `<img src="cid:SEU_CID">`. Usado pelo "Enviar e-mail para clientes"
+    em lote (ver admin.api_clientes_enviar_email_lote, pedido do Paulo
+    em 23/09/2026), que deixa o admin anexar uma foto promocional que
+    aparece junto com o texto, não como arquivo separado pra baixar.
     """
     if not all([Config.SMTP_HOST, Config.SMTP_USER, Config.SMTP_PASSWORD, Config.EMAIL_FROM]):
         print("[email] SMTP não configurado — pulando envio de email. "
@@ -50,9 +60,26 @@ def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
     msg["From"] = Config.EMAIL_FROM
     msg["To"] = ", ".join(destinatarios)
 
-    corpo = MIMEMultipart("alternative")
-    corpo.attach(MIMEText(corpo_html, "html"))
-    msg.attach(corpo)
+    if imagens_inline:
+        # multipart/related: corpo HTML + imagem(ns) referenciadas por
+        # Content-ID (cid:) dentro do próprio HTML -- é assim que um
+        # cliente de e-mail sabe renderizar a imagem embutida no texto,
+        # em vez de listá-la como anexo separado pra baixar.
+        envolucro = MIMEMultipart("related")
+        corpo = MIMEMultipart("alternative")
+        corpo.attach(MIMEText(corpo_html, "html"))
+        envolucro.attach(corpo)
+        for cid, conteudo_bytes, mimetype in imagens_inline:
+            subtipo = (mimetype or "image/png").split("/", 1)[-1]
+            imagem = MIMEImage(conteudo_bytes, _subtype=subtipo)
+            imagem.add_header("Content-ID", f"<{cid}>")
+            imagem.add_header("Content-Disposition", "inline", filename=f"{cid}.{subtipo}")
+            envolucro.attach(imagem)
+        msg.attach(envolucro)
+    else:
+        corpo = MIMEMultipart("alternative")
+        corpo.attach(MIMEText(corpo_html, "html"))
+        msg.attach(corpo)
 
     for nome_arquivo, conteudo_bytes, mimetype in (anexos or []):
         subtipo = mimetype.split("/", 1)[-1] if mimetype else "octet-stream"

@@ -1,38 +1,59 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Clientes — Lifemax Admin</title><style>
-body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
-.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between}
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Clientes — Lifemax Admin</title><meta name="csrf-token" content="{{ csrf_token() }}"><style>
+/* Pedido do Paulo em 23/09/2026 (item 1): fontes maiores em toda a
+   página pra facilitar a leitura do admin -- valores abaixo subiram em
+   relação ao original (ex: body 14px->15.5px, tabela 13px->14.5px,
+   nav/th/muted também cresceram). */
+body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43;font-size:15.5px}
+.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between;font-size:15px}
 .nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}
-.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}
+.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:15.5px}
 .nav a.active{color:#10AFA9}
 .wrap{max-width:1180px;margin:auto;padding:28px 24px}
 .card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px}
-input,select{padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px}
-button,.btn{padding:10px 14px;border:0;border-radius:8px;background:#10AFA9;color:#fff;font-weight:700;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
+input,select{padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:14.5px}
+button,.btn{padding:10px 14px;border:0;border-radius:8px;background:#10AFA9;color:#fff;font-weight:700;cursor:pointer;font-size:14.5px;text-decoration:none;display:inline-block}
 .btn.alt{background:#082A3D}
 .busca{display:flex;gap:8px;margin-bottom:18px}
 .busca input{flex:1}
 table{width:100%;border-collapse:collapse}
-th,td{padding:11px;border-bottom:1px solid #e3ebef;text-align:left;font-size:13px;vertical-align:top}
-th{color:#62788A}
-.muted{color:#62788A;font-size:12.5px}
-.tag{display:inline-block;padding:3px 8px;border-radius:6px;background:#EAF6F5;color:#0B7B76;font-size:11.5px;font-weight:700}
+th,td{padding:12px;border-bottom:1px solid #e3ebef;text-align:left;font-size:14.5px;vertical-align:top}
+th{color:#62788A;font-size:13.5px}
+.muted{color:#62788A;font-size:13.5px}
+.tag{display:inline-block;padding:3px 8px;border-radius:6px;background:#EAF6F5;color:#0B7B76;font-size:12.5px;font-weight:700}
 details.ajuste{margin-top:6px}
-details.ajuste summary{cursor:pointer;color:#10AFA9;font-weight:700;font-size:12.5px;list-style:none}
+details.ajuste summary{cursor:pointer;color:#10AFA9;font-weight:700;font-size:13.5px;list-style:none}
 details.ajuste summary::-webkit-details-marker{display:none}
 .form-ajuste{margin-top:10px;padding:12px;background:#F5F8FA;border-radius:8px;display:flex;flex-direction:column;gap:8px;min-width:220px}
-.form-ajuste label{font-size:12px;font-weight:600;color:#0B3A52}
-.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}
+.form-ajuste label{font-size:13px;font-weight:600;color:#0B3A52}
+.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14.5px;font-weight:600}
 .flash.ok{background:#E3F7EE;color:#0B7B45}
 .flash.erro{background:#FBEAE6;color:#B33}
 .nome-bloqueado{color:#C0392B}
-.status-tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.status-tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:700}
 .status-tag.liberado{background:#E3F7EE;color:#0B7B45}
 .status-tag.bloqueado{background:#FBEAE6;color:#B33}
 .form-autorizacao{margin-top:6px}
-.btn-autorizacao{font-size:12px;padding:6px 10px}
+.btn-autorizacao{font-size:13px;padding:6px 10px}
 .btn-autorizacao.liberar{background:#0B7B45}
 .btn-autorizacao.bloquear{background:#B33}
+.saldo-horas-num{font-size:17px;font-weight:800;color:#0B3A52}
 @media(max-width:700px){table,thead,tbody,th,td,tr{display:block}th{display:none}td{border:none;padding:4px 0}tr{border-bottom:1px solid #e3ebef;padding:12px 0}}
+
+/* Modais de ação em lote (item 2 e 3, pedido do Paulo em 23/09/2026) */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(8,42,61,0.55);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.aberto{display:flex}
+.modal-lote{background:#fff;border-radius:14px;padding:24px;width:100%;max-width:520px;max-height:86vh;overflow-y:auto}
+.modal-lote h3{margin:0 0 4px}
+.modal-lote .muted{margin-bottom:16px}
+.modal-lote label{font-size:13px;font-weight:600;color:#0B3A52;display:block;margin:12px 0 6px}
+.modal-lote input[type=text],.modal-lote textarea,.modal-lote input[type=file]{width:100%;box-sizing:border-box}
+.modal-lote textarea{min-height:110px;font-family:inherit;resize:vertical}
+.lista-selecao{border:1px solid #e3ebef;border-radius:8px;max-height:220px;overflow-y:auto;margin-top:6px}
+.lista-selecao label{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid #eef3f5;font-weight:400;margin:0;cursor:pointer}
+.lista-selecao label:last-child{border-bottom:0}
+.lista-selecao input{width:auto}
+.modal-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.modal-status{font-size:13px;margin-top:10px}
 </style></head><body>
 <div class="top"><strong>LIFEMAX ADMIN · CLIENTES</strong><span>Administrador</span></div>
 <div class="nav">
@@ -52,7 +73,11 @@ details.ajuste summary::-webkit-details-marker{display:none}
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
       <h2 style="margin-top:0">Clientes cadastrados</h2>
-      <a class="btn" href="{{ url_for('admin.novo_cliente') }}">+ Inserir novo</a>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn alt" onclick="abrirModalLote('email')">📧 Enviar e-mail para clientes</button>
+        <button type="button" class="btn alt" onclick="abrirModalLote('link')">🔗 Enviar link de acesso</button>
+        <a class="btn" href="{{ url_for('admin.novo_cliente') }}">+ Inserir novo</a>
+      </div>
     </div>
     <form class="busca" method="get">
       <input type="text" name="busca" value="{{ busca }}" placeholder="Buscar por nome, telefone ou e-mail...">
@@ -96,7 +121,32 @@ details.ajuste summary::-webkit-details-marker{display:none}
               {% endif %}
             </form>
           </td>
-          <td>{{ m.saldo_horas }}h</td>
+          <td>
+            <div class="saldo-horas-num">{{ m.saldo_horas }}h</div>
+            {# Cópia do botão "Alterar saldo" -- pedido do Paulo em
+               23/09/2026 (item 1): a tela "Visualizar" já tinha esse
+               botão (ver admin_cliente_visualizar.html), aqui é a mesma
+               rota/form (admin.ajustar_saldo_cliente), só que direto na
+               lista, logo embaixo do saldo, pra não precisar entrar em
+               "Visualizar" toda vez. #}
+            <details class="ajuste">
+              <summary>💰 Alterar saldo</summary>
+              <form class="form-ajuste" method="post" action="{{ url_for('admin.ajustar_saldo_cliente', medico_id=m.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="busca" value="{{ busca }}">
+                <label>Carteira</label>
+                <select name="carteira" required onchange="atualizarUnidadeAjusteLista(this)">
+                  <option value="salas">Salas/Horas (medido em horas)</option>
+                  <option value="ia">IA (medido em R$)</option>
+                </select>
+                <label class="lbl-quantidade">Quantas horas? (negativo pra debitar)</label>
+                <input type="number" step="1" name="quantidade" class="input-quantidade" placeholder="ex: 15 ou -5" required>
+                <label>Motivo (opcional)</label>
+                <input type="text" name="descricao" placeholder="ex: crédito de teste">
+                <button type="submit">Confirmar ajuste</button>
+              </form>
+            </details>
+          </td>
           <td>R$ {{ "%.2f"|format(m.saldo_ia) }}</td>
           <td>
             <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.visualizar_cliente', medico_id=m.id) }}">🔍 Visualizar</a>
@@ -120,4 +170,163 @@ details.ajuste summary::-webkit-details-marker{display:none}
     </table>
   </div>
 </div>
+
+{# Modal "Enviar e-mail para clientes" (item 2) e "Enviar link de acesso"
+   em lote (item 3) -- pedido do Paulo em 23/09/2026. Os dois reaproveitam
+   a mesma lista de médicos que já veio renderizada nessa página (evita
+   buscar de novo no banco só pra montar a lista de checkboxes). #}
+<div class="modal-overlay" id="modal-lote-overlay">
+  <div class="modal-lote">
+    <h3 id="modal-lote-titulo">Enviar e-mail para clientes</h3>
+    <p class="muted" id="modal-lote-sub">Selecione os clientes que vão receber a mensagem.</p>
+
+    <div id="bloco-campos-email">
+      <label>Assunto</label>
+      <input type="text" id="lote-assunto" placeholder="ex: Novidade Lifemax">
+      <label>Mensagem</label>
+      <textarea id="lote-mensagem" placeholder="Escreva a mensagem que os clientes selecionados vão receber..."></textarea>
+      <label>Foto promocional (opcional)</label>
+      <input type="file" id="lote-imagem" accept="image/*">
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+      <label style="display:flex; align-items:center; gap:8px; font-weight:700; cursor:pointer;">
+        <input type="checkbox" id="lote-selecionar-todos" onchange="alternarSelecionarTodosLote(this)">
+        Selecionar todos
+      </label>
+      <span class="muted" id="lote-contagem">0 selecionado(s)</span>
+    </div>
+    <div class="lista-selecao" id="lote-lista-clientes">
+      {% for m in medicos %}
+      <label>
+        <input type="checkbox" class="lote-checkbox" value="{{ m.id }}" data-nome="{{ m.nome }}" data-email="{{ m.email or '' }}" onchange="atualizarContagemLote()">
+        {{ m.nome }}{% if not m.email %} <span class="muted">(sem e-mail cadastrado)</span>{% endif %}
+      </label>
+      {% endfor %}
+    </div>
+
+    <div class="modal-status" id="modal-lote-status"></div>
+
+    <div class="modal-acoes">
+      <button type="button" class="btn alt" onclick="fecharModalLote()">Cancelar</button>
+      <button type="button" class="btn" id="btn-enviar-lote" onclick="enviarLote()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function atualizarUnidadeAjusteLista(select) {
+  if (!select) return;
+  const form = select.closest('form');
+  const label = form.querySelector('.lbl-quantidade');
+  const input = form.querySelector('.input-quantidade');
+  if (select.value === 'ia') {
+    label.textContent = 'Valor em R$ (negativo pra debitar)';
+    input.step = '0.01';
+    input.placeholder = 'ex: 150 ou -50';
+  } else {
+    label.textContent = 'Quantas horas? (negativo pra debitar)';
+    input.step = '1';
+    input.placeholder = 'ex: 15 ou -5';
+  }
+}
+
+function csrfHeader() {
+  return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
+}
+
+let modoLoteAtual = 'email'; // 'email' | 'link'
+
+function abrirModalLote(modo) {
+  modoLoteAtual = modo;
+  document.getElementById('modal-lote-titulo').textContent =
+    modo === 'email' ? 'Enviar e-mail para clientes' : 'Enviar link de acesso';
+  document.getElementById('modal-lote-sub').textContent =
+    modo === 'email'
+      ? 'Selecione os clientes que vão receber a mensagem por e-mail.'
+      : 'Selecione os clientes que vão receber o link de acesso por e-mail (só quem já tem e-mail cadastrado recebe).';
+  document.getElementById('bloco-campos-email').style.display = modo === 'email' ? '' : 'none';
+  document.getElementById('lote-assunto').value = '';
+  document.getElementById('lote-mensagem').value = '';
+  document.getElementById('lote-imagem').value = '';
+  document.getElementById('modal-lote-status').textContent = '';
+  document.querySelectorAll('.lote-checkbox').forEach(c => c.checked = false);
+  document.getElementById('lote-selecionar-todos').checked = false;
+  atualizarContagemLote();
+  document.getElementById('modal-lote-overlay').classList.add('aberto');
+}
+
+function fecharModalLote() {
+  document.getElementById('modal-lote-overlay').classList.remove('aberto');
+}
+
+function alternarSelecionarTodosLote(origem) {
+  document.querySelectorAll('.lote-checkbox').forEach(c => c.checked = origem.checked);
+  atualizarContagemLote();
+}
+
+function atualizarContagemLote() {
+  const total = document.querySelectorAll('.lote-checkbox:checked').length;
+  document.getElementById('lote-contagem').textContent = `${total} selecionado(s)`;
+}
+
+async function enviarLote() {
+  const selecionados = Array.from(document.querySelectorAll('.lote-checkbox:checked')).map(c => c.value);
+  const statusEl = document.getElementById('modal-lote-status');
+  const btn = document.getElementById('btn-enviar-lote');
+
+  if (!selecionados.length) {
+    statusEl.textContent = 'Selecione pelo menos um cliente.';
+    statusEl.style.color = '#B33';
+    return;
+  }
+
+  const formData = new FormData();
+  selecionados.forEach(id => formData.append('medico_ids', id));
+
+  let url = '/admin/api/clientes/enviar-link-lote';
+  if (modoLoteAtual === 'email') {
+    const mensagem = document.getElementById('lote-mensagem').value.trim();
+    if (!mensagem) {
+      statusEl.textContent = 'Escreva uma mensagem.';
+      statusEl.style.color = '#B33';
+      return;
+    }
+    formData.append('assunto', document.getElementById('lote-assunto').value.trim() || 'Aviso Lifemax');
+    formData.append('mensagem', mensagem);
+    const arquivo = document.getElementById('lote-imagem').files[0];
+    if (arquivo) formData.append('imagem', arquivo);
+    url = '/admin/api/clientes/enviar-email-lote';
+  }
+
+  statusEl.textContent = 'Enviando...';
+  statusEl.style.color = '#62788A';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch(url, { method: 'POST', headers: csrfHeader(), body: formData });
+    const resultado = await resp.json();
+    if (!resp.ok) {
+      statusEl.textContent = resultado.erro || 'Erro ao enviar.';
+      statusEl.style.color = '#B33';
+      btn.disabled = false;
+      return;
+    }
+    let msg = `✅ Enviado para ${resultado.enviados.length} cliente(s).`;
+    if (resultado.sem_email && resultado.sem_email.length) {
+      msg += ` ${resultado.sem_email.length} sem e-mail cadastrado (${resultado.sem_email.join(', ')}).`;
+    }
+    if (resultado.falhas && resultado.falhas.length) {
+      msg += ` ${resultado.falhas.length} falharam no envio (${resultado.falhas.join(', ')}).`;
+    }
+    statusEl.textContent = msg;
+    statusEl.style.color = resultado.falhas && resultado.falhas.length ? '#B33' : '#0B7B45';
+    btn.disabled = false;
+  } catch (e) {
+    statusEl.textContent = 'Erro de conexão com o servidor.';
+    statusEl.style.color = '#B33';
+    btn.disabled = false;
+  }
+}
+</script>
 </body></html>

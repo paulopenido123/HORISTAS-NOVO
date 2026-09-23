@@ -599,14 +599,15 @@ def criar_medico(nome: str, telefone: str, especialidade: str = "", tipo_vinculo
                   endereco_complemento: str = "", endereco_bairro: str = "", endereco_cidade: str = "",
                   endereco_estado: str = "", convenios: list[str] | None = None,
                   autorizado: bool = True) -> dict:
-    """`autorizado=True` por padrão -- preserva o comportamento de sempre
-    pra quem já chamava essa função (ex: importação de agenda fixa em
-    agenda_fixos_service.py, onde é o PRÓPRIO admin que está cadastrando
-    médicos a partir de uma planilha já conferida por ele, não faz
-    sentido travar esses). Quem precisa nascer com `autorizado=False`
-    (auto-cadastro público, sem ninguém do lado do admin conferindo antes
-    -- ver rota /primeiro-acesso em app/routes/auth.py, pedido do Paulo em
-    10/09/2026) passa `autorizado=False` explicitamente na chamada."""
+    """`autorizado=True` por padrão -- desde 23/09/2026 (pedido do Paulo,
+    itens 1 e 2) TODO médico novo nasce autorizado, seja pelo auto-cadastro
+    público (/primeiro-acesso) ou pelo admin em /admin/clientes -- o que
+    de fato trava a RESERVA agora é o cadastro incompleto (ver
+    reserva_service._CAMPOS_OBRIGATORIOS_PARA_RESERVAR), não mais essa
+    liberação manual. `autorizado=False` continua existindo só como um
+    bloqueio manual excepcional que o admin aciona depois, em
+    /admin/clientes (ex: suspender um médico) -- não é mais passado aqui
+    na criação."""
     resp = (
         get_client()
         .table("medicos")

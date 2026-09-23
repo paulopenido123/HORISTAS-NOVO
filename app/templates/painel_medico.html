@@ -63,7 +63,21 @@
   }
   .btn-branco:hover { background: #DCEEEC; }
 
+  /* ---------- Botões extras no hero (Comprar horas / Meus dados) --
+     pedido do Paulo em 23/09/2026 (item 4): cópias dos botões "Comprar
+     horas" e "Meus dados" flanqueando "Reservar consultórios" no topo
+     do painel, além de onde já existiam (modal de compra e board
+     "Meu perfil" mais abaixo). ---- */
+  .hero-botoes-linha { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .btn-outline-claro {
+    background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.6); padding: 12px 20px;
+    border-radius: 7px; font-family: var(--display); font-weight: 800; font-size: 14.5px; cursor: pointer;
+    text-decoration: none; display: inline-block; text-align: center; transition: background 0.15s;
+  }
+  .btn-outline-claro:hover { background: rgba(255,255,255,0.12); }
+
   @media (max-width: 640px) {
+    .hero-botoes-linha { justify-content: flex-start; }
     .hero-linha { flex-direction: column; }
     .hero-saldo-bloco { text-align: left; }
   }
@@ -277,7 +291,11 @@ if ("serviceWorker" in navigator) {
       <div class="hero-saldo-bloco">
         <div class="hero-saldo-titulo">Saldo de horas</div>
         <div class="hero-saldo-valor">{{ saldo_horas }}h</div>
-        <a class="btn-branco" href="{{ url_for('turnos.pagina_turnos') }}">Reservar consultórios</a>
+        <div class="hero-botoes-linha">
+          <button type="button" class="btn-outline-claro" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
+          <a class="btn-branco" href="{{ url_for('turnos.pagina_turnos') }}">Reservar consultórios</a>
+          <a class="btn-outline-claro" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}">Meus dados</a>
+        </div>
       </div>
       {% endif %}
     </div>
@@ -295,6 +313,11 @@ if ("serviceWorker" in navigator) {
   <div class="flash erro">
     Seu cadastro ainda está aguardando liberação do administrador. Você já pode comprar horas,
     mas só vai conseguir reservar um consultório depois que seu acesso for autorizado.
+  </div>
+  {% elif campos_faltando %}
+  <div class="flash erro">
+    Falta completar seu cadastro para reservar um consultório: {{ campos_faltando|join(', ') }}.
+    <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" style="color:inherit; text-decoration:underline; font-weight:700;">Completar em "Meus dados"</a>.
   </div>
   {% endif %}
 
@@ -438,16 +461,13 @@ if ("serviceWorker" in navigator) {
         <div class="cell-label">Meu perfil</div>
         <p class="muted-cell" style="margin-bottom:14px;">Seus dados de contato, endereço e informações de
           atendimento (CRM, CPF/CNPJ, valor da consulta, convênios) ficam em uma tela só.</p>
-        <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" class="btn-ghost" style="width:100%;">✎ Editar dados pessoais</a>
+        <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" class="btn-ghost" style="width:100%;">✎ Meus dados</a>
       </div>
 
       <div class="cell">
         <div class="cell-label">Saldo para IA</div>
         <div class="total">R$ {{ "%.2f"|format(status_ia.saldo) }}</div>
-        <p class="muted-cell">Crédito pra usar o assistente de IA (secretária, análise de prontuário, contábil).
-          Cada uso desconta direto daqui, mostrando sempre o saldo atual.</p>
         <button class="btn-cyan" style="margin-top:16px;" onclick="abrirModalCompra('ia')">+ Comprar créditos IA</button>
-        <a href="{{ url_for('medico_painel.pagina_painel_ia') }}" class="btn-ghost" style="width:100%; margin-top:8px; display:block; text-align:center;">Ver Painel de IA</a>
       </div>
     </div>
   </div>
@@ -520,7 +540,11 @@ if ("serviceWorker" in navigator) {
   {# Bloco "Minhas notas fiscais" removido a pedido do Paulo em 15/09/2026. #}
 
   <div class="painel">
-    <h2>Histórico</h2>
+    <div class="painel-topo">
+      <h2>Histórico</h2>
+      <button type="button" class="btn-ghost" id="btn-toggle-historico" onclick="alternarHistorico()">Exibir</button>
+    </div>
+    <div id="bloco-historico" style="display:none;">
     {% if transacoes %}
     <table>
       <thead><tr><th>Data</th><th>Carteira</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Saldo após</th></tr></thead>
@@ -549,6 +573,7 @@ if ("serviceWorker" in navigator) {
     {% else %}
       <div class="vazio">Nenhuma movimentação ainda.</div>
     {% endif %}
+    </div>
   </div>
 
   <div class="painel" style="text-align:center;">
@@ -987,6 +1012,18 @@ function selecionarPacote() {
 </script>
 
 <script>
+// Histórico começa sempre oculto quando o médico abre a página -- pedido
+// do Paulo em 23/09/2026 (item 5). A ordenação (mais recente no topo) já
+// vem pronta do backend (creditos_service.listar_transacoes_medico ordena
+// por criado_em desc), então aqui só cuida de mostrar/esconder o bloco.
+function alternarHistorico() {
+  const bloco = document.getElementById('bloco-historico');
+  const btn = document.getElementById('btn-toggle-historico');
+  const oculto = bloco.style.display === 'none';
+  bloco.style.display = oculto ? '' : 'none';
+  btn.textContent = oculto ? 'Ocultar' : 'Exibir';
+}
+
 function abrirModalCompra(destino) {
   // restaura o formulario original do zero toda vez que o modal abre --
   // sem isso, se o médico já tinha usado PIX ou cartão antes, o modal

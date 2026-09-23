@@ -46,13 +46,22 @@ def painel():
     pacientes_agendados_por_reserva = db.listar_pacientes_agendados_por_reservas([r["id"] for r in reservas])
     for r in reservas:
         r["pacientes_agendados"] = pacientes_agendados_por_reserva.get(r["id"], [])
+    # Pedido do Paulo em 23/09/2026 (item 2): avisa no painel quais dados
+    # ainda faltam pra poder reservar -- mesma lista de campos que
+    # reserva_service._checar_pode_alugar_avulso exige (só chega a
+    # mostrar o aviso pra quem realmente aluga consultório avulso; fixo
+    # e horista têm agenda própria e não passam por essa checagem).
+    campos_faltando = []
+    if medico.get("tipo_vinculo") not in ("fixo", "horista"):
+        campos_faltando = reserva_service._campos_pessoais_faltando(medico)
     return render_template("painel_medico.html", medico=medico, saldo=saldo, saldo_horas=saldo_horas,
                             transacoes=transacoes, precos=precos,
                             horas_minimas=horas_minimas, preco_minimo=preco_minimo,
                             pacotes_horas=pacotes_horas,
                             notas_fiscais=notas_fiscais, modulos=modulos,
                             status_ia=status_ia, extrato_ia=extrato_ia,
-                            reservas=reservas, pacientes=pacientes)
+                            reservas=reservas, pacientes=pacientes,
+                            campos_faltando=campos_faltando)
 
 
 def _resolver_pacote_salas(body: dict, medico: dict):
@@ -198,26 +207,19 @@ def comprar_creditos_cartao():
     })
 
 
-@medico_painel_bp.route("/painel/ia")
-@requer_login_medico
-@requer_termo_aceito
-def pagina_painel_ia():
-    medico = db.get_medico_by_id(medico_logado_id())
-    status_ia = ia_uso.status_ia_medico(medico["id"])
-    return render_template("painel_ia.html", medico=medico, status_ia=status_ia)
-
-
-@medico_painel_bp.route("/api/ia/modulo", methods=["POST"])
-@requer_login_medico
-def salvar_modulo_ia():
-    body = request.get_json(force=True)
-    modulo_slug = body.get("modulo_slug", "")
-    ativado = bool(body.get("ativado"))
-    try:
-        ia_uso.definir_modulo_ativado(medico_logado_id(), modulo_slug, ativado)
-    except ValueError as e:
-        return jsonify({"erro": str(e)}), 400
-    return jsonify({"resultado": "Salvo com sucesso."})
+    # Rotas "/painel/ia" (tela "Painel de IA") e "/api/ia/modulo" (toggle
+    # de módulo de IA) removidas a pedido do Paulo em 23/09/2026 (item 6)
+    # -- eram uma tela vestigial desse recorte do sistema (este pacote,
+    # "Reserva de Horas", não implementa os módulos de IA via WhatsApp
+    # de verdade, ver comentário no topo de painel_medico.html sobre
+    # Agenda/Prontuário/Assistente de IA pertencerem ao sistema maior da
+    # Lifemax). O template app/templates/painel_ia.html também foi
+    # removido. `ia_uso_service.status_ia_medico` continua em uso (mostra
+    # o saldo em R$ no card "Saldo para IA" do painel principal); as
+    # funções `obter_modulos_ativados`/`definir_modulo_ativado` (usadas só
+    # por essa tela removida) ficaram sem chamador, mas continuam no
+    # serviço -- fazem parte do mecanismo de ativação opt-in de módulo de
+    # IA que pertence ao sistema maior, não dessa tela específica.
 
 
 @medico_painel_bp.route("/painel/dados-pessoais")

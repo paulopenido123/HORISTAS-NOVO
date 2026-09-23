@@ -74,11 +74,14 @@ def _formatar_data_br(iso_str: str | None) -> str:
 
 def gerar_pdf_contrato(medico: dict) -> io.BytesIO:
     """Monta o PDF do contrato preenchido com os dados de aceite DESSE
-    médico (nome, CPF/CNPJ, registro profissional, data/hora, IP, versão
-    do texto aceita). Se por algum motivo o médico ainda não tiver
-    aceitado (não deveria acontecer -- essa rota já fica atrás do login
-    + @requer_termo_aceito em todas as outras telas), mostra os campos
-    como pendentes em vez de quebrar."""
+    médico (nome, CPF/CNPJ, registro profissional, especialidade, data de
+    nascimento, endereço, telefone, e-mail, data/hora, IP, versão do
+    texto aceita -- pedido do Paulo em 23/09/2026, item 2: os mesmos
+    campos que agora são obrigatórios pra poder reservar, ver
+    reserva_service._CAMPOS_OBRIGATORIOS_PARA_RESERVAR). Se por algum
+    motivo o médico ainda não tiver aceitado (não deveria acontecer --
+    essa rota já fica atrás do login + @requer_termo_aceito em todas as
+    outras telas), mostra os campos como pendentes em vez de quebrar."""
     estilos = _estilos()
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -131,10 +134,18 @@ def gerar_pdf_contrato(medico: dict) -> io.BytesIO:
         story.append(Paragraph(f"[X] {declaracao}", estilos["aceite_item"]))
 
     story.append(Spacer(1, 14))
+    endereco_partes = [medico.get("endereco_rua"), medico.get("endereco_numero"), medico.get("endereco_bairro"),
+                       medico.get("endereco_cidade"), medico.get("endereco_estado")]
+    endereco_fmt = ", ".join(p for p in endereco_partes if p) or "não informado"
     dados = [
         ("Nome do profissional", medico.get("nome") or "—"),
         ("CPF/CNPJ", medico.get("cpf_cnpj") or "não informado"),
         ("Registro profissional (CRM)", medico.get("crm") or "não informado"),
+        ("Especialidade", medico.get("especialidade") or "não informada"),
+        ("Data de nascimento", medico.get("data_nascimento") or "não informada"),
+        ("Endereço", endereco_fmt),
+        ("Telefone", medico.get("telefone") or "não informado"),
+        ("E-mail", medico.get("email") or "não informado"),
         ("Data e hora do aceite", _formatar_data_br(medico.get("termo_aceito_em"))),
         ("IP / identificação eletrônica", medico.get("termo_aceito_ip") or "não registrado"),
         ("Versão do contrato aceita", medico.get("termo_versao") or "não registrada (aceite anterior ao controle de versão)"),

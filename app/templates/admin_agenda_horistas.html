@@ -65,7 +65,12 @@
     font-family: inherit; font-weight: 800; font-size: 14px; color: var(--navy);
   }
 
-  .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); }
+  /* Mesmo ajuste feito em turnos.html (item 4, pedido do Paulo em
+     23/09/2026): cabeçalho agora mora dentro do mesmo contêiner com
+     rolagem horizontal do corpo da grade, com min-width igual e
+     position: sticky, pra não ficar estático enquanto as colunas de
+     horário se movem ao rolar no celular. */
+  .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); min-width: 760px; position: sticky; top: 0; z-index: 2; background: #fff; }
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
   /* Fonte dos dias da semana/números e das horas aumentada bastante,
      e negrito preto -- pedido do Paulo em 22/09/2026: a grade estava
@@ -330,6 +335,11 @@ async function confirmarAgendamento() {
     const x = await r.json();
     if (!r.ok) { alert(x.erro || 'Não consegui agendar.'); return; }
     let msg = `${x.sucesso.length} horário(s) agendado(s) para ${medicoSelecionado.nome}.`;
+    const cortesias = (x.sucesso || []).filter(s => s.tryout).length;
+    if (cortesias) {
+      msg += ` (${cortesias} como cortesia de tryout, sem débito de saldo -- ` +
+             `${x.sucesso.length - cortesias} debitado(s) do saldo dele.)`;
+    }
     if (x.erros && x.erros.length) {
       msg += `\n\n${x.erros.length} não puderam ser agendados:\n` +
         x.erros.map(e => `${e.data} ${e.hora_inicio}: ${e.erro}`).join('\n');
@@ -562,7 +572,10 @@ function renderizarGrade() {
             <div class="h">${hora}</div><div class="nome">${ocupado.nome}</div>
           </div>`;
         } else if (indisponivel) {
-          html += `<div class="slot-vago indisponivel" style="top:${top}px; height:${altura}px;" title="Indisponível"></div>`;
+          // Pedido do Paulo em 23/09/2026 (item 5): idem turnos.html --
+          // a faixa-bege já cobre o intervalo bloqueado inteiro com um
+          // retângulo cinza só, não precisa mais da caixinha individual
+          // por horário (evita o efeito "listrado").
         } else {
           // Modo "Agendar para:": qualquer horário livre pode ser
           // selecionado pra reservar em nome do médico escolhido.
@@ -582,8 +595,10 @@ function renderizarGrade() {
 
     return `<div class="bloco-consultorio">
       <div class="bloco-consultorio-header">${consultorio.nome}</div>
-      <div class="grade-cabecalho">${cabecalhoDiasHtml}</div>
-      <div class="grade-scroll-vertical"><div class="grade-corpo">${colunaHoras + colunasDias}</div></div>
+      <div class="grade-scroll-vertical">
+        <div class="grade-cabecalho">${cabecalhoDiasHtml}</div>
+        <div class="grade-corpo">${colunaHoras + colunasDias}</div>
+      </div>
     </div>`;
   }).join('');
 

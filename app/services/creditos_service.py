@@ -899,6 +899,7 @@ def atualizar_crm(medico_id: str, crm: str) -> dict:
 
 _CAMPOS_DADOS_PESSOAIS = (
     "nome", "telefone", "email", "cpf_cnpj", "crm", "especialidade",
+    "data_nascimento",
     "endereco_cep", "endereco_rua", "endereco_numero", "endereco_complemento",
     "endereco_bairro", "endereco_cidade", "endereco_estado",
     "valor_consulta", "tempo_consulta", "convenios", "formas_pagamento",
@@ -930,5 +931,10 @@ def atualizar_dados_pessoais(medico_id: str, dados: dict) -> dict:
         apenas_digitos = "".join(c for c in payload["cpf_cnpj"] if c.isdigit())
         if len(apenas_digitos) not in (11, 14):
             raise ValueError("CPF deve ter 11 dígitos ou CNPJ 14 dígitos.")
+    if "data_nascimento" in payload and not payload["data_nascimento"]:
+        # campo <input type="date"> manda "" quando fica vazio -- a coluna
+        # é do tipo date no banco, então "" precisa virar None (senão dá
+        # erro de sintaxe no Postgres).
+        payload["data_nascimento"] = None
     resp = get_client().table("medicos").update(payload).eq("id", medico_id).execute()
     return resp.data[0]

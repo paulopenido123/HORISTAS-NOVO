@@ -220,6 +220,34 @@ async function alternarCelula(consultorioId, diaSemana, hora, el) {
   }
 }
 
+// Pedido do Paulo em 23/09/2026 (item 5): mesmo ajuste de turnos.html/
+// admin_agenda_horistas.html -- em vez de uma caixinha cinza por
+// horário bloqueado (ex: as 7 caixinhas de sábado/domingo à tarde),
+// calcula os intervalos CONTÍNUOS de horários bloqueados e desenha UM
+// retângulo cinza (.faixa-bege) cobrindo cada intervalo inteiro.
+function faixasBegeDoDiaSemana(consultorioId, diaSemana) {
+  const bloqueios = templateAtual.bloqueios || [];
+  const bloqueadoNoHorario = (hora) => bloqueios.some(b =>
+    b.consultorio_id === consultorioId && b.dia_semana === diaSemana && b.hora_inicio === hora
+  );
+  const intervalosReservaveis = HORARIOS
+    .filter(hora => !bloqueadoNoHorario(hora))
+    .map(hora => { const inicio = _minutosDeHora(hora); return [inicio, inicio + 60]; })
+    .sort((a, b) => a[0] - b[0]);
+
+  const faixas = [];
+  let cursor = GRID_INICIO_MIN;
+  for (const [inicio, fim] of intervalosReservaveis) {
+    const inicioClamp = Math.max(inicio, GRID_INICIO_MIN);
+    const fimClamp = Math.min(fim, GRID_FIM_MIN);
+    if (inicioClamp >= GRID_FIM_MIN || fimClamp <= GRID_INICIO_MIN) continue;
+    if (inicioClamp > cursor) faixas.push([cursor, inicioClamp]);
+    cursor = Math.max(cursor, fimClamp);
+  }
+  if (cursor < GRID_FIM_MIN) faixas.push([cursor, GRID_FIM_MIN]);
+  return faixas;
+}
+
 function renderizarGrade() {
   const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
     DIAS_SEMANA.map(d => `<div class="col-dia">${d.slice(0, 3)}</div>`).join('');
@@ -239,6 +267,12 @@ function renderizarGrade() {
     const colunasDias = DIAS_SEMANA.map((_, diaSemana) => {
       let html = `<div class="coluna-dia" style="height:${alturaTotal}px;">`;
 
+      faixasBegeDoDiaSemana(consultorio.id, diaSemana).forEach(([inicio, fim]) => {
+        const top = (inicio - GRID_INICIO_MIN) * PX_POR_MIN;
+        const altura = (fim - inicio) * PX_POR_MIN;
+        html += `<div class="faixa-bege" style="top:${top}px; height:${altura}px;"></div>`;
+      });
+
       HORARIOS.forEach(hora => {
         const minutos = _minutosDeHora(hora);
         if (minutos < GRID_INICIO_MIN || minutos >= GRID_FIM_MIN) return;
@@ -251,7 +285,8 @@ function renderizarGrade() {
         if (marcado) {
           html += `<div class="slot-reservado" style="top:${top}px; height:${altura}px;" title="Clique para liberar" onclick="alternarCelula('${consultorio.id}', ${diaSemana}, '${hora}', this)">${hora}</div>`;
         } else if (indisponivel) {
-          html += `<div class="slot-vago indisponivel" style="top:${top}px; height:${altura}px;" title="Indisponível (bloqueado na Semana Padrão)"></div>`;
+          // A faixa-bege acima já cobre esse horário com um retângulo
+          // cinza contínuo -- não desenha mais a caixinha individual.
         } else {
           html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;" title="Clique para marcar como reservado" onclick="alternarCelula('${consultorio.id}', ${diaSemana}, '${hora}', this)"></div>`;
         }

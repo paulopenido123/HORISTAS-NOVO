@@ -19,6 +19,7 @@ admin desmarcou).
 Convenção de dia_semana: 0=domingo, 1=segunda, ..., 6=sábado (mesma
 convenção do JavaScript Date.getDay()).
 """
+import time
 from datetime import date
 from app.services.supabase_client import get_client
 
@@ -67,8 +68,22 @@ _DIAS_FIM_DE_SEMANA = (0, 6)  # 0=domingo, 6=sábado (mesma convenção do dia_s
 _HORARIOS_BLOQUEADOS_FIM_DE_SEMANA = HORARIOS_POR_PERIODO["tarde"] + HORARIOS_POR_PERIODO["noite"]
 
 
+_CACHE_CONSULTORIO_IDS: dict = {"ids": None, "expira_em": 0.0}
+_CACHE_TTL_SEGUNDOS = 60  # consultórios praticamente nunca mudam -- pedido do
+# Paulo em 23/09/2026 (item 8, acelerar a reserva): essa lista era buscada
+# no banco de novo a cada única checagem de disponibilidade (ou seja, a
+# cada clique de reserva), só pra aplicar a regra fixa de fim de semana.
+# Com o cache, só busca de novo depois de expirar 60s -- se o admin criar
+# um consultório novo, o pior caso é ele demorar até 1 minuto pra entrar
+# na regra de bloqueio de fim de semana, o que é aceitável.
+
+
 def _bloqueios_fixos_fim_de_semana() -> list[dict]:
-    consultorio_ids = [c["id"] for c in get_client().table("consultorios").select("id").execute().data]
+    agora = time.monotonic()
+    if _CACHE_CONSULTORIO_IDS["ids"] is None or agora >= _CACHE_CONSULTORIO_IDS["expira_em"]:
+        _CACHE_CONSULTORIO_IDS["ids"] = [c["id"] for c in get_client().table("consultorios").select("id").execute().data]
+        _CACHE_CONSULTORIO_IDS["expira_em"] = agora + _CACHE_TTL_SEGUNDOS
+    consultorio_ids = _CACHE_CONSULTORIO_IDS["ids"]
     return [
         {"consultorio_id": cid, "dia_semana": dia, "hora_inicio": hora}
         for cid in consultorio_ids
@@ -89,6 +104,24 @@ def verificar_disponibilidade(consultorio_id: str, data_iso: str, horarios: list
     dia = dia_semana_de(data_iso)
     bloqueios = listar_bloqueios()
     return all(not esta_bloqueado(bloqueios, consultorio_id, dia, h) for h in horarios)
+
+
+def data_tem_matriz_gerada(data_iso: str) -> bool:
+    """True se essa data cai dentro do período de alguma "Replicar matriz
+    por período/mês" que o admin já rodou (ver matriz_replicacoes,
+    api_matriz_replicar_periodo/api_matriz_replicar_mes em admin.py) --
+    pedido do Paulo em 23/09/2026: antes, uma data sem NENHUMA
+    replicação ainda assim aparecia com todos os horários "livres" pro
+    médico (a Matriz só bloqueia o que foi explicitamente marcado, não
+    "abre" o que não foi tocado) -- deixava o médico reservar datas que
+    o admin nunca preparou de verdade. Agora, reservar_por_hora/
+    reservar_turno chamam isso ANTES de deixar passar, pra médico não
+    conseguir mais reservar num período "no escuro"."""
+    resp = (
+        get_client().table("matriz_replicacoes")
+        .select("id").lte("data_inicio", data_iso).gte("data_fim", data_iso).limit(1).execute()
+    )
+    return bool(resp.data)
 
 
 def alternar_bloqueio(consultorio_id: str, dia_semana: int, hora_inicio: str) -> bool:

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dados Pessoais — Lifemax</title>
+<title>Meus Dados — Lifemax</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -43,7 +43,7 @@
   label { display:block; font-family: var(--display); font-weight:700; font-size:12px; color: var(--ink-faint);
           text-transform:uppercase; letter-spacing:.02em; margin: 14px 0 6px; }
   label:first-child { margin-top:0; }
-  input[type=text], input[type=email], input[type=number], textarea {
+  input[type=text], input[type=email], input[type=number], input[type=date], textarea {
     width:100%; padding:10px 12px; border-radius:7px; border:1px solid var(--line-strong);
     font-family: var(--serif); font-size:14px; color: var(--ink); background:#fff;
   }
@@ -80,7 +80,7 @@
 </script>
 
 <header>
-  <div class="brand">✎ Dados Pessoais</div>
+  <div class="brand">✎ Meus Dados</div>
   <div>
     <a class="voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar ao painel</a>
     <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
@@ -94,6 +94,9 @@
     <p>Esses são os dados que o sistema usa pra recibos, notas fiscais e informações que a IA
        responde por WhatsApp. Já vêm preenchidos com o que já estava no seu cadastro — clique em
        "Editar dados" pra corrigir ou completar qualquer campo.</p>
+    <p><strong>Telefone, e-mail, especialidade, CPF, data de nascimento e endereço completo
+       (CEP, rua, número, bairro, cidade e estado) são obrigatórios para poder reservar
+       consultórios.</strong></p>
   </div>
 
   <div class="barra-acoes">
@@ -130,8 +133,16 @@
         </div>
       </div>
 
-      <label for="especialidade">Especialidade</label>
-      <input type="text" id="especialidade" name="especialidade" value="{{ medico.especialidade or '' }}" disabled>
+      <div class="grid-2">
+        <div>
+          <label for="especialidade">Especialidade</label>
+          <input type="text" id="especialidade" name="especialidade" value="{{ medico.especialidade or '' }}" disabled>
+        </div>
+        <div>
+          <label for="data_nascimento">Data de nascimento</label>
+          <input type="date" id="data_nascimento" name="data_nascimento" value="{{ medico.data_nascimento or '' }}" disabled>
+        </div>
+      </div>
     </div>
 
     <div class="card">

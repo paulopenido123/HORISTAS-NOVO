@@ -60,17 +60,19 @@ def primeiro_acesso():
                 erro = "Esse telefone já foi cadastrado. Tente fazer login."
                 etapa = "telefone"
             else:
-                # autorizado=False -- pedido do Paulo em 10/09/2026: esse é
-                # o auto-cadastro público, ninguém do admin conferiu esse
-                # médico antes dele já poder logar. Nasce podendo logar e
-                # comprar horas, mas bloqueado de RESERVAR consultório até
-                # o admin clicar em "Liberar acesso" em /admin/clientes
-                # (ver reserva_service.NaoAutorizadoError). Diferente do
-                # import de agenda fixa em agenda_fixos_service.py, que
-                # continua nascendo autorizado=True (default) porque quem
-                # cadastra ali é o próprio admin, a partir de uma planilha
-                # já conferida por ele -- não tem o mesmo risco.
-                novo_medico = db.criar_medico(nome, telefone_digitado, especialidade, autorizado=False)
+                # autorizado=True (default) -- pedido do Paulo em
+                # 23/09/2026 (itens 1 e 2): médico novo NÃO espera mais
+                # liberação manual do admin pra poder reservar. Assim que
+                # aceita o contrato, compra horas e completa o cadastro
+                # (telefone, e-mail, especialidade, CPF, data de
+                # nascimento e endereço -- ver reserva_service.
+                # _CAMPOS_OBRIGATORIOS_PARA_RESERVAR), já pode reservar
+                # consultório sozinho. O bloqueio manual (autorizado=False)
+                # continua existindo em reserva_service.NaoAutorizadoError,
+                # mas agora só como uma exceção rara que o admin aciona
+                # manualmente em /admin/clientes (ex: suspender um médico
+                # problemático), não mais o fluxo padrão de todo cadastro novo.
+                novo_medico = db.criar_medico(nome, telefone_digitado, especialidade)
                 creditos_db.definir_senha_medico(novo_medico["id"], auth_service.gerar_hash_senha(senha))
                 auth_service.login_medico(novo_medico["id"])
 

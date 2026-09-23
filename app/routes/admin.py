@@ -302,6 +302,112 @@ def ajustar_saldo_cliente(medico_id):
     return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
 
+@admin_bp.route('/api/clientes/enviar-email-lote', methods=['POST'])
+@_admin
+def api_clientes_enviar_email_lote():
+    """Pedido do Paulo em 23/09/2026 (item 2): botão "Enviar e-mail para
+    clientes" -- o admin seleciona uma lista de médicos (checkbox na tela
+    de Clientes), escreve uma mensagem e, opcionalmente, anexa uma
+    imagem promocional (mostrada embutida no corpo do e-mail, não como
+    anexo pra baixar), e manda um e-mail PRA CADA médico selecionado que
+    tenha e-mail cadastrado.
+
+    Manda um e-mail por vez (em vez de um e-mail só com todo mundo no
+    "Para:") de propósito -- pra não expor o e-mail de um cliente pros
+    outros (LGPD, ver contrato_service cláusula 7ª)."""
+    from app.services import email_service
+
+    medico_ids = request.form.getlist('medico_ids')
+    assunto = (request.form.get('assunto') or '').strip() or 'Aviso Lifemax'
+    mensagem = (request.form.get('mensagem') or '').strip()
+    arquivo = request.files.get('imagem')
+
+    if not medico_ids:
+        return {'erro': 'Selecione pelo menos um cliente.'}, 400
+    if not mensagem:
+        return {'erro': 'Escreva uma mensagem.'}, 400
+
+    imagem_bytes = None
+    imagem_mimetype = None
+    if arquivo and arquivo.filename:
+        if not (arquivo.mimetype or '').startswith('image/'):
+            return {'erro': 'O arquivo anexado precisa ser uma imagem.'}, 400
+        imagem_bytes = arquivo.read()
+        imagem_mimetype = arquivo.mimetype
+
+    # Corpo do e-mail: a mensagem digitada pelo admin (uma linha por
+    # parágrafo) + a imagem embutida no topo, se tiver.
+    from app.services.email_service import _esc
+    paragrafos = "".join(f"<p>{_esc(linha)}</p>" for linha in mensagem.splitlines() if linha.strip())
+    corpo_imagem = '<p><img src="cid:promo" style="max-width:100%; border-radius:8px;"></p>' if imagem_bytes else ''
+    corpo_html = f"""
+    <div style="font-family:Arial,sans-serif; color:#102A43; max-width:560px;">
+      {corpo_imagem}
+      {paragrafos}
+      <p style="margin-top:24px; color:#62788A; font-size:12px;">Lifemax Coworking</p>
+    </div>
+    """
+
+    enviados = []
+    sem_email = []
+    falhas = []
+    for medico_id in medico_ids:
+        medico = db.get_medico_by_id(medico_id)
+        if not medico:
+            continue
+        if not medico.get('email'):
+            sem_email.append(medico['nome'])
+            continue
+        imagens_inline = [("promo", imagem_bytes, imagem_mimetype)] if imagem_bytes else None
+        try:
+            ok = email_service.enviar_email([medico['email']], assunto, corpo_html, imagens_inline=imagens_inline)
+        except Exception:
+            ok = False
+        if ok:
+            enviados.append(medico['nome'])
+        else:
+            falhas.append(medico['nome'])
+
+    return {'enviados': enviados, 'sem_email': sem_email, 'falhas': falhas}
+
+
+@admin_bp.route('/api/clientes/enviar-link-lote', methods=['POST'])
+@_admin
+def api_clientes_enviar_link_lote():
+    """Pedido do Paulo em 23/09/2026 (item 3): botão "Enviar link de
+    acesso" em lote -- mesma coisa que o "Enviar link por e-mail" que já
+    existia por cliente (ver enviar_link_cliente acima e
+    rec_senha.enviar_link_primeiro_acesso), só que aplicado de uma vez
+    pra uma lista de médicos selecionados. Só manda pra quem já tem
+    e-mail cadastrado (sem um campo novo pra digitar e-mail um por um,
+    já que é uma ação em massa)."""
+    medico_ids = request.form.getlist('medico_ids')
+    if not medico_ids:
+        return {'erro': 'Selecione pelo menos um cliente.'}, 400
+
+    enviados = []
+    sem_email = []
+    falhas = []
+    for medico_id in medico_ids:
+        medico = db.get_medico_by_id(medico_id)
+        if not medico:
+            continue
+        if not medico.get('email'):
+            sem_email.append(medico['nome'])
+            continue
+        try:
+            resultado = rec_senha.enviar_link_primeiro_acesso(medico_id, medico['email'])
+        except Exception:
+            falhas.append(medico['nome'])
+            continue
+        if resultado['enviado']:
+            enviados.append(medico['nome'])
+        else:
+            falhas.append(medico['nome'])
+
+    return {'enviados': enviados, 'sem_email': sem_email, 'falhas': falhas}
+
+
 @admin_bp.route('/clientes/novo', methods=['GET', 'POST'])
 @_admin
 def novo_cliente():
@@ -892,13 +998,15 @@ def api_matriz_relatorio():
 @admin_bp.route('/api/agenda-horistas/medicos', methods=['GET'])
 @_admin
 def api_agenda_horistas_medicos():
-    """Lista pro seletor de "Agendar para:" -- só médicos tipo 'avulso'
-    (os únicos que alugam consultório por essa agenda; 'fixo' e 'horista'
-    têm agendas próprias, ver _checar_pode_alugar_avulso)."""
+    """Lista pro seletor de "Agendar para:" -- pedido do Paulo em
+    23/09/2026 (item 6): TODOS os médicos ativos, não só os de tipo
+    'avulso' -- antes essa lista ficava restrita aos avulsos (que alugam
+    consultório por essa agenda por padrão), mas o admin também precisa
+    poder agendar manualmente pra um médico fixo/horista em algum
+    encaixe avulso, então a lista não filtra mais por tipo_vinculo."""
     todos = db.get_client().table('medicos').select('id,nome,telefone,tipo_vinculo').eq('ativo', True).execute().data
-    avulsos = [m for m in todos if (m.get('tipo_vinculo') or 'avulso') == 'avulso']
-    avulsos.sort(key=lambda m: (m.get('nome') or '').lower())
-    return {'medicos': avulsos}
+    todos.sort(key=lambda m: (m.get('nome') or '').lower())
+    return {'medicos': todos}
 
 
 @admin_bp.route('/api/agenda-horistas/agendar', methods=['POST'])
@@ -924,8 +1032,17 @@ def api_agenda_horistas_agendar():
             resultado = reserva_service.reservar_por_hora(
                 medico_id, consultorio_id, data_str, hora_inicio, 1, criado_por_admin=True,
             )
+            # Pedido do Paulo em 23/09/2026 (item 7): deixa explícito no
+            # retorno se essa hora foi DEBITADA do saldo do médico ou se
+            # entrou como cortesia de tryout (as 3 primeiras reservas do
+            # médico em qualquer canal são grátis por design -- ver
+            # creditos_db.tryout_restante/debitar_credito_por_reserva) --
+            # sem isso não dava pra distinguir, na tela do admin, se o
+            # débito realmente aconteceu ou se essa reserva específica
+            # era, de fato, uma cortesia.
             sucesso.append({'consultorio_id': consultorio_id, 'data': data_str, 'hora_inicio': hora_inicio,
-                            'reserva_id': resultado['reserva']['id']})
+                            'reserva_id': resultado['reserva']['id'], 'tryout': resultado.get('tryout', False),
+                            'saldo_atual': resultado.get('saldo_atual')})
         except Exception as e:
             erros.append({'consultorio_id': consultorio_id, 'data': data_str, 'hora_inicio': hora_inicio,
                           'erro': str(e)})

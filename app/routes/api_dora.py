@@ -173,6 +173,10 @@ def api_dora_reservar():
         return jsonify({"erro": str(e)}), 409
     except reserva_service.NaoAutorizadoError as e:
         return jsonify({"erro": str(e)}), 403
+    except reserva_service.DadosPessoaisIncompletosError as e:
+        return jsonify({"erro": str(e), "campos_faltando": e.campos_faltando}), 403
+    except reserva_service.MatrizNaoGeradaError as e:
+        return jsonify({"erro": str(e)}), 403
     except reserva_service.MedicoFixoNaoPodeAlugarError as e:
         return jsonify({"erro": str(e)}), 403
     except ValueError as e:

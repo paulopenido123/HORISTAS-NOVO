@@ -412,9 +412,11 @@ def listar_reservas_medico(medico_id: str) -> list[dict]:
     """Todas as reservas (turno ou hora avulsa, qualquer status) desse
     médico, com o nome do consultório já embutido -- usada na tela "Minha
     Agenda" (pedido do Paulo em 10/09/2026). Ordenadas por data/horário
-    crescente (mais próxima primeiro), calculado em Python porque turno
-    guarda só `periodo` (sem hora_inicio) e hora avulsa guarda hora_inicio
-    -- os dois precisam de uma chave de ordenação comum."""
+    DECRESCENTE (mais atual primeiro -- pedido do Paulo em 23/09/2026,
+    item 3, mesmo padrão já usado no Histórico de transações), calculado
+    em Python porque turno guarda só `periodo` (sem hora_inicio) e hora
+    avulsa guarda hora_inicio -- os dois precisam de uma chave de
+    ordenação comum."""
     resp = (
         get_client()
         .table("reservas")
@@ -431,7 +433,7 @@ def listar_reservas_medico(medico_id: str) -> list[dict]:
             hora = PERIODOS_HORARIOS.get(r.get("periodo"), ("00:00",))[0]
         return (r.get("data") or "", hora)
 
-    reservas.sort(key=_chave_ordenacao)
+    reservas.sort(key=_chave_ordenacao, reverse=True)
     return reservas
 
 

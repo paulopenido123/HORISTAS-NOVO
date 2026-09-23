@@ -36,16 +36,19 @@
   .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan-glow); box-shadow: 0 0 10px var(--cyan-glow); }
   .brand-logo { height: 66px; width: auto; display: block; }
   .hero-topo-direita { display: flex; align-items: center; gap: 16px; }
-  .hero-nome { font-weight: 700; font-size: 14px; color: var(--onnavy-ink); }
+  .hero-nome { font-weight: 700; font-size: 15px; color: var(--onnavy-ink); }
+  /* Pedido do Paulo em 23/09/2026 (item 2): todo botão de fundo branco
+     vira verde claro, igual ao "+ Comprar horas" -- esse aqui era o
+     único com fundo branco fora do hero. */
   .sair {
-    font-size: 13px; font-weight: 700; color: var(--navy); text-decoration: none;
-    padding: 8px 16px; border-radius: 7px; background: #fff; transition: background 0.15s;
+    font-size: 14px; font-weight: 700; color: #fff; text-decoration: none;
+    padding: 8px 16px; border-radius: 7px; background: var(--verde); transition: background 0.15s;
   }
-  .sair:hover { background: #DCEEEC; }
+  .sair:hover { background: #187A4D; }
 
   /* ---------- HERO (Área do cliente) ---------- */
   .hero { padding: 0 0 40px; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%); }
-  .eyebrow { font-size: 12.5px; font-weight: 700; color: var(--cyan-glow); letter-spacing: 0.04em; margin-bottom: 10px; text-transform: uppercase; }
+  .eyebrow { font-size: 13.5px; font-weight: 700; color: var(--cyan-glow); letter-spacing: 0.04em; margin-bottom: 10px; text-transform: uppercase; }
   .hero h1 { font-weight: 800; font-size: clamp(26px, 3.6vw, 44px); line-height: 1.12; letter-spacing: -0.01em; color: #fff; }
   .lead { color: rgba(234,242,245,0.82); font-size: 15.5px; margin-top: 10px; max-width: 520px; line-height: 1.6; }
 
@@ -56,25 +59,22 @@
   .hero-saldo-bloco { text-align: right; flex-shrink: 0; }
   .hero-saldo-titulo { font-weight: 800; font-size: clamp(26px, 3.6vw, 44px); line-height: 1.12; letter-spacing: -0.01em; color: #fff; margin: 0; }
   .hero-saldo-valor { font-weight: 800; font-size: 30px; color: #fff; margin: 4px 0 14px; }
-  .btn-branco {
-    background: #fff; color: var(--navy); border: 1px solid #fff; padding: 12px 22px; border-radius: 7px;
-    font-family: var(--display); font-weight: 800; font-size: 14.5px; cursor: pointer; text-decoration: none;
+  /* ---------- Botões do hero (Comprar horas / Reservar consultórios /
+     Meus dados) -- pedido do Paulo em 23/09/2026 (item 1): os 3 com
+     EXATAMENTE o mesmo formato/cor/tamanho (antes "Reservar" era um
+     botão branco sólido e os outros dois eram contornados, transparentes
+     -- os 3 agora usam essa única classe). Cor "verde claro" pedida no
+     mesmo request (item 2) -- mesmo tom usado no botão "+ Comprar horas"
+     do board mais abaixo (.btn-cyan, var(--cyan)), aqui um pouco mais
+     forte (--verde) pra ter contraste suficiente sobre o fundo azul
+     escuro do hero. ---- */
+  .hero-botoes-linha { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .btn-hero-verde {
+    background: var(--verde); color: #fff; border: 1px solid var(--verde); padding: 12px 22px; border-radius: 7px;
+    font-family: var(--display); font-weight: 800; font-size: 15.5px; cursor: pointer; text-decoration: none;
     display: inline-block; text-align: center; transition: background 0.15s;
   }
-  .btn-branco:hover { background: #DCEEEC; }
-
-  /* ---------- Botões extras no hero (Comprar horas / Meus dados) --
-     pedido do Paulo em 23/09/2026 (item 4): cópias dos botões "Comprar
-     horas" e "Meus dados" flanqueando "Reservar consultórios" no topo
-     do painel, além de onde já existiam (modal de compra e board
-     "Meu perfil" mais abaixo). ---- */
-  .hero-botoes-linha { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
-  .btn-outline-claro {
-    background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.6); padding: 12px 20px;
-    border-radius: 7px; font-family: var(--display); font-weight: 800; font-size: 14.5px; cursor: pointer;
-    text-decoration: none; display: inline-block; text-align: center; transition: background 0.15s;
-  }
-  .btn-outline-claro:hover { background: rgba(255,255,255,0.12); }
+  .btn-hero-verde:hover { background: #187A4D; }
 
   @media (max-width: 640px) {
     .hero-botoes-linha { justify-content: flex-start; }
@@ -83,26 +83,26 @@
   }
 
   /* ---------- Status/kicker/tag/total (padrão "área do cliente") ---------- */
-  .kicker { font-weight: 700; font-size: 12px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 6px; }
-  .tag { display: inline-block; background: var(--cyan-soft); color: var(--cyan); font-size: 12px; font-weight: 700; padding: 7px 16px; border-radius: 20px; }
+  .kicker { font-weight: 700; font-size: 13px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 6px; }
+  .tag { display: inline-block; background: var(--cyan-soft); color: var(--cyan); font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 20px; }
   .total { font-weight: 800; font-size: 38px; color: var(--ink); font-family: var(--display); line-height: 1.1; margin: 4px 0 2px; }
-  .muted-cell { font-size: 13px; color: var(--ink-muted); line-height: 1.55; }
-  .aviso-saldo { background: var(--coral-soft); color: var(--coral); padding: 8px 12px; border-radius: 8px; font-size: 12px; margin-top: 10px; }
+  .muted-cell { font-size: 14px; color: var(--ink-muted); line-height: 1.55; }
+  .aviso-saldo { background: var(--coral-soft); color: var(--coral); padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }
 
   .container { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
 
-  .flash { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 22px; font-family: var(--display); }
+  .flash { padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 22px; font-family: var(--display); }
   .flash.sucesso { background: var(--cyan-soft); color: var(--cyan); }
   .flash.erro { background: var(--coral-soft); color: var(--coral); }
 
   /* ---------- BOARD / CELL SYSTEM ---------- */
   .board { background: linear-gradient(165deg, var(--panel) 0%, var(--panel-2) 100%); border: 1px solid var(--line-strong); border-radius: 10px; overflow: hidden; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(14,42,58,0.05); }
-  .board-top { display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink-faint); }
+  .board-top { display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--ink-faint); }
   .board-top .puck { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
   .board-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--line); }
   @media (max-width: 860px) { .board-grid { grid-template-columns: 1fr; } }
   .cell { background: var(--panel); padding: 24px; }
-  .cell-label { font-weight: 700; font-size: 12px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 16px; }
+  .cell-label { font-weight: 700; font-size: 13px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 16px; }
 
   /* Gauge (saldo em horas) */
   .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 6px 0 4px; }
@@ -110,17 +110,22 @@
            background: conic-gradient(var(--cyan) 0deg var(--gauge-deg), rgba(14,165,160,0.12) var(--gauge-deg) 360deg); }
   .gauge::before { content: ''; position: absolute; width: 96px; height: 96px; border-radius: 50%; background: var(--panel); }
   .gauge-val { position: relative; font-weight: 800; font-size: 20px; color: var(--cyan); }
-  .gauge-unit { position: relative; font-size: 11px; color: var(--ink-muted); margin-top: -2px; }
-  .gauge-caption { font-size: 12.5px; color: var(--ink-muted); margin-top: 14px; }
+  .gauge-unit { position: relative; font-size: 12px; color: var(--ink-muted); margin-top: -2px; }
+  .gauge-caption { font-size: 13.5px; color: var(--ink-muted); margin-top: 14px; }
 
-  .kv { display: flex; justify-content: space-between; font-size: 13.5px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .kv { display: flex; justify-content: space-between; font-size: 14.5px; padding: 9px 0; border-top: 1px solid var(--line); }
   .kv span:first-child { color: var(--ink-muted); }
   .kv span:last-child { color: var(--ink); font-weight: 600; }
 
-  .btn-cyan { background: var(--cyan); color: #fff; border: none; padding: 11px 18px; border-radius: 7px; font-family: var(--display); font-weight: 700; font-size: 13.5px; cursor: pointer; width: 100%; }
-  .btn-ghost { background: transparent; color: var(--ink-muted); border: 1px solid var(--line-strong); padding: 10px 16px; border-radius: 7px; font-family: var(--display); font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
+  .btn-cyan { background: var(--cyan); color: #fff; border: none; padding: 11px 18px; border-radius: 7px; font-family: var(--display); font-weight: 700; font-size: 14.5px; cursor: pointer; width: 100%; }
+  .btn-ghost { background: transparent; color: var(--ink-muted); border: 1px solid var(--line-strong); padding: 10px 16px; border-radius: 7px; font-family: var(--display); font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
   .btn-ghost:hover { color: var(--ink); border-color: var(--cyan); }
-  .btn-coral-outline { background: transparent; color: var(--coral); border: 1px solid var(--coral-soft); padding: 9px 14px; border-radius: 7px; font-family: var(--display); font-weight: 600; font-size: 13px; cursor: pointer; }
+  .btn-coral-outline { background: transparent; color: var(--coral); border: 1px solid var(--coral-soft); padding: 9px 14px; border-radius: 7px; font-family: var(--display); font-weight: 600; font-size: 14px; cursor: pointer; }
+  /* Botões "Ocultar/Exibir" (Histórico + Minha agenda) -- pedido do
+     Paulo em 23/09/2026 (item 2): coloridos de verde claro, igual ao
+     "+ Comprar horas", em vez do cinza neutro que o Histórico usava. */
+  .btn-toggle-verde { background: var(--cyan); color: #fff; border: none; padding: 8px 16px; border-radius: 7px; font-family: var(--display); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .btn-toggle-verde:hover { background: #0C8B87; }
 
   /* Módulos */
   .grid-modulos { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
@@ -128,104 +133,111 @@
   .card-modulo.modulo-ativo { border-color: var(--cyan); background: linear-gradient(160deg, var(--cyan-soft), var(--panel-2)); }
   .modulo-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .modulo-icone { font-size: 22px; }
-  .badge-modulo { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 10px; letter-spacing: 0.03em; }
+  .badge-modulo { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 10px; letter-spacing: 0.03em; }
   .badge-modulo.ativo { background: var(--cyan); color: #fff; }
   .badge-modulo.beta { background: var(--coral); color: #fff; }
   .badge-modulo.em_desenvolvimento { background: rgba(14,42,58,0.07); color: var(--ink-faint); }
-  .modulo-numero { font-size: 10px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
-  .card-modulo h3 { font-weight: 700; font-size: 14px; color: var(--ink); margin-bottom: 6px; }
-  .card-modulo p { font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; }
-  .modulo-link { display: inline-block; margin-top: 10px; font-size: 12.5px; font-weight: 700; color: var(--cyan); text-decoration: none; }
+  .modulo-numero { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .card-modulo h3 { font-weight: 700; font-size: 15px; color: var(--ink); margin-bottom: 6px; }
+  .card-modulo p { font-size: 13.5px; color: var(--ink-muted); line-height: 1.5; }
+  .modulo-link { display: inline-block; margin-top: 10px; font-size: 13.5px; font-weight: 700; color: var(--cyan); text-decoration: none; }
 
   .painel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(14,42,58,0.05); }
-  .painel h2 { font-weight: 700; font-size: 14.5px; color: var(--ink); margin-bottom: 14px; }
+  .painel h2 { font-weight: 700; font-size: 15.5px; color: var(--ink); margin-bottom: 14px; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; color: var(--ink-faint); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--line); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.02em; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--ink-faint); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--line); font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.02em; }
   td { padding: 10px 8px; border-bottom: 1px solid var(--line); color: var(--ink); }
   .valor-positivo { color: var(--verde); font-weight: 600; }
   .valor-negativo { color: var(--coral); font-weight: 600; }
-  .vazio { color: var(--ink-faint); font-size: 13px; padding: 12px 0; }
+  .vazio { color: var(--ink-faint); font-size: 14px; padding: 12px 0; }
 
   /* ---------- Minha agenda (inline no topo do painel) ---------- */
-  .status-tag { display:inline-block; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .status-tag { display:inline-block; font-size: 12.5px; font-weight:700; padding:3px 10px; border-radius:20px; }
   .status-tag.cancelada { background: var(--coral-soft); color: var(--coral); }
   /* Item 6 (pedido do Paulo em 21/09/2026): aviso quando foi o
      administrador da Lifemax (não o próprio médico) quem agendou ou
      cancelou um horário pela Agenda Horistas. */
-  .aviso-admin { display:block; margin-top:3px; font-size:11px; font-weight:600; color: var(--teal); }
+  .aviso-admin { display:block; margin-top:3px; font-size: 12px; font-weight:600; color: var(--teal); }
   .aviso-admin.cancelamento { color: var(--coral); }
-  .btn-cancelar { background: var(--coral-soft); color: var(--coral); border:1px solid rgba(214,92,63,0.3); border-radius:6px; padding:4px 9px; font-family: var(--display); font-weight:600; font-size:11px; cursor:pointer; }
+  .btn-cancelar { background: var(--coral-soft); color: var(--coral); border:1px solid rgba(214,92,63,0.3); border-radius:6px; padding:4px 9px; font-family: var(--display); font-weight:600; font-size: 12px; cursor:pointer; }
   .btn-cancelar:disabled { opacity:0.5; cursor:not-allowed; }
-  .aviso-linha-12h { color: var(--coral); font-size:11px; font-weight:600; margin-top:4px; max-width:180px; }
+  .aviso-linha-12h { color: var(--coral); font-size: 12px; font-weight:600; margin-top:4px; max-width:180px; }
   .painel-topo { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
   .painel-topo h2 { margin-bottom:0; }
   .botoes-agenda { display:flex; gap:8px; flex-wrap:wrap; }
-  .btn-ghost.pequeno { padding:8px 12px; font-size:12.5px; }
+  .btn-ghost.pequeno { padding:8px 12px; font-size: 13.5px; }
   /* Botões "azul da faixa escura" -- pedido do Paulo em 11/09/2026: mesma
      cor de fundo do topo da página (var(--navy)), letras brancas -- pros
      3 botões principais do painel do médico ("Cadastre o seu paciente",
      "Pacientes cadastrados", "Reservar consultórios"). */
-  .btn-navy { background: var(--navy); color: #fff; border: 1px solid var(--navy); padding: 10px 16px; border-radius: 7px; font-family: var(--display); font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; transition: background 0.15s; }
+  .btn-navy { background: var(--navy); color: #fff; border: 1px solid var(--navy); padding: 10px 16px; border-radius: 7px; font-family: var(--display); font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; transition: background 0.15s; }
   .btn-navy:hover { background: var(--navy-soft); color: #fff; }
   .btn-navy.grande { padding: 15px 28px; font-size: 15.5px; font-weight: 800; }
   details.ajuste-paciente { margin-top:6px; }
-  details.ajuste-paciente summary { cursor:pointer; color: var(--cyan); font-weight:700; font-size:12px; list-style:none; }
+  /* Pedido do Paulo em 23/09/2026: "Incluir/alterar paciente" também
+     vira um botão verde claro preenchido, igual ao padrão adotado pros
+     outros botões (era só um link de texto colorido antes). */
+  details.ajuste-paciente summary {
+    cursor:pointer; color: #fff; background: var(--cyan); font-weight:700; font-size: 13px; list-style:none;
+    padding: 7px 13px; border-radius: 7px; display: inline-block;
+  }
+  details.ajuste-paciente summary:hover { background: #0C8B87; }
   details.ajuste-paciente summary::-webkit-details-marker { display:none; }
   .form-paciente { margin-top:8px; padding:12px; background: var(--panel-2); border-radius:8px; display:flex; flex-direction:column; gap:6px; min-width:210px; }
-  .opcao-paciente { display:flex; align-items:center; gap:9px; font-size:12.5px; color: var(--ink); cursor:pointer; padding:3px 0; }
+  .opcao-paciente { display:flex; align-items:center; gap:9px; font-size: 13.5px; color: var(--ink); cursor:pointer; padding:3px 0; }
   input[type=radio].marcar-x { appearance:none; -webkit-appearance:none; width:17px; height:17px; min-width:17px; border:1.5px solid var(--line-strong); border-radius:4px; position:relative; cursor:pointer; background:#fff; }
   input[type=radio].marcar-x:checked { border-color: var(--coral); }
-  input[type=radio].marcar-x:checked::after { content:'✕'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color: var(--coral); }
-  .btn-inserir-paciente { margin-top:4px; background: var(--cyan); color:#fff; border:none; border-radius:7px; padding:8px 14px; font-family: var(--display); font-weight:700; font-size:12.5px; cursor:pointer; align-self:flex-start; }
+  input[type=radio].marcar-x:checked::after { content:'✕'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size: 13px; font-weight:800; color: var(--coral); }
+  .btn-inserir-paciente { margin-top:4px; background: var(--cyan); color:#fff; border:none; border-radius:7px; padding:8px 14px; font-family: var(--display); font-weight:700; font-size: 13.5px; cursor:pointer; align-self:flex-start; }
   .celula-paciente { font-weight:600; }
   .celula-paciente.vazia { color: var(--ink-faint); font-weight:400; }
 
   /* E-mail de agendamento pro paciente -- pedido do Paulo em 11/09/2026 */
   details.ajuste-email-agendamento { margin-top:8px; }
-  details.ajuste-email-agendamento summary { cursor:pointer; color: var(--navy); font-weight:700; font-size:12px; list-style:none; }
+  details.ajuste-email-agendamento summary { cursor:pointer; color: var(--navy); font-weight:700; font-size: 13px; list-style:none; }
   details.ajuste-email-agendamento summary::-webkit-details-marker { display:none; }
   .form-email-agendamento { margin-top:8px; padding:12px; background: var(--panel-2); border-radius:8px; display:flex; flex-direction:column; gap:8px; min-width:230px; }
-  .form-email-agendamento label { font-size:11.5px; font-weight:700; color: var(--ink-muted); }
+  .form-email-agendamento label { font-size: 12.5px; font-weight:700; color: var(--ink-muted); }
   .linha-hora-confirmada { display:flex; gap:6px; align-items:center; }
-  .linha-hora-confirmada input { width:90px !important; padding:7px 9px !important; font-size:12.5px !important; }
-  .btn-salvar-hora, .btn-adicionar-paciente-agendado { background: var(--navy); color:#fff; border:none; border-radius:6px; padding:7px 11px; font-family: var(--display); font-weight:700; font-size:11.5px; cursor:pointer; white-space:nowrap; }
+  .linha-hora-confirmada input { width:90px !important; padding:7px 9px !important; font-size: 13.5px !important; }
+  .btn-salvar-hora, .btn-adicionar-paciente-agendado { background: var(--navy); color:#fff; border:none; border-radius:6px; padding:7px 11px; font-family: var(--display); font-weight:700; font-size: 12.5px; cursor:pointer; white-space:nowrap; }
   .lista-pacientes-agendados { display:flex; flex-direction:column; gap:6px; margin-top:2px; }
-  .linha-paciente-agendado { display:flex; align-items:center; gap:8px; justify-content:space-between; font-size:12.5px; background:#fff; border-radius:6px; padding:6px 9px; }
+  .linha-paciente-agendado { display:flex; align-items:center; gap:8px; justify-content:space-between; font-size: 13.5px; background:#fff; border-radius:6px; padding:6px 9px; }
   .linha-paciente-agendado .nome-paciente-ag { font-weight:600; flex:1; }
-  .btn-enviar-email { background: var(--cyan); color:#fff; border:none; border-radius:6px; padding:5px 9px; font-family: var(--display); font-weight:700; font-size:11px; cursor:pointer; }
-  .btn-remover-paciente-agendado { background:none; border:none; color: var(--coral); font-size:11px; font-weight:700; cursor:pointer; }
-  .tag-email-enviado { color:#1C8A4C; font-weight:700; font-size:11px; }
+  .btn-enviar-email { background: var(--cyan); color:#fff; border:none; border-radius:6px; padding:5px 9px; font-family: var(--display); font-weight:700; font-size: 12px; cursor:pointer; }
+  .btn-remover-paciente-agendado { background:none; border:none; color: var(--coral); font-size: 12px; font-weight:700; cursor:pointer; }
+  .tag-email-enviado { color:#1C8A4C; font-weight:700; font-size: 12px; }
   .adicionar-paciente-agendado { display:flex; gap:6px; margin-top:2px; }
   .adicionar-paciente-agendado select { flex:1; }
-  .erro-email-agendamento { color: var(--coral); font-size:11.5px; font-weight:600; }
+  .erro-email-agendamento { color: var(--coral); font-size: 12.5px; font-weight:600; }
 
-  .precos-info { font-size: 13.5px; color: var(--ink-muted); }
+  .precos-info { font-size: 14.5px; color: var(--ink-muted); }
   .precos-info strong { color: var(--ink); }
 
   input[type=text], input[type=number], input[type=password], input[type=date], input[type=email], select {
     width: 100%; padding: 10px 13px; border-radius: 7px; border: 1px solid var(--line-strong);
-    background: #fff; color: var(--ink); font-family: var(--display); font-size: 13.5px;
+    background: #fff; color: var(--ink); font-family: var(--display); font-size: 14.5px;
   }
   input::placeholder { color: var(--ink-faint); }
   #form-paciente label, #form-editar-paciente label { display:flex; flex-direction:column; gap:5px; }
-  #form-paciente .muted-cell, #form-editar-paciente .muted-cell { font-size: 12px; }
+  #form-paciente .muted-cell, #form-editar-paciente .muted-cell { font-size: 13px; }
 
   /* Modal de compra */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(14,30,40,0.55); align-items: center; justify-content: center; z-index: 200; padding: 16px; }
   .modal-overlay.aberto { display: flex; }
   .modal { background: var(--panel); border: 1px solid var(--line-strong); border-radius: 12px; padding: 26px; width: 100%; max-width: 360px; text-align: center; box-shadow: 0 20px 60px rgba(14,42,58,0.25); }
   .modal h3 { font-weight: 700; font-size: 16px; color: var(--ink); margin-bottom: 4px; }
-  .modal p { font-size: 13px; color: var(--ink-muted); margin: 4px 0 16px; }
+  .modal p { font-size: 14px; color: var(--ink-muted); margin: 4px 0 16px; }
   .valores-rapidos { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; justify-content: center; }
-  .valores-rapidos button { background: var(--cyan-soft); color: var(--cyan); border: 1px solid rgba(14,165,160,0.3); border-radius: 7px; padding: 8px 12px; font-size: 13px; cursor: pointer; font-family: var(--display); font-weight: 600; }
+  .valores-rapidos button { background: var(--cyan-soft); color: var(--cyan); border: 1px solid rgba(14,165,160,0.3); border-radius: 7px; padding: 8px 12px; font-size: 14px; cursor: pointer; font-family: var(--display); font-weight: 600; }
   .modal input { text-align: center; font-size: 16px; margin-bottom: 14px; }
-  .modal .btn-gerar { width: 100%; background: var(--cyan); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: var(--display); font-size: 13.5px; }
-  .modal .btn-fechar { margin-top: 10px; background: none; border: none; color: var(--ink-muted); font-size: 13px; cursor: pointer; font-family: var(--display); }
-  .modal .opcao-link { display: block; width: 100%; margin-top: 10px; background: none; border: none; color: var(--cyan); font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: var(--display); text-align: center; }
+  .modal .btn-gerar { width: 100%; background: var(--cyan); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: var(--display); font-size: 14.5px; }
+  .modal .btn-fechar { margin-top: 10px; background: none; border: none; color: var(--ink-muted); font-size: 14px; cursor: pointer; font-family: var(--display); }
+  .modal .opcao-link { display: block; width: 100%; margin-top: 10px; background: none; border: none; color: var(--cyan); font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: var(--display); text-align: center; }
   .qrcode-area img { width: 200px; height: 200px; margin: 0 auto 12px; display: block; border-radius: 8px; }
-  .copia-cola { background: var(--bg); border: 1px solid var(--line); color: var(--ink-muted); padding: 10px; border-radius: 8px; font-size: 11px; word-break: break-all; margin-bottom: 12px; }
-  .status-aguardando { color: var(--ink-muted); font-size: 13px; }
+  .copia-cola { background: var(--bg); border: 1px solid var(--line); color: var(--ink-muted); padding: 10px; border-radius: 8px; font-size: 12px; word-break: break-all; margin-bottom: 12px; }
+  .status-aguardando { color: var(--ink-muted); font-size: 14px; }
   .status-pago { color: var(--cyan); font-weight: 700; }
 
   /* ---- celular ---- */
@@ -235,7 +247,7 @@
     .container { padding: 22px 16px 60px; }
     .painel, .cell { padding: 16px; }
     .board-top { padding: 12px 16px; }
-    table { font-size: 12px; }
+    table { font-size: 13px; }
     .painel { overflow-x: auto; }
     .valores-rapidos { justify-content: flex-start; }
   }
@@ -292,9 +304,9 @@ if ("serviceWorker" in navigator) {
         <div class="hero-saldo-titulo">Saldo de horas</div>
         <div class="hero-saldo-valor">{{ saldo_horas }}h</div>
         <div class="hero-botoes-linha">
-          <button type="button" class="btn-outline-claro" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
-          <a class="btn-branco" href="{{ url_for('turnos.pagina_turnos') }}">Reservar consultórios</a>
-          <a class="btn-outline-claro" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}">Meus dados</a>
+          <button type="button" class="btn-hero-verde" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
+          <a class="btn-hero-verde" href="{{ url_for('turnos.pagina_turnos') }}">Reservar consultórios</a>
+          <a class="btn-hero-verde" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}">Meus dados</a>
         </div>
       </div>
       {% endif %}
@@ -332,8 +344,10 @@ if ("serviceWorker" in navigator) {
       <div class="botoes-agenda">
         <button type="button" class="btn-navy" onclick="abrirModalPaciente()">+ Cadastre o seu paciente</button>
         <a class="btn-navy" href="{{ url_for('medico_painel.pagina_pacientes_cadastrados') }}">Pacientes cadastrados</a>
+        <button type="button" class="btn-toggle-verde" id="btn-toggle-agenda" onclick="alternarAgenda()">Ocultar</button>
       </div>
     </div>
+    <div id="bloco-agenda">
     {% if reservas %}
     <table>
       <thead><tr><th>Data</th><th>Horário</th><th>Consultório</th><th>Paciente</th><th>Ações</th></tr></thead>
@@ -423,6 +437,7 @@ if ("serviceWorker" in navigator) {
     {% else %}
       <div class="vazio">Você ainda não fez nenhuma reserva.</div>
     {% endif %}
+    </div>
   </div>
 
   <div class="painel">
@@ -542,7 +557,7 @@ if ("serviceWorker" in navigator) {
   <div class="painel">
     <div class="painel-topo">
       <h2>Histórico</h2>
-      <button type="button" class="btn-ghost" id="btn-toggle-historico" onclick="alternarHistorico()">Exibir</button>
+      <button type="button" class="btn-toggle-verde" id="btn-toggle-historico" onclick="alternarHistorico()">Exibir</button>
     </div>
     <div id="bloco-historico" style="display:none;">
     {% if transacoes %}
@@ -1019,6 +1034,18 @@ function selecionarPacote() {
 function alternarHistorico() {
   const bloco = document.getElementById('bloco-historico');
   const btn = document.getElementById('btn-toggle-historico');
+  const oculto = bloco.style.display === 'none';
+  bloco.style.display = oculto ? '' : 'none';
+  btn.textContent = oculto ? 'Ocultar' : 'Exibir';
+}
+
+// Botão "Ocultar/Exibir" da Minha Agenda -- pedido do Paulo em
+// 23/09/2026 (item 2). Diferente do Histórico, a agenda começa VISÍVEL
+// (é a informação mais importante ao abrir a página), então o botão
+// nasce com o texto "Ocultar".
+function alternarAgenda() {
+  const bloco = document.getElementById('bloco-agenda');
+  const btn = document.getElementById('btn-toggle-agenda');
   const oculto = bloco.style.display === 'none';
   bloco.style.display = oculto ? '' : 'none';
   btn.textContent = oculto ? 'Ocultar' : 'Exibir';

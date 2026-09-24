@@ -108,10 +108,10 @@
   #lista-consultorios { display: flex; flex-direction: column; gap: 3px; }
   .bloco-consultorio { background: white; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .bloco-consultorio-header {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: flex-start; align-items: center; gap: 12px;
     padding: 3px 10px; border-bottom: 1px solid var(--line); background: #FAFCFC;
   }
-  .bloco-consultorio-nome { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: var(--navy); }
+  .bloco-consultorio-nome { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 21px; color: var(--navy); }
   .btn-ver-foto {
     cursor: pointer; background: var(--teal-soft); border: 1px solid var(--teal); color: var(--navy);
     font-weight: 700; font-size: 12.5px; padding: 7px 14px; border-radius: 7px;
@@ -144,7 +144,11 @@
      translateY(-50%) da .marca-hora empurra o texto pra cima/baixo da
      própria linha da hora, e nas pontas isso ia parar fora da área
      visível (scrollável) do próprio contêiner. */
-  .grade-scroll-vertical { max-height: 520px; overflow-y: auto; overflow-x: auto; padding: 7px 0; }
+  /* padding-top maior que o padding-bottom -- pedido do Paulo em
+     24/09/2026: a marca da primeira hora (08:00) usa
+     transform:translateY(-50%) pra centralizar o texto na linha, o que
+     fazia a metade de cima do texto ficar cortada no topo da grade. */
+  .grade-scroll-vertical { max-height: 520px; overflow-y: auto; overflow-x: auto; padding: 14px 0 7px; }
   .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
   .coluna-horas { position: relative; border-right: 1px solid var(--line); }
   .coluna-horas .marca-hora { position: absolute; left: 0; right: 0; font-size: 12px; font-weight: 700; color: #10222E; text-align: right; padding-right: 6px; transform: translateY(-50%); }

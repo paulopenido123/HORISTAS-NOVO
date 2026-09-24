@@ -178,23 +178,22 @@ def obter_saldo(medico_id: str) -> float:
     return float(resp.data[0]["saldo_creditos"]) if resp.data else 0.0
 
 
-TRYOUT_TOTAL = 3
+TRYOUT_TOTAL = 0  # DESATIVADO -- ver tryout_restante() abaixo.
 
 
 def tryout_restante(medico_id: str) -> int:
-    """Pedido do Paulo em 21/09/2026: as 3 primeiras reservas de
-    consultório do médico (por hora, em qualquer canal -- site ou
-    assistente Dora) são de graça, sem debitar saldo. Conta quantas
-    reservas com `tryout=true` esse médico já tem NÃO canceladas -- se
-    ele cancelar uma reserva de teste, a cortesia volta a ficar
-    disponível automaticamente (mesmo espírito do reembolso normal)."""
-    resp = (
-        get_client().table("reservas").select("id")
-        .eq("medico_id", medico_id).eq("tryout", True).neq("status", "cancelada")
-        .execute()
-    )
-    usadas = len(resp.data or [])
-    return max(0, TRYOUT_TOTAL - usadas)
+    """DESATIVADO -- pedido do Paulo em 24/09/2026: não existe mais
+    cortesia/teste grátis nenhuma, TODA reserva tem que debitar do saldo
+    do médico, sem exceção. Antes (pedido do Paulo em 21/09/2026) as 3
+    primeiras reservas de consultório do médico eram de graça; sempre
+    devolver 0 aqui é o único ponto que precisa mudar pra desligar isso
+    em todo o sistema -- reservar_turno/reservar_por_hora (ver
+    reserva_service.py) calculam `usa_tryout = tryout_restante(...) > 0`,
+    então com 0 aqui essa conta dá sempre False e o fluxo normal de
+    checagem de saldo + débito roda para 100% das reservas, em qualquer
+    canal (site ou assistente Dora) e também quando é o admin quem
+    agenda pela Agenda Horistas."""
+    return 0
 
 
 def obter_saldo_ia(medico_id: str) -> float:

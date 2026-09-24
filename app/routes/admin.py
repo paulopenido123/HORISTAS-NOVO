@@ -864,14 +864,30 @@ def api_matriz_template_toggle():
 
 def _aplicar_template_no_periodo(data_inicio: date, data_fim: date, tipo: str, confirmar: bool):
     """Lógica comum aos botões "Replicar matriz por período" e "Replicar
-    matriz por mês" -- pedido do Paulo em 21/09/2026: pega o padrão
-    semanal marcado em matriz_template e cria os registros de verdade
-    (matriz_reservas_admin) pra cada data do período que cai no dia da
-    semana certo. Se algum desses horários já tiver uma reserva de
-    VERDADE de um médico, não aplica de cara -- devolve a lista de
-    conflitos pra tela de revisão confirmar (`confirmar=True` reenvia
-    depois de o admin já ter visto e confirmado, ciente de que precisa
-    avisar os médicos envolvidos)."""
+    matriz por mês".
+
+    Reescrita em 24/09/2026 (pedido do Paulo): a matriz nova precisa
+    SOBREPOR a antiga no período escolhido, nos dois sentidos --
+      1) todo horário que o padrão semanal ATUAL marca fica reservado
+         nesse período (cria o que falta);
+      2) todo horário que tinha sido marcado por uma replicação
+         ANTERIOR mas não faz mais parte do padrão atual é LIBERADO
+         (removido de matriz_reservas_admin) -- antes isso nunca
+         acontecia (só inserção, nunca remoção), então tirar um horário
+         do padrão semanal e replicar de novo não tinha efeito nenhum
+         nas datas já aplicadas.
+    As reservas de VERDADE de médico (tabela `reservas`) NUNCA são
+    tocadas sem confirmação explícita: se uma célula que o padrão atual
+    quer reservar já tem uma reserva de médico em cima, a função para e
+    devolve `precisa_confirmar` com a lista de conflitos (sala/dia/
+    horário/médico) pra tela mostrar em vermelho e pedir "Confirmar
+    sobreposição" -- só quando `confirmar=True` (o admin já viu e
+    confirmou) é que a reserva do médico é CANCELADA de verdade (mesma
+    regra de reembolso/aviso de sempre, ver reserva_service.
+    cancelar_reserva_admin) antes de aplicar o bloqueio administrativo
+    por cima dela. Liberar um horário (passo 2 acima) nunca gera
+    conflito -- só cria/mantém um bloqueio administrativo pode colidir
+    com uma reserva de médico."""
     client = db.get_client()
     template = client.table('matriz_template').select('*').execute().data
     if not template:
@@ -881,60 +897,85 @@ def _aplicar_template_no_periodo(data_inicio: date, data_fim: date, tipo: str, c
     consultorios_nome = {c['id']: c['nome'] for c in client.table('consultorios').select('id,nome').execute().data}
 
     # Todas as células-alvo (consultorio, data, horario) que o padrão
-    # gera dentro do período pedido.
-    alvo = []
+    # ATUAL gera dentro do período pedido -- set, não lista: cada célula
+    # entra uma vez só, e dá pra comparar direto com o que já existe.
+    alvo = set()
     d = data_inicio
     while d <= data_fim:
         dw = _dia_semana(d)
         for t in template:
             if t['dia_semana'] == dw:
-                alvo.append((t['consultorio_id'], d.isoformat(), t['horario']))
+                alvo.add((t['consultorio_id'], d.isoformat(), t['horario']))
         d += timedelta(days=1)
 
     if not alvo:
         return {'erro': 'Nenhum dia do período escolhido cai nos dias da semana marcados na matriz.'}, 400
 
     # Reservas de VERDADE (médico) dentro do período -- essas geram
-    # conflito e precisam de confirmação + aviso pra contatar o médico.
+    # conflito e precisam de confirmação; guarda o id da reserva também,
+    # pra poder cancelá-la de verdade se o admin confirmar a sobreposição.
     reservas_reais = (
-        client.table('reservas').select('consultorio_id,data,hora_inicio,medicos(nome)')
+        client.table('reservas').select('id,consultorio_id,data,hora_inicio,medicos(nome)')
         .gte('data', data_inicio.isoformat()).lte('data', data_fim.isoformat())
         .neq('status', 'cancelada').execute().data
     )
-    nome_por_chave = {}
+    reserva_por_chave = {}
     for r in reservas_reais:
         if not r.get('hora_inicio'):
             continue
         chave = (r['consultorio_id'], _data_str(r['data']), _hora_str(r['hora_inicio']))
-        nome_por_chave[chave] = (r.get('medicos') or {}).get('nome') or 'Médico'
+        reserva_por_chave[chave] = r
 
     conflitos = [
-        {'consultorio_nome': consultorios_nome.get(c, '—'), 'data': dt, 'horario': h, 'medico_nome': nome_por_chave[(c, dt, h)]}
-        for (c, dt, h) in alvo if (c, dt, h) in nome_por_chave
+        {
+            'reserva_id': reserva_por_chave[(c, dt, h)]['id'],
+            'consultorio_nome': consultorios_nome.get(c, '—'),
+            'data': dt, 'horario': h,
+            'medico_nome': (reserva_por_chave[(c, dt, h)].get('medicos') or {}).get('nome') or 'Médico',
+        }
+        for (c, dt, h) in alvo if (c, dt, h) in reserva_por_chave
     ]
 
     if conflitos and not confirmar:
         return {'precisa_confirmar': True, 'conflitos': conflitos, 'total_alvo': len(alvo)}
 
-    # Já existentes no período -- pra não tentar inserir duplicado (a
-    # unique constraint de matriz_reservas_admin rejeitaria) e pra
-    # "prevalecer sempre a última matriz aplicada" sem precisar apagar e
-    # recriar tudo -- as que já existem simplesmente continuam.
-    existentes = {
-        (h['consultorio_id'], _data_str(h['data']), _hora_str(h['horario']))
-        for h in client.table('matriz_reservas_admin').select('consultorio_id,data,horario')
+    # O admin já confirmou (ou não havia conflito nenhum): cancela de
+    # verdade a reserva de cada médico em conflito -- mesma regra de
+    # reembolso (12h) e mesmo e-mail de aviso que qualquer outro
+    # cancelamento feito pelo admin -- antes de aplicar o bloqueio da
+    # matriz por cima daquela célula.
+    canceladas = 0
+    for cf in conflitos:
+        try:
+            reserva_service.cancelar_reserva_admin(cf['reserva_id'])
+            canceladas += 1
+        except ValueError:
+            pass  # já cancelada nesse meio-tempo -- segue aplicando o resto
+
+    # Estado atual da Matriz nesse período.
+    existentes_rows = (
+        client.table('matriz_reservas_admin').select('id,consultorio_id,data,horario')
         .gte('data', data_inicio.isoformat()).lte('data', data_fim.isoformat()).execute().data
+    )
+    existentes = {
+        (h['consultorio_id'], _data_str(h['data']), _hora_str(h['horario'])): h['id']
+        for h in existentes_rows
     }
 
-    novos = []
-    vistos = set()
-    for (c, dt, h) in alvo:
-        chave = (c, dt, h)
-        if chave in existentes or chave in vistos:
-            continue
-        vistos.add(chave)
-        novos.append({'consultorio_id': c, 'data': dt, 'horario': h, 'descricao': '', 'criado_por': 'admin'})
+    # Libera (remove) o que uma replicação anterior tinha marcado e que
+    # não faz mais parte do padrão semanal atual -- é a "sobreposição"
+    # no sentido de liberar horários, pedido do Paulo em 24/09/2026.
+    a_remover = [rid for chave, rid in existentes.items() if chave not in alvo]
+    for rid in a_remover:
+        client.table('matriz_reservas_admin').delete().eq('id', rid).execute()
 
+    # Cria o que o padrão atual quer reservar e ainda não existe (as
+    # células em conflito já foram liberadas acima ao cancelar a reserva
+    # do médico, então entram aqui normalmente).
+    novos = [
+        {'consultorio_id': c, 'data': dt, 'horario': h, 'descricao': '', 'criado_por': 'admin'}
+        for (c, dt, h) in alvo if (c, dt, h) not in existentes
+    ]
     if novos:
         client.table('matriz_reservas_admin').insert(novos).execute()
 
@@ -943,7 +984,8 @@ def _aplicar_template_no_periodo(data_inicio: date, data_fim: date, tipo: str, c
         'aplicados': len(novos), 'conflitos': len(conflitos),
     }).execute()
 
-    return {'aplicados': len(novos), 'conflitos': len(conflitos),
+    return {'aplicados': len(novos), 'liberados': len(a_remover), 'conflitos': len(conflitos),
+            'canceladas_medico': canceladas,
             'data_inicio': data_inicio.isoformat(), 'data_fim': data_fim.isoformat()}
 
 

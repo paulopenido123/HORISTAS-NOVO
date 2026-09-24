@@ -88,7 +88,12 @@
   .lista-conflitos { list-style: none; margin: 0 0 14px; padding: 0; font-size: 12.5px; max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
   .lista-conflitos li { padding: 8px 10px; border-bottom: 1px solid var(--line); }
   .lista-conflitos li:last-child { border-bottom: none; }
-  .aviso-conflito { background: var(--coral-soft); color: var(--coral); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; margin-bottom: 12px; font-weight: 600; }
+  /* Pedido do Paulo em 24/09/2026: a lista de conflitos (sala/dia/
+     horário/médico) também em vermelho, não só a frase de cima -- fica
+     bem visível que aplicar vai cancelar essas reservas de médico. */
+  .lista-conflitos-vermelha { border-color: var(--coral); }
+  .lista-conflitos-vermelha li { color: var(--coral); font-weight: 600; }
+  .aviso-conflito { background: var(--coral-soft); color: var(--coral); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 12px; font-weight: 700; line-height: 1.5; }
 
   @media (max-width: 760px) {
     .top, .nav { padding: 14px 16px; }
@@ -295,6 +300,17 @@ function renderizarGrade() {
     '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum consultório cadastrado ainda.</div>';
 }
 
+// Monta o resumo do resultado de uma replicação -- pedido do Paulo em
+// 24/09/2026: agora que a matriz nova SOBREPÕE a antiga (libera o que
+// saiu do padrão, cancela reserva de médico em conflito confirmado),
+// o resumo precisa contar as três coisas separadas.
+function _mensagemResultadoReplicacao(x, periodoTexto) {
+  let msg = `${x.aplicados} horário(s) aplicado(s) ${periodoTexto}.`;
+  if (x.liberados) msg += ` ${x.liberados} horário(s) que não fazem mais parte do padrão semanal foram liberados.`;
+  if (x.canceladas_medico) msg += ` ⚠ ${x.canceladas_medico} reserva(s) de médico foram CANCELADAS por sobreposição confirmada (avise os profissionais envolvidos).`;
+  return msg;
+}
+
 function fecharModais() {
   document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('visivel'));
   document.getElementById('periodo-aviso-conflito').innerHTML = '';
@@ -310,16 +326,27 @@ function abrirModalPeriodo() {
   document.getElementById('modal-periodo').classList.add('visivel');
 }
 
+// Reescrito em 24/09/2026 (pedido do Paulo): antes, "aplicar mesmo
+// assim" só criava o bloqueio administrativo por cima -- a reserva do
+// médico continuava lá por baixo, então na prática nada mudava. Agora
+// confirmar aqui CANCELA de verdade a reserva do médico em cada célula
+// listada (mesma regra de reembolso de 12h e aviso por e-mail de
+// qualquer outro cancelamento feito pelo admin), então o aviso precisa
+// deixar isso bem claro, em vermelho, antes do admin confirmar.
 function renderizarConflitos(container, conflitos, totalAlvo, onConfirmar) {
   const itens = conflitos.map(c =>
-    `<li>${c.consultorio_nome} — ${c.data} ${c.horario} — já reservado por <strong>${c.medico_nome}</strong></li>`
+    `<li><strong>${c.consultorio_nome}</strong> — ${c.data} às ${c.horario} — reservado por <strong>${c.medico_nome}</strong></li>`
   ).join('');
   container.innerHTML = `
-    <div class="aviso-conflito">${conflitos.length} horário(s) desse período já têm reserva confirmada de um médico. Confira antes de aplicar mesmo assim -- depois será preciso avisar esses profissionais.</div>
-    <ul class="lista-conflitos">${itens}</ul>
+    <div class="aviso-conflito">
+      ⚠ ${conflitos.length} horário(s) deste período já têm reserva de um médico. Confirmar essa aplicação da matriz vai
+      <strong>CANCELAR a reserva desse(s) médico(s)</strong> nesses horários (com reembolso de horas se faltar 12h ou mais
+      para o horário, sem reembolso se faltar menos -- mesma regra de sempre) e liberar a célula pro bloqueio administrativo.
+    </div>
+    <ul class="lista-conflitos lista-conflitos-vermelha">${itens}</ul>
     <div class="modal-botoes">
       <button type="button" class="btn-fechar-modal" onclick="fecharModais()">Cancelar</button>
-      <button type="button" class="btn-confirmar perigo" id="btn-confirmar-conflito">Aplicar mesmo assim e avisar os médicos</button>
+      <button type="button" class="btn-confirmar perigo" id="btn-confirmar-conflito">Confirmar sobreposição</button>
     </div>`;
   document.getElementById('btn-confirmar-conflito').onclick = onConfirmar;
 }
@@ -339,7 +366,7 @@ async function aplicarPeriodo(confirmar) {
       renderizarConflitos(document.getElementById('periodo-aviso-conflito'), x.conflitos, x.total_alvo, () => aplicarPeriodo(true));
       return;
     }
-    alert(`${x.aplicados} horário(s) aplicado(s) de ${x.data_inicio} até ${x.data_fim}.` + (x.conflitos ? ` (${x.conflitos} já tinham reserva de médico -- lembre de avisá-los.)` : ''));
+    alert(_mensagemResultadoReplicacao(x, `de ${x.data_inicio} até ${x.data_fim}`));
     fecharModais();
   } catch (e) {
     alert('Erro ao replicar: ' + e);
@@ -378,7 +405,7 @@ async function aplicarMes(confirmar) {
       renderizarConflitos(document.getElementById('mes-aviso-conflito'), x.conflitos, x.total_alvo, () => aplicarMes(true));
       return;
     }
-    alert(`${x.aplicados} horário(s) aplicado(s) em ${MESES[mesSelecionado - 1]}/${ano}.` + (x.conflitos ? ` (${x.conflitos} já tinham reserva de médico -- lembre de avisá-los.)` : ''));
+    alert(_mensagemResultadoReplicacao(x, `em ${MESES[mesSelecionado - 1]}/${ano}`));
     fecharModais();
   } catch (e) {
     alert('Erro ao replicar: ' + e);

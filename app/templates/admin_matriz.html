@@ -85,9 +85,9 @@
   .btn-mes { padding: 10px 6px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--navy); }
   .btn-mes.selecionado { background: var(--navy); color: #fff; border-color: var(--navy); }
 
-  .lista-conflitos, .lista-relatorio { list-style: none; margin: 0 0 14px; padding: 0; font-size: 12.5px; max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
-  .lista-conflitos li, .lista-relatorio li { padding: 8px 10px; border-bottom: 1px solid var(--line); }
-  .lista-conflitos li:last-child, .lista-relatorio li:last-child { border-bottom: none; }
+  .lista-conflitos { list-style: none; margin: 0 0 14px; padding: 0; font-size: 12.5px; max-height: 220px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+  .lista-conflitos li { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  .lista-conflitos li:last-child { border-bottom: none; }
   .aviso-conflito { background: var(--coral-soft); color: var(--coral); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; margin-bottom: 12px; font-weight: 600; }
 
   @media (max-width: 760px) {
@@ -101,8 +101,8 @@
 <div class="top"><strong>LIFEMAX ADMIN · MATRIZ DE AGENDAMENTO</strong></div>
 <div class="nav">
   <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-  <a href="{{ url_for('admin.agenda_horistas') }}">Agenda Horistas</a>
   <a href="{{ url_for('admin.matriz') }}" class="ativo">Gerar Matriz</a>
+  <a href="{{ url_for('admin.agenda_horistas') }}">Agenda Horistas</a>
   <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
   <a href="{{ url_for('admin.clientes') }}">Clientes</a>
   <a href="{{ url_for('admin.horas') }}">Horas</a>
@@ -123,7 +123,7 @@
     <div class="botoes-topo">
       <button type="button" class="btn-admin-acao destaque" onclick="abrirModalPeriodo()">Replicar matriz por período</button>
       <button type="button" class="btn-admin-acao destaque" onclick="abrirModalMes()">Replicar matriz por mês</button>
-      <button type="button" class="btn-admin-acao" onclick="abrirModalRelatorio()">Relatório</button>
+      <a href="{{ url_for('admin.matriz_visualizar_agenda') }}" class="btn-admin-acao" style="text-decoration:none; display:inline-flex; align-items:center;">Visualizar agenda</a>
     </div>
   </div>
 
@@ -160,18 +160,6 @@
     <div class="modal-botoes">
       <button type="button" class="btn-fechar-modal" onclick="fecharModais()">Cancelar</button>
       <button type="button" class="btn-confirmar" id="btn-aplicar-mes" onclick="aplicarMes()">Confirmar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Relatório -->
-<div class="modal-overlay" id="modal-relatorio">
-  <div class="modal-caixa">
-    <h2>Relatório de matrizes aplicadas</h2>
-    <p class="ajuda">Histórico de cada vez que a matriz foi replicada, mais recente primeiro.</p>
-    <ul class="lista-relatorio" id="lista-relatorio"></ul>
-    <div class="modal-botoes">
-      <button type="button" class="btn-fechar-modal" onclick="fecharModais()">Fechar</button>
     </div>
   </div>
 </div>
@@ -397,25 +385,6 @@ async function aplicarMes(confirmar) {
   }
 }
 
-// ---- Relatório -----------------------------------------------------
-
-async function abrirModalRelatorio() {
-  const lista = document.getElementById('lista-relatorio');
-  lista.innerHTML = '<li>Carregando...</li>';
-  document.getElementById('modal-relatorio').classList.add('visivel');
-  try {
-    const r = await fetch('/admin/api/matriz/relatorio');
-    const x = await r.json();
-    const itens = x.replicacoes || [];
-    lista.innerHTML = itens.length ? itens.map(rp => {
-      const dataAplicacao = (rp.criado_em || '').slice(0, 16).replace('T', ' ');
-      const tipoLabel = rp.tipo === 'mes' ? 'por mês' : 'por período';
-      return `<li><strong>${dataAplicacao}</strong> — replicada ${tipoLabel}, cobrindo ${rp.data_inicio} até ${rp.data_fim} — ${rp.aplicados} horário(s) aplicado(s)${rp.conflitos ? `, ${rp.conflitos} conflito(s) com médico` : ''}</li>`;
-    }).join('') : '<li>Nenhuma matriz replicada ainda.</li>';
-  } catch (e) {
-    lista.innerHTML = '<li>Erro ao carregar o relatório.</li>';
-  }
-}
 
 carregarTemplate();
 </script>

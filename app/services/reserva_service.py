@@ -188,19 +188,25 @@ def _checar_pode_alugar_avulso(medico: dict | None, criado_por_admin: bool = Fal
     reserva. Agora busca-se o médico uma vez só, no início de
     reservar_turno/reservar_por_hora, e passa pra cá e pro resto da
     função reaproveitando o mesmo dict.)"""
+    # Pedido do Paulo em 24/09/2026: o admin tem SEMPRE autonomia pra
+    # agendar (e cancelar) horário pra qualquer médico, de qualquer
+    # tipo_vinculo, mesmo sem acesso liberado ou cadastro completo --
+    # essas três checagens abaixo (autorização, tipo de vínculo, cadastro
+    # incompleto) existem pra proteger a RESERVA FEITA PELO PRÓPRIO
+    # MÉDICO nesta tela (avulso/site), não uma ação manual do admin em
+    # "Agendar para:" na Agenda Horistas. Por isso todas pulam quando
+    # criado_por_admin=True -- inclusive pra médico horista/fixo, que
+    # antes ficava bloqueado até nessa tela do admin (bug reportado pelo
+    # Paulo: tentou agendar pra uma médica horista e caiu no aviso
+    # "Médicos horistas usam saldo de horas próprio...", que só devia
+    # valer pra reserva feita pelo próprio médico avulso).
+    if criado_por_admin:
+        return
     if medico and not medico.get("autorizado", True):
         raise NaoAutorizadoError()
     if medico and medico.get("tipo_vinculo") in ("fixo", "horista"):
         raise MedicoFixoNaoPodeAlugarError(medico.get("tipo_vinculo"))
-    # Pedido do Paulo em 23/09/2026 (itens 1 e 2): médico novo não espera
-    # mais liberação manual do admin (ver NaoAutorizadoError acima, que
-    # continua existindo só como bloqueio manual EXCEPCIONAL que o admin
-    # pode acionar em /admin/clientes) -- o requisito real agora é ter
-    # completado o cadastro. Reserva feita pelo próprio admin (Agenda
-    # Horistas "Agendar para:") não passa por essa checagem -- é o admin
-    # resolvendo manualmente, não faz sentido travar por um campo que o
-    # médico ainda não preencheu.
-    if medico and not criado_por_admin:
+    if medico:
         faltando = _campos_pessoais_faltando(medico)
         if faltando:
             raise DadosPessoaisIncompletosError(faltando)

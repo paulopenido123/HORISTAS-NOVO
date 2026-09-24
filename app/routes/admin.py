@@ -756,6 +756,18 @@ def matriz():
     return render_template('admin_matriz.html')
 
 
+@admin_bp.route('/matriz/visualizar-agenda')
+@_admin
+def matriz_visualizar_agenda():
+    """Botão "Visualizar agenda" na tela da Matriz -- pedido do Paulo em
+    24/09/2026 (item 2), no lugar do antigo botão "Relatório": mostra a
+    agenda completa (somente leitura) com TODOS os dias que já têm matriz
+    replicada de verdade (matriz_reservas_admin), com rolagem horizontal
+    E vertical, sem setas de avançar/voltar -- ver
+    admin_matriz_visualizar_agenda.html."""
+    return render_template('admin_matriz_visualizar_agenda.html')
+
+
 @admin_bp.route('/agenda-horistas')
 @_admin
 def agenda_horistas():
@@ -983,6 +995,25 @@ def api_matriz_relatorio():
     resp = (db.get_client().table('matriz_replicacoes').select('*')
             .order('criado_em', desc=True).limit(200).execute())
     return {'replicacoes': resp.data}
+
+
+@admin_bp.route('/api/matriz/intervalo-criado', methods=['GET'])
+@_admin
+def api_matriz_intervalo_criado():
+    """Usado pela tela "Visualizar agenda" (item 2, pedido do Paulo em
+    24/09/2026): descobre o intervalo de datas que JÁ tem matriz
+    replicada de verdade (matriz_reservas_admin -- é o que "Replicar
+    matriz por período/mês" cria), pra tela buscar exatamente "todos os
+    dias das agendas criadas", nem mais nem menos."""
+    cliente = db.get_client()
+    primeira = cliente.table('matriz_reservas_admin').select('data').order('data', desc=False).limit(1).execute().data
+    ultima = cliente.table('matriz_reservas_admin').select('data').order('data', desc=True).limit(1).execute().data
+    if not primeira or not ultima:
+        return {'data_inicio': None, 'data_fim': None, 'dias': 0}
+    data_inicio = date.fromisoformat(primeira[0]['data'])
+    data_fim = date.fromisoformat(ultima[0]['data'])
+    dias = (data_fim - data_inicio).days + 1
+    return {'data_inicio': data_inicio.isoformat(), 'data_fim': data_fim.isoformat(), 'dias': dias}
 
 
 # ---------------------------------------------------------------------

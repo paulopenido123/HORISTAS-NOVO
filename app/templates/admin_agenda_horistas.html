@@ -115,6 +115,20 @@
   .btn-admin-acao:hover { background: #F3F7F8; }
   .btn-admin-acao.ativo { background: var(--navy); color: #fff; border-color: var(--navy); }
 
+  /* Pedido do Paulo em 24/09/2026 (item 1): botões deixaram de ser
+     brancos -- "Agendar para:" em teal (mesma cor de destaque usada em
+     "Replicar matriz..." na tela da Matriz) e "Cancelar agendamento" em
+     coral (mesma cor de aviso/cancelamento usada no resto do sistema),
+     pra ficar claro que são ações, não texto neutro. O estado ".ativo"
+     continua escurecendo o próprio botão (em vez de virar navy) pra não
+     perder a distinção de cor entre os dois quando um deles está ligado. */
+  .btn-admin-acao.btn-agendar-para { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .btn-admin-acao.btn-agendar-para:hover { background: #0C8F8A; }
+  .btn-admin-acao.btn-agendar-para.ativo { background: #0A716D; border-color: #0A716D; }
+  .btn-admin-acao.btn-cancelar-agendamento { background: var(--coral); color: #fff; border-color: var(--coral); }
+  .btn-admin-acao.btn-cancelar-agendamento:hover { background: #C04B30; }
+  .btn-admin-acao.btn-cancelar-agendamento.ativo { background: #A83E27; border-color: #A83E27; }
+
   .banner-acao { display: none; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
     background: var(--coral-soft); color: var(--coral); border: 1px solid #f3c9b9; border-radius: 10px;
     padding: 12px 16px; margin-bottom: 10px; font-size: 13.5px; font-weight: 600; }
@@ -138,11 +152,24 @@
   .modal-overlay.visivel { display: flex; }
   .modal-caixa { background: #fff; border-radius: 12px; max-width: 420px; width: 100%; max-height: 80vh;
     overflow-y: auto; padding: 18px; }
-  .modal-caixa h2 { margin: 0 0 12px; font-size: 16px; color: var(--navy); }
+  .modal-caixa h2 { margin: 0; font-size: 16px; color: var(--navy); }
+  /* Item 2 (pedido do Paulo em 24/09/2026): botão "Cancelar" subiu pro
+     topo da tela do modal (voltar pra grade), e entrou um campo de busca
+     por nome + botão "Buscar" antes da lista de médicos. */
+  .modal-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .modal-fechar-topo { flex-shrink: 0; padding: 7px 12px; border-radius: 7px; border: 1px solid var(--line);
+    background: #fff; color: var(--muted); font-weight: 700; font-size: 12.5px; cursor: pointer; }
+  .modal-fechar-topo:hover { background: #F3F7F8; }
+  .modal-busca { display: flex; gap: 8px; margin-bottom: 12px; }
+  .modal-busca input { flex: 1; min-width: 0; padding: 9px 10px; border-radius: 7px; border: 1px solid var(--line);
+    font-size: 14px; font-family: inherit; }
+  .modal-busca input:focus { outline: 2px solid var(--teal); border-color: var(--teal); }
+  .btn-buscar-medico { flex-shrink: 0; padding: 9px 16px; border-radius: 7px; border: 1px solid var(--teal);
+    background: var(--teal); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .btn-buscar-medico:hover { background: #0C8F8A; }
   .modal-lista-medicos { list-style: none; margin: 0; padding: 0; }
   .modal-lista-medicos li { padding: 10px 8px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 14px; }
   .modal-lista-medicos li:hover { background: var(--teal-soft); }
-  .modal-fechar { margin-top: 12px; background: none; border: 0; color: var(--muted); font-size: 13px; cursor: pointer; }
 
   @media (max-width: 760px) {
     .top, .nav { padding: 14px 16px; }
@@ -155,8 +182,8 @@
 <div class="top"><strong>LIFEMAX ADMIN · AGENDA HORISTAS</strong></div>
 <div class="nav">
   <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-  <a href="{{ url_for('admin.agenda_horistas') }}" class="ativo">Agenda Horistas</a>
   <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
+  <a href="{{ url_for('admin.agenda_horistas') }}" class="ativo">Agenda Horistas</a>
   <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
   <a href="{{ url_for('admin.clientes') }}">Clientes</a>
   <a href="{{ url_for('admin.horas') }}">Horas</a>
@@ -188,8 +215,8 @@
       <span><span class="dot bege"></span> Indisponível</span>
     </div>
     <div style="display:flex; gap:8px;">
-      <button type="button" class="btn-admin-acao" id="btn-agendar-para" onclick="abrirModalMedicos()">Agendar para:</button>
-      <button type="button" class="btn-admin-acao" id="btn-cancelar-agendamento" onclick="iniciarModoCancelar()">Cancelar agendamento</button>
+      <button type="button" class="btn-admin-acao btn-agendar-para" id="btn-agendar-para" onclick="abrirModalMedicos()">Agendar para:</button>
+      <button type="button" class="btn-admin-acao btn-cancelar-agendamento" id="btn-cancelar-agendamento" onclick="iniciarModoCancelar()">Cancelar agendamento</button>
     </div>
   </div>
 
@@ -203,9 +230,16 @@
 
 <div class="modal-overlay" id="modal-medicos">
   <div class="modal-caixa">
-    <h2>Agendar para qual profissional?</h2>
+    <div class="modal-topo">
+      <h2>Agendar para qual profissional?</h2>
+      <button type="button" class="modal-fechar-topo" onclick="fecharModalMedicos()">Cancelar</button>
+    </div>
+    <div class="modal-busca">
+      <input type="text" id="busca-medico-input" placeholder="Nome do médico"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();buscarMedicoNoModal();}">
+      <button type="button" class="btn-buscar-medico" onclick="buscarMedicoNoModal()">Buscar</button>
+    </div>
     <ul class="modal-lista-medicos" id="modal-lista-medicos"></ul>
-    <button type="button" class="modal-fechar" onclick="fecharModalMedicos()">Cancelar</button>
   </div>
 </div>
 
@@ -271,21 +305,43 @@ function resetarModoAcao() {
 
 // ---- "Agendar para:" ----------------------------------------------
 
+// Lista completa de médicos carregada ao abrir o modal -- o campo de
+// busca + botão "Buscar" (item 2, pedido do Paulo em 24/09/2026) só
+// filtram essa lista já carregada, sem precisar ir ao banco de novo a
+// cada busca.
+let todosMedicosModal = [];
+
 async function abrirModalMedicos() {
   const overlay = document.getElementById('modal-medicos');
   const lista = document.getElementById('modal-lista-medicos');
+  const input = document.getElementById('busca-medico-input');
+  input.value = '';
   lista.innerHTML = '<li style="cursor:default;color:var(--muted);">Carregando...</li>';
   overlay.classList.add('visivel');
   try {
     const r = await fetch('/admin/api/agenda-horistas/medicos');
     const x = await r.json();
-    const medicos = x.medicos || [];
-    lista.innerHTML = medicos.length
-      ? medicos.map(m => `<li onclick='escolherMedico(${JSON.stringify(m.id)}, ${JSON.stringify(m.nome)})'>${m.nome}</li>`).join('')
-      : '<li style="cursor:default;color:var(--muted);">Nenhum médico avulso cadastrado.</li>';
+    todosMedicosModal = x.medicos || [];
+    renderizarListaMedicosModal(todosMedicosModal);
   } catch (e) {
     lista.innerHTML = '<li style="cursor:default;color:var(--coral);">Erro ao carregar médicos.</li>';
   }
+  input.focus();
+}
+
+function renderizarListaMedicosModal(medicos) {
+  const lista = document.getElementById('modal-lista-medicos');
+  lista.innerHTML = medicos.length
+    ? medicos.map(m => `<li onclick='escolherMedico(${JSON.stringify(m.id)}, ${JSON.stringify(m.nome)})'>${m.nome}</li>`).join('')
+    : '<li style="cursor:default;color:var(--muted);">Nenhum médico encontrado.</li>';
+}
+
+function buscarMedicoNoModal() {
+  const termo = document.getElementById('busca-medico-input').value.trim().toLowerCase();
+  const filtrados = termo
+    ? todosMedicosModal.filter(m => (m.nome || '').toLowerCase().includes(termo))
+    : todosMedicosModal;
+  renderizarListaMedicosModal(filtrados);
 }
 
 function fecharModalMedicos() {

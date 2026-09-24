@@ -52,20 +52,23 @@ def listar_bloqueios() -> list[dict]:
     return resp.data + _bloqueios_fixos_fim_de_semana()
 
 
-# Regra fixa -- pedido do Paulo em 15/09/2026: sábado e domingo, a partir
-# de 12h (ou seja, os horários de tarde e noite: 13h em diante), ficam
-# SEMPRE bloqueados para reserva, em TODOS os consultórios, sem precisar
-# de nenhuma configuração manual na Semana Padrão. Isso entra
-# automaticamente em qualquer lugar que já use listar_bloqueios(): a
-# Grade de Turnos do médico, a Agenda Horistas do admin (fica cinza,
-# igual aos outros bloqueios) e a própria checagem de disponibilidade
-# em verificar_disponibilidade (então o horário fica de fato indisponível
-# pra reservar, não só visualmente cinza) -- e a Matriz de Agendamento
-# também passa a refletir isso automaticamente (ver app/routes/admin.py
-# api_matriz_template, que agora busca os bloqueios daqui em vez de ler
-# a tabela direto).
-_DIAS_FIM_DE_SEMANA = (0, 6)  # 0=domingo, 6=sábado (mesma convenção do dia_semana_de)
-_HORARIOS_BLOQUEADOS_FIM_DE_SEMANA = HORARIOS_POR_PERIODO["tarde"] + HORARIOS_POR_PERIODO["noite"]
+# Regra fixa -- pedido do Paulo em 15/09/2026 (sábado e domingo, a partir
+# de 12h) e AJUSTADA em 24/09/2026 (item 1): domingo passou a ficar
+# bloqueado o DIA INTEIRO (manhã também, não só tarde/noite) -- sábado
+# continua igual, só tarde/noite. Ficam SEMPRE bloqueados para reserva,
+# em TODOS os consultórios, sem precisar de nenhuma configuração manual
+# na Semana Padrão. Isso entra automaticamente em qualquer lugar que já
+# use listar_bloqueios(): a Grade de Turnos do médico, a Agenda Horistas
+# do admin (fica cinza, igual aos outros bloqueios) e a própria checagem
+# de disponibilidade em verificar_disponibilidade (então o horário fica
+# de fato indisponível pra reservar, não só visualmente cinza) -- e a
+# Matriz de Agendamento também passa a refletir isso automaticamente (ver
+# app/routes/admin.py api_matriz_template, que agora busca os bloqueios
+# daqui em vez de ler a tabela direto).
+_DIA_DOMINGO = 0
+_DIA_SABADO = 6
+_HORARIOS_BLOQUEADOS_DOMINGO = HORARIOS_DO_DIA  # dia inteiro
+_HORARIOS_BLOQUEADOS_SABADO = HORARIOS_POR_PERIODO["tarde"] + HORARIOS_POR_PERIODO["noite"]
 
 
 _CACHE_CONSULTORIO_IDS: dict = {"ids": None, "expira_em": 0.0}
@@ -87,8 +90,8 @@ def _bloqueios_fixos_fim_de_semana() -> list[dict]:
     return [
         {"consultorio_id": cid, "dia_semana": dia, "hora_inicio": hora}
         for cid in consultorio_ids
-        for dia in _DIAS_FIM_DE_SEMANA
-        for hora in _HORARIOS_BLOQUEADOS_FIM_DE_SEMANA
+        for dia, horarios in ((_DIA_DOMINGO, _HORARIOS_BLOQUEADOS_DOMINGO), (_DIA_SABADO, _HORARIOS_BLOQUEADOS_SABADO))
+        for hora in horarios
     ]
 
 

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visualizar agenda — Lifemax Admin</title>
+<style>
+  :root {
+    --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --teal-soft: #EAF4F3;
+    --line: #DCE6E8; --muted: #55707C; --coral: #D65C3F;
+    --bege: #C8CDD1; --verde: #9BE79A; --rosa: #FFB8C0;
+    /* Mesma paleta da Agenda Horistas / Matriz / Grade de Turnos, pra
+       ficar visualmente igual -- pedido do Paulo em 14/09/2026. */
+    --azul-confirmado: #22A7C5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Inter, Arial, sans-serif;
+    background: #F5F8F9; color: #10222E;
+  }
+  .top { background: var(--navy); color: #fff; padding: 18px 28px; display:flex; justify-content:space-between; align-items:center; }
+  .nav { padding: 14px 28px; background: #fff; border-bottom: 1px solid #e3ebef; }
+  .nav a { margin-right: 18px; color: #0B3A52; text-decoration: none; font-weight: 600; font-size: 14px; }
+  .nav a.ativo { color: var(--teal); border-bottom: 2px solid var(--teal); padding-bottom: 4px; }
+  .container { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  h1 { font-size: 19px; margin: 0 0 4px; }
+  .subtitulo { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+
+  .barra-controles {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    background: white; border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; margin-bottom: 10px;
+  }
+  .legenda { display: flex; gap: 16px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot.livre { background: var(--verde); }
+  .dot.reservado { background: var(--azul-confirmado); }
+  .dot.bloqueado { background: var(--rosa); }
+  .dot.bege { background: var(--bege); }
+  .periodo-atual { font-size: 13px; font-weight: 700; color: var(--navy); }
+
+  #lista-consultorios { display: flex; flex-direction: column; gap: 3px; }
+  .bloco-consultorio { background: white; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .bloco-consultorio-header {
+    padding: 3px 10px; border-bottom: 1px solid var(--line); background: #FAFCFC;
+    font-family: inherit; font-weight: 800; font-size: 14px; color: var(--navy);
+  }
+
+  /* Tela somente de leitura, com N dias (todos os dias que já têm matriz
+     replicada) -- não dá pra usar "repeat(7, 1fr)" como nas outras
+     grades porque o número de colunas é dinâmico e a rolagem é sempre
+     horizontal (largura fixa por dia), nunca "encaixando" na tela --
+     pedido do Paulo em 24/09/2026 (item 2): sem setas de avançar/
+     voltar, só a barra de rolagem horizontal E vertical mesmo. */
+  .grade-cabecalho { display: grid; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; background: #fff; }
+  .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia { text-align: center; padding: 5px 4px; font-size: 13.5px; font-weight: 800; color: #10222E; border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia .numero { font-size: 15px; font-weight: 800; }
+  .grade-cabecalho .col-dia .mes { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+  .grade-scroll-vertical { max-height: 620px; overflow-y: auto; overflow-x: auto; padding: 7px 0; }
+  .grade-corpo { display: grid; position: relative; }
+  .coluna-horas { position: relative; border-right: 1px solid var(--line); position: sticky; left: 0; z-index: 1; background: #fff; }
+  .coluna-horas .marca-hora { position: absolute; left: 0; right: 0; font-size: 12px; font-weight: 700; color: #10222E; text-align: right; padding-right: 6px; transform: translateY(-50%); }
+  .coluna-dia {
+    border-right: 1px solid var(--line); position: relative;
+    background-image: repeating-linear-gradient(to bottom, #f1f4f5 0, #f1f4f5 1px, transparent 1px, transparent 21.6px);
+  }
+  .faixa-bege { position: absolute; left: 0; right: 0; background: var(--bege); pointer-events: none; z-index: 0; }
+  .slot-vago { position: absolute; left: 2px; right: 2px; border-radius: 3px; border: 1px dashed #e3e8ea; box-sizing: border-box; background: var(--verde); }
+  .bloco-reserva {
+    position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 0 4px; overflow: hidden;
+    font-size: 10.5px; line-height: 1.1; box-shadow: 0 1px 3px rgba(0,0,0,.15); box-sizing: border-box;
+    display: flex; align-items: center; gap: 4px; white-space: nowrap;
+  }
+  .bloco-reserva.reservado { background: var(--azul-confirmado); border: 1.5px solid #0E6B7D; }
+  .bloco-reserva.bloqueado { background: var(--rosa); border: 1.5px solid #C24A63; }
+  .bloco-reserva .h { font-weight: 800; color: #10222E; }
+  .bloco-reserva .nome { font-weight: 800; color: #10222E; overflow: hidden; text-overflow: ellipsis; }
+
+  .aviso-vazio { background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted); }
+
+  @media (max-width: 760px) {
+    .top, .nav { padding: 14px 16px; }
+    .container { padding: 14px 12px 50px; }
+  }
+</style>
+</head>
+<body>
+<div class="top"><strong>LIFEMAX ADMIN · VISUALIZAR AGENDA</strong></div>
+<div class="nav">
+  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('admin.matriz') }}" class="ativo">Gerar Matriz</a>
+  <a href="{{ url_for('admin.agenda_horistas') }}">Agenda Horistas</a>
+  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
+  <a href="{{ url_for('admin.clientes') }}">Clientes</a>
+  <a href="{{ url_for('admin.horas') }}">Horas</a>
+  <a href="{{ url_for('admin.relatorios') }}">Relatórios</a><a href="{{ url_for('admin.controle_ia') }}">Controle de IA</a>
+  <a href="{{ url_for('admin.admin_logout') }}">Sair</a>
+</div>
+
+<div class="container">
+  <h1>Visualizar agenda</h1>
+  <p class="subtitulo">Agenda completa, somente leitura, com todos os dias que já têm matriz replicada (via "Replicar matriz por período" ou "por mês"). Use a barra de rolagem horizontal para ver os outros dias, e a vertical para ver os outros horários.</p>
+
+  <div class="barra-controles">
+    <div class="legenda">
+      <span><span class="dot livre"></span> Livre</span>
+      <span><span class="dot reservado"></span> Reservado (nome do profissional)</span>
+      <span><span class="dot bloqueado"></span> Bloqueado pelo administrador</span>
+      <span><span class="dot bege"></span> Indisponível</span>
+    </div>
+    <div class="periodo-atual" id="periodo-atual">Carregando...</div>
+  </div>
+
+  <div id="lista-consultorios"><div class="aviso-vazio">Carregando...</div></div>
+</div>
+
+<script>
+const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:30', '18:30', '19:30'];
+const GRID_INICIO_MIN = 8 * 60;
+const GRID_FIM_MIN = 20 * 60 + 30;
+const PX_POR_MIN = 0.36;
+const LARGURA_COL_HORA = 64;
+const LARGURA_COL_DIA = 76;
+
+const MARCAS_GRADE = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
+                       '17:00', '17:30', '18:30', '19:30', '20:30'];
+
+const HORARIOS_DO_TURNO = {
+  manha: ['08:00', '09:00', '10:00', '11:00'],
+  tarde: ['13:00', '14:00', '15:00', '16:00'],
+  noite: ['17:30', '18:30', '19:30'],
+};
+
+const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+let gradeAtual = { consultorios: [], reservas: [], reservas_admin: [], bloqueios_template: [] };
+let diasAtual = [];
+
+function _minutosDeHora(hora) {
+  const [hh, mm] = hora.split(':').map(Number);
+  return hh * 60 + mm;
+}
+
+function somarDias(iso, n) {
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function formatarDataCurta(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return { dia: DIAS_SEMANA[d.getDay()], numero: String(d.getDate()).padStart(2, '0'), mes: MESES_ABREV[d.getMonth()] };
+}
+
+// Mesma lógica de faixasBegeDoDia usada em admin_agenda_horistas.html /
+// turnos.html: junta os intervalos bloqueados consecutivos numa faixa
+// cinza só, em vez de caixinha por horário.
+function faixasBegeDoDia(consultorioId, dataIso) {
+  const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
+  const bloqueiosTemplate = gradeAtual.bloqueios_template || [];
+  const bloqueadoNoHorario = (hora) => bloqueiosTemplate.some(b =>
+    b.consultorio_id === consultorioId && b.dia_semana === diaSemana && b.hora_inicio === hora
+  );
+
+  const intervalosReservaveis = HORARIOS
+    .filter(hora => !bloqueadoNoHorario(hora))
+    .map(hora => { const inicio = _minutosDeHora(hora); return [inicio, inicio + 60]; })
+    .sort((a, b) => a[0] - b[0]);
+
+  const faixas = [];
+  let cursor = GRID_INICIO_MIN;
+  for (const [inicio, fim] of intervalosReservaveis) {
+    const inicioClamp = Math.max(inicio, GRID_INICIO_MIN);
+    const fimClamp = Math.min(fim, GRID_FIM_MIN);
+    if (inicioClamp >= GRID_FIM_MIN || fimClamp <= GRID_INICIO_MIN) continue;
+    if (inicioClamp > cursor) faixas.push([cursor, inicioClamp]);
+    cursor = Math.max(cursor, fimClamp);
+  }
+  if (cursor < GRID_FIM_MIN) faixas.push([cursor, GRID_FIM_MIN]);
+  return faixas;
+}
+
+function renderizarGrade() {
+  const dias = diasAtual;
+  const colunasTemplate = `${LARGURA_COL_HORA}px repeat(${dias.length}, ${LARGURA_COL_DIA}px)`;
+  const larguraTotal = LARGURA_COL_HORA + dias.length * LARGURA_COL_DIA;
+
+  const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
+    dias.map(d => {
+      const { dia, numero, mes } = formatarDataCurta(d);
+      return `<div class="col-dia">${dia}<div class="numero">${numero}</div><div class="mes">${mes}</div></div>`;
+    }).join('');
+
+  const alturaTotal = (GRID_FIM_MIN - GRID_INICIO_MIN) * PX_POR_MIN;
+
+  let colunaHoras = `<div class="coluna-horas" style="height:${alturaTotal}px;">`;
+  MARCAS_GRADE.forEach(h => {
+    const top = (_minutosDeHora(h) - GRID_INICIO_MIN) * PX_POR_MIN;
+    colunaHoras += `<div class="marca-hora" style="top:${top}px;">${h}</div>`;
+  });
+  colunaHoras += `</div>`;
+
+  // ocupação: pra cada consultório+data+hora, o nome de quem reservou --
+  // visão do administrador, nunca oculta o nome.
+  const ocupacao = {};
+  for (const h of (gradeAtual.reservas_admin || [])) {
+    ocupacao[`${h.consultorio_id}|${h.data}|${h.horario.slice(0,5)}`] = { nome: h.descricao || 'Bloqueado', bloqueado: true };
+  }
+  for (const r of (gradeAtual.reservas || [])) {
+    const nomeMedico = (r.medicos && r.medicos.nome) || 'Reservado';
+    let horariosOcupados;
+    if (r.tipo_reserva === 'hora' && r.hora_inicio) {
+      const horaInicioReal = r.hora_inicio.slice(0, 5);
+      const idxInicio = HORARIOS.indexOf(horaInicioReal);
+      const qtd = r.quantidade_horas || 1;
+      horariosOcupados = idxInicio >= 0 ? HORARIOS.slice(idxInicio, idxInicio + qtd) : [horaInicioReal];
+    } else {
+      horariosOcupados = HORARIOS_DO_TURNO[r.periodo] || [];
+    }
+    for (const h of horariosOcupados) {
+      ocupacao[`${r.consultorio_id}|${r.data}|${h}`] = { nome: nomeMedico, bloqueado: false };
+    }
+  }
+
+  const blocosHtml = (gradeAtual.consultorios || []).map(consultorio => {
+    const colunasDias = dias.map(dataIso => {
+      let html = `<div class="coluna-dia" style="height:${alturaTotal}px;">`;
+
+      faixasBegeDoDia(consultorio.id, dataIso).forEach(([inicio, fim]) => {
+        const top = (inicio - GRID_INICIO_MIN) * PX_POR_MIN;
+        const altura = (fim - inicio) * PX_POR_MIN;
+        html += `<div class="faixa-bege" style="top:${top}px; height:${altura}px;"></div>`;
+      });
+
+      HORARIOS.forEach(hora => {
+        const minutos = _minutosDeHora(hora);
+        if (minutos < GRID_INICIO_MIN || minutos >= GRID_FIM_MIN) return;
+        const top = (minutos - GRID_INICIO_MIN) * PX_POR_MIN;
+        const altura = 60 * PX_POR_MIN;
+        const chave = `${consultorio.id}|${dataIso}|${hora}`;
+        const ocupado = ocupacao[chave];
+        const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
+        const indisponivel = (gradeAtual.bloqueios_template || []).some(b =>
+          b.consultorio_id === consultorio.id && b.dia_semana === diaSemana && b.hora_inicio === hora
+        );
+
+        if (ocupado) {
+          const classe = ocupado.bloqueado ? 'bloqueado' : 'reservado';
+          html += `<div class="bloco-reserva ${classe}" style="top:${top}px; height:${altura}px;" title="${ocupado.nome}">
+            <div class="h">${hora}</div><div class="nome">${ocupado.nome}</div>
+          </div>`;
+        } else if (indisponivel) {
+          // faixa-bege já cobre o intervalo inteiro -- sem caixinha por horário.
+        } else {
+          html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;" title="Livre"></div>`;
+        }
+      });
+
+      html += `</div>`;
+      return html;
+    }).join('');
+
+    return `<div class="bloco-consultorio">
+      <div class="bloco-consultorio-header">${consultorio.nome}</div>
+      <div class="grade-scroll-vertical">
+        <div class="grade-cabecalho" style="grid-template-columns:${colunasTemplate}; min-width:${larguraTotal}px;">${cabecalhoDiasHtml}</div>
+        <div class="grade-corpo" style="grid-template-columns:${colunasTemplate}; min-width:${larguraTotal}px;">${colunaHoras + colunasDias}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('lista-consultorios').innerHTML = blocosHtml ||
+    '<div class="aviso-vazio">Nenhum consultório cadastrado ainda.</div>';
+}
+
+async function carregar() {
+  const periodoEl = document.getElementById('periodo-atual');
+  const listaEl = document.getElementById('lista-consultorios');
+  try {
+    const rIntervalo = await fetch('/admin/api/matriz/intervalo-criado');
+    const intervalo = await rIntervalo.json();
+    if (!intervalo.data_inicio) {
+      periodoEl.textContent = '';
+      listaEl.innerHTML = '<div class="aviso-vazio">Nenhuma matriz foi replicada ainda -- use "Replicar matriz por período" ou "por mês" primeiro.</div>';
+      return;
+    }
+    const dias = intervalo.dias;
+    diasAtual = [];
+    for (let i = 0; i < dias; i++) diasAtual.push(somarDias(intervalo.data_inicio, i));
+
+    const fIni = formatarDataCurta(intervalo.data_inicio);
+    const fFim = formatarDataCurta(intervalo.data_fim);
+    periodoEl.textContent = `${fIni.numero}/${fIni.mes} até ${fFim.numero}/${fFim.mes} (${dias} dia${dias > 1 ? 's' : ''})`;
+
+    const resp = await fetch(`/admin/api/agenda-horistas/grade?data_inicio=${intervalo.data_inicio}&dias=${dias}`);
+    gradeAtual = await resp.json();
+    renderizarGrade();
+  } catch (e) {
+    listaEl.innerHTML = '<div class="aviso-vazio">Erro ao carregar a agenda.</div>';
+  }
+}
+
+carregar();
+</script>
+</body>
+</html>

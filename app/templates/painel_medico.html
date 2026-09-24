@@ -173,9 +173,13 @@
      cancelou um horário pela Agenda Horistas. */
   .aviso-admin { display:block; margin-top:3px; font-size: 12px; font-weight:600; color: var(--teal); }
   .aviso-admin.cancelamento { color: var(--coral); }
-  .btn-cancelar { background: var(--coral-soft); color: var(--coral); border:1px solid rgba(214,92,63,0.3); border-radius:6px; padding:4px 9px; font-family: var(--display); font-weight:600; font-size: 12px; cursor:pointer; }
+  .btn-cancelar { background: #000; color: #fff; border:1px solid #000; border-radius:6px; padding:4px 9px; font-family: var(--display); font-weight:600; font-size: 12px; cursor:pointer; }
   .btn-cancelar:disabled { opacity:0.5; cursor:not-allowed; }
   .aviso-linha-12h { color: var(--coral); font-size: 12px; font-weight:600; margin-top:4px; max-width:180px; }
+  /* Pedido do Paulo em 24/09/2026: horários do dia atual (hoje) destacados
+     com fundo verde claro em "Minha agenda", pra facilitar a visualização
+     dos horários que o profissional tem no dia de hoje. */
+  #corpo-tabela-agenda tr.linha-hoje { background: #E3F6E5; }
   .painel-topo { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
   .painel-topo h2 { margin-bottom:0; }
   .botoes-agenda { display:flex; gap:8px; flex-wrap:wrap; }
@@ -1058,6 +1062,19 @@ function alternarAgenda() {
   bloco.style.display = oculto ? '' : 'none';
   btn.textContent = oculto ? 'Ocultar' : 'Exibir';
 }
+
+// Pedido do Paulo em 24/09/2026: destacar (fundo verde claro) os horários
+// de "Minha agenda" que são do dia de hoje, pra facilitar a visualização.
+function _marcarLinhasDeHoje() {
+  const corpo = document.getElementById('corpo-tabela-agenda');
+  if (!corpo) return;
+  const hoje = new Date();
+  const hojeIso = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
+  corpo.querySelectorAll('tr[data-data-iso]').forEach(function (tr) {
+    tr.classList.toggle('linha-hoje', tr.getAttribute('data-data-iso') === hojeIso);
+  });
+}
+document.addEventListener('DOMContentLoaded', _marcarLinhasDeHoje);
 
 function abrirModalCompra(destino) {
   // restaura o formulario original do zero toda vez que o modal abre --

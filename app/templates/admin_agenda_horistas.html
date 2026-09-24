@@ -289,6 +289,12 @@ function csrfHeader() {
   return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
 }
 
+// Pedido do Paulo em 24/09/2026: datas mostradas pro admin em texto
+// sempre em dia/mês/ano (nunca ano-mês-dia) -- só pra exibição.
+function _formatarDataBR(dataIso) {
+  return `${dataIso.slice(8, 10)}/${dataIso.slice(5, 7)}/${dataIso.slice(0, 4)}`;
+}
+
 function resetarModoAcao() {
   modoAtual = null;
   medicoSelecionado = null;
@@ -398,7 +404,7 @@ async function confirmarAgendamento() {
     }
     if (x.erros && x.erros.length) {
       msg += `\n\n${x.erros.length} não puderam ser agendados:\n` +
-        x.erros.map(e => `${e.data} ${e.hora_inicio}: ${e.erro}`).join('\n');
+        x.erros.map(e => `${_formatarDataBR(e.data)} ${e.hora_inicio}: ${e.erro}`).join('\n');
     }
     alert(msg);
     resetarModoAcao();
@@ -445,7 +451,7 @@ function irParaRevisaoCancelar() {
   etapaCancelar = 'revisao';
   const banner = document.getElementById('banner-acao');
   const itens = Array.from(celulasSelecionadasCancelar.entries())
-    .map(([id, v]) => `<li>${v.consultorioNome} — ${v.data} ${v.hora} — <strong>${v.nome}</strong></li>`).join('');
+    .map(([id, v]) => `<li>${v.consultorioNome} — ${_formatarDataBR(v.data)} ${v.hora} — <strong>${v.nome}</strong></li>`).join('');
   document.getElementById('banner-texto').innerHTML =
     `Confirma o cancelamento destes horários? A restituição de horas segue a regra de sempre ` +
     `(reembolsa só se faltar 12h ou mais para o horário).<ul class="revisao-lista">${itens}</ul>`;

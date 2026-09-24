@@ -144,7 +144,7 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
         <tbody>
           {% for t in transacoes %}
           <tr>
-            <td>{{ t.criado_em[:10] }}</td>
+            <td>{{ t.criado_em[8:10] }}/{{ t.criado_em[5:7] }}/{{ t.criado_em[0:4] }}</td>
             <td>{{ 'IA' if (t.carteira or 'salas') == 'ia' else 'Salas/Horas' }}</td>
             <td>{{ {'compra': 'Recarga', 'consumo': 'Uso', 'ajuste': 'Ajuste'}.get(t.tipo, t.tipo) }}</td>
             <td>{{ t.descricao or '—' }}</td>

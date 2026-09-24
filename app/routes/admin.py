@@ -915,7 +915,15 @@ def _aplicar_template_no_periodo(data_inicio: date, data_fim: date, tipo: str, c
     # conflito e precisam de confirmação; guarda o id da reserva também,
     # pra poder cancelá-la de verdade se o admin confirmar a sobreposição.
     reservas_reais = (
-        client.table('reservas').select('id,consultorio_id,data,hora_inicio,medicos(nome)')
+        # medico_id PRECISA estar na lista (mesmo sem ser usado direto
+        # aqui) -- é a FK que o embed "medicos(nome)" usa pra buscar o
+        # nome; sem ela no select, o embutido não acha o médico e o nome
+        # vem sempre vazio (bug encontrado e corrigido em 24/09/2026,
+        # pedido do Paulo: a mensagem de sobreposição mostrava só a
+        # palavra genérica "Médico" em vez do nome de verdade -- ver
+        # pg_query.py._attach_embeds, que resolve o embed a partir da
+        # coluna FK já selecionada na linha, não busca ela de novo).
+        client.table('reservas').select('id,consultorio_id,data,hora_inicio,medico_id,medicos(nome)')
         .gte('data', data_inicio.isoformat()).lte('data', data_fim.isoformat())
         .neq('status', 'cancelada').execute().data
     )
@@ -1039,23 +1047,45 @@ def api_matriz_relatorio():
     return {'replicacoes': resp.data}
 
 
+DIAS_PASSADOS_VISUALIZAR_AGENDA = 5
+
+
 @admin_bp.route('/api/matriz/intervalo-criado', methods=['GET'])
 @_admin
 def api_matriz_intervalo_criado():
     """Usado pela tela "Visualizar agenda" (item 2, pedido do Paulo em
-    24/09/2026): descobre o intervalo de datas que JÁ tem matriz
-    replicada de verdade (matriz_reservas_admin -- é o que "Replicar
-    matriz por período/mês" cria), pra tela buscar exatamente "todos os
-    dias das agendas criadas", nem mais nem menos."""
+    24/09/2026; janela de dias passados ajustada em 24/09/2026, item 1):
+    descobre o intervalo de datas a mostrar -- só os últimos
+    DIAS_PASSADOS_VISUALIZAR_AGENDA dias passados, mais hoje, mais todo o
+    futuro que já tem matriz replicada de verdade (matriz_reservas_admin
+    -- é o que "Replicar matriz por período/mês" cria).
+
+    Também é AQUI que a limpeza automática acontece: bloqueio
+    administrativo (matriz_reservas_admin) com mais de
+    DIAS_PASSADOS_VISUALIZAR_AGENDA dias de passado é apagado do banco
+    direto, sem arquivar em lugar nenhum -- pedido explícito do Paulo.
+    Isso NUNCA toca a reserva de verdade do médico (tabela `reservas`)
+    nem o extrato financeiro (`creditos_transacoes`): essas continuam
+    intactas e aparecem normalmente em Relatórios/Histórico, que não
+    dependem de matriz_reservas_admin pra nada -- só o registro de "esse
+    horário foi bloqueado pela matriz" é descartado, porque essa tela é
+    a única que usa esse dado, e ele deixou de fazer sentido reter pra
+    trás de 5 dias."""
     cliente = db.get_client()
-    primeira = cliente.table('matriz_reservas_admin').select('data').order('data', desc=False).limit(1).execute().data
+    hoje = date.today()
+    limite_antigo = (hoje - timedelta(days=DIAS_PASSADOS_VISUALIZAR_AGENDA)).isoformat()
+    cliente.table('matriz_reservas_admin').delete().lt('data', limite_antigo).execute()
+
     ultima = cliente.table('matriz_reservas_admin').select('data').order('data', desc=True).limit(1).execute().data
-    if not primeira or not ultima:
+    if not ultima:
         return {'data_inicio': None, 'data_fim': None, 'dias': 0}
-    data_inicio = date.fromisoformat(primeira[0]['data'])
     data_fim = date.fromisoformat(ultima[0]['data'])
+    data_inicio = hoje - timedelta(days=DIAS_PASSADOS_VISUALIZAR_AGENDA)
+    if data_fim < data_inicio:
+        return {'data_inicio': None, 'data_fim': None, 'dias': 0}
     dias = (data_fim - data_inicio).days + 1
-    return {'data_inicio': data_inicio.isoformat(), 'data_fim': data_fim.isoformat(), 'dias': dias}
+    return {'data_inicio': data_inicio.isoformat(), 'data_fim': data_fim.isoformat(), 'dias': dias,
+            'hoje': hoje.isoformat()}
 
 
 # ---------------------------------------------------------------------

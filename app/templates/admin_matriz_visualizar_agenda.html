@@ -73,6 +73,17 @@
     border-right: 1px solid var(--line); position: relative;
     background-image: repeating-linear-gradient(to bottom, #f1f4f5 0, #f1f4f5 1px, transparent 1px, transparent 21.6px);
   }
+  /* Item 2 (pedido do Paulo em 24/09/2026): dias passados (dentro da
+     janela dos últimos DIAS_PASSADOS_VISUALIZAR_AGENDA dias, ver
+     admin.py) ficam num tom mais escuro -- só o FUNDO da coluna, os
+     blocos de reserva/bloqueio/livre em cima continuam com as mesmas
+     cores de sempre (são elementos à parte, sobrepostos), então
+     continuam fáceis de ler; só fica claro que aquele dia já passou. */
+  .coluna-dia.passado {
+    background-color: #DCE3E6;
+    background-image: repeating-linear-gradient(to bottom, #cfd7da 0, #cfd7da 1px, transparent 1px, transparent 21.6px);
+  }
+  .grade-cabecalho .col-dia.passado { background: #DCE3E6; color: #3E4F56; }
   .faixa-bege { position: absolute; left: 0; right: 0; background: var(--bege); pointer-events: none; z-index: 0; }
   .slot-vago { position: absolute; left: 2px; right: 2px; border-radius: 3px; border: 1px dashed #e3e8ea; box-sizing: border-box; background: var(--verde); }
   .bloco-reserva {
@@ -146,6 +157,10 @@ const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Se
 
 let gradeAtual = { consultorios: [], reservas: [], reservas_admin: [], bloqueios_template: [] };
 let diasAtual = [];
+// Data de hoje (YYYY-MM-DD, vinda do backend) -- usada só pra marcar
+// visualmente as colunas de dias passados com um tom mais escuro (item
+// 2, pedido do Paulo em 24/09/2026).
+let hojeAtual = null;
 
 function _minutosDeHora(hora) {
   const [hh, mm] = hora.split(':').map(Number);
@@ -199,7 +214,8 @@ function renderizarGrade() {
   const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
     dias.map(d => {
       const { dia, numero, mes } = formatarDataCurta(d);
-      return `<div class="col-dia">${dia}<div class="numero">${numero}</div><div class="mes">${mes}</div></div>`;
+      const passado = hojeAtual && d < hojeAtual ? ' passado' : '';
+      return `<div class="col-dia${passado}">${dia}<div class="numero">${numero}</div><div class="mes">${mes}</div></div>`;
     }).join('');
 
   const alturaTotal = (GRID_FIM_MIN - GRID_INICIO_MIN) * PX_POR_MIN;
@@ -235,7 +251,8 @@ function renderizarGrade() {
 
   const blocosHtml = (gradeAtual.consultorios || []).map(consultorio => {
     const colunasDias = dias.map(dataIso => {
-      let html = `<div class="coluna-dia" style="height:${alturaTotal}px;">`;
+      const passado = hojeAtual && dataIso < hojeAtual ? ' passado' : '';
+      let html = `<div class="coluna-dia${passado}" style="height:${alturaTotal}px;">`;
 
       faixasBegeDoDia(consultorio.id, dataIso).forEach(([inicio, fim]) => {
         const top = (inicio - GRID_INICIO_MIN) * PX_POR_MIN;
@@ -295,6 +312,7 @@ async function carregar() {
       listaEl.innerHTML = '<div class="aviso-vazio">Nenhuma matriz foi replicada ainda -- use "Replicar matriz por período" ou "por mês" primeiro.</div>';
       return;
     }
+    hojeAtual = intervalo.hoje;
     const dias = intervalo.dias;
     diasAtual = [];
     for (let i = 0; i < dias; i++) diasAtual.push(somarDias(intervalo.data_inicio, i));

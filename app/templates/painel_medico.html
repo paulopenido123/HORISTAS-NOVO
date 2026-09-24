@@ -82,9 +82,7 @@
     .hero-saldo-bloco { text-align: left; }
   }
 
-  /* ---------- Status/kicker/tag/total (padrão "área do cliente") ---------- */
-  .kicker { font-weight: 700; font-size: 13px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 6px; }
-  .tag { display: inline-block; background: var(--cyan-soft); color: var(--cyan); font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 20px; }
+  /* ---------- total (padrão "área do cliente") ---------- */
   .total { font-weight: 800; font-size: 38px; color: var(--ink); font-family: var(--display); line-height: 1.1; margin: 4px 0 2px; }
   .muted-cell { font-size: 14px; color: var(--ink-muted); line-height: 1.55; }
   .aviso-saldo { background: var(--coral-soft); color: var(--coral); padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }
@@ -457,15 +455,8 @@ if ("serviceWorker" in navigator) {
     </div>
   </div>
 
-  <div class="painel">
-    <div style="display:flex; justify-content:space-between; gap:20px; align-items:end; flex-wrap:wrap;">
-      <div>
-        <div class="kicker">Status da contratação</div>
-        <h2 style="font-size:19px;">Olá, {{ (medico.nome.split(' ')[0].rstrip('.') if medico.nome else 'médico') }}.</h2>
-      </div>
-      <div><span class="tag">{{ 'Ativo' if medico.autorizado else 'Aguardando liberação' }}</span></div>
-    </div>
-  </div>
+  {# Bloco "Status da contratação" (Olá, {nome} + tag Ativo/Aguardando
+     liberação) removido a pedido do Paulo em 24/09/2026 (item 3). #}
 
   {# Botão "Reservar consultórios" -- pedido do Paulo em 14/09/2026: subiu
      de vez pra faixa azul escura do topo (hero), junto com "Saldo de
@@ -583,7 +574,7 @@ if ("serviceWorker" in navigator) {
       <tbody>
         {% for t in transacoes %}
         <tr>
-          <td>{{ t.criado_em[:10] }}</td>
+          <td>{{ t.criado_em[8:10] }}/{{ t.criado_em[5:7] }}/{{ t.criado_em[0:4] }}</td>
           <td>{{ 'IA' if (t.carteira or 'salas') == 'ia' else 'Salas/Horas' }}</td>
           <td>{{ {'compra': 'Recarga', 'consumo': 'Uso', 'ajuste': 'Ajuste'}.get(t.tipo, t.tipo) }}</td>
           <td>{{ t.descricao or '—' }}</td>

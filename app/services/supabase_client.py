@@ -412,11 +412,14 @@ def listar_reservas_medico(medico_id: str) -> list[dict]:
     """Reservas de HOJE em diante (turno ou hora avulsa, qualquer status)
     desse médico, com o nome do consultório já embutido -- usada na tela
     "Minha Agenda" (pedido do Paulo em 10/09/2026). Ordenadas por
-    data/horário DECRESCENTE (mais atual primeiro -- pedido do Paulo em
-    23/09/2026, item 3, mesmo padrão já usado no Histórico de
-    transações), calculado em Python porque turno guarda só `periodo`
-    (sem hora_inicio) e hora avulsa guarda hora_inicio -- os dois
-    precisam de uma chave de ordenação comum.
+    data/horário CRESCENTE (data mais próxima primeiro, mais distante
+    por último -- pedido do Paulo em 24/09/2026; ANTES de 23/09/2026 era
+    decrescente, igual ao Histórico de transações, mas agora que a lista
+    só mostra hoje em diante -- ver filtro `data >= hoje` abaixo --, faz
+    mais sentido pro médico ver o próximo compromisso no topo, não o mais
+    distante). Calculado em Python porque turno guarda só `periodo` (sem
+    hora_inicio) e hora avulsa guarda hora_inicio -- os dois precisam de
+    uma chave de ordenação comum.
 
     Pedido do Paulo em 24/09/2026: "Minha agenda" não mostra mais dias
     que já passaram -- filtra direto no banco (`data >= hoje`), mesmo
@@ -443,7 +446,7 @@ def listar_reservas_medico(medico_id: str) -> list[dict]:
             hora = PERIODOS_HORARIOS.get(r.get("periodo"), ("00:00",))[0]
         return (r.get("data") or "", hora)
 
-    reservas.sort(key=_chave_ordenacao, reverse=True)
+    reservas.sort(key=_chave_ordenacao)
     return reservas
 
 

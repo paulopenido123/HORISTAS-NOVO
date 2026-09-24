@@ -186,6 +186,15 @@ function csrfHeader() {
   return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
 }
 
+// Pedido do Paulo em 24/09/2026: datas mostradas pro admin em
+// dia/mês/ano (nunca mais ano-mês-dia) -- só pra exibição em texto; os
+// campos <input type="date"> continuam em ISO (é o formato que o HTML
+// exige) e as chaves internas usadas pra comparar/agrupar dados também
+// continuam em ISO, só o texto que a pessoa lê muda.
+function _formatarDataBR(dataIso) {
+  return `${dataIso.slice(8, 10)}/${dataIso.slice(5, 7)}/${dataIso.slice(0, 4)}`;
+}
+
 function _minutosDeHora(hora) {
   const [hh, mm] = hora.split(':').map(Number);
   return hh * 60 + mm;
@@ -335,7 +344,7 @@ function abrirModalPeriodo() {
 // deixar isso bem claro, em vermelho, antes do admin confirmar.
 function renderizarConflitos(container, conflitos, totalAlvo, onConfirmar) {
   const itens = conflitos.map(c =>
-    `<li><strong>${c.consultorio_nome}</strong> — ${c.data} às ${c.horario} — reservado por <strong>${c.medico_nome}</strong></li>`
+    `<li><strong>${c.consultorio_nome}</strong> — ${_formatarDataBR(c.data)} às ${c.horario} — reservado por <strong>${c.medico_nome}</strong></li>`
   ).join('');
   container.innerHTML = `
     <div class="aviso-conflito">
@@ -366,7 +375,7 @@ async function aplicarPeriodo(confirmar) {
       renderizarConflitos(document.getElementById('periodo-aviso-conflito'), x.conflitos, x.total_alvo, () => aplicarPeriodo(true));
       return;
     }
-    alert(_mensagemResultadoReplicacao(x, `de ${x.data_inicio} até ${x.data_fim}`));
+    alert(_mensagemResultadoReplicacao(x, `de ${_formatarDataBR(x.data_inicio)} até ${_formatarDataBR(x.data_fim)}`));
     fecharModais();
   } catch (e) {
     alert('Erro ao replicar: ' + e);

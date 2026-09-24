@@ -45,7 +45,7 @@ Se seus nomes reais forem diferentes, é só ajustar as strings de
 tabela/coluna abaixo — a lógica do resto do sistema não muda.
 """
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from app.services.pg_query import PgClient
 
 _client: PgClient | None = None
@@ -409,19 +409,29 @@ def obter_transacao_consumo_da_reserva(reserva_id: str) -> dict | None:
 
 
 def listar_reservas_medico(medico_id: str) -> list[dict]:
-    """Todas as reservas (turno ou hora avulsa, qualquer status) desse
-    médico, com o nome do consultório já embutido -- usada na tela "Minha
-    Agenda" (pedido do Paulo em 10/09/2026). Ordenadas por data/horário
-    DECRESCENTE (mais atual primeiro -- pedido do Paulo em 23/09/2026,
-    item 3, mesmo padrão já usado no Histórico de transações), calculado
-    em Python porque turno guarda só `periodo` (sem hora_inicio) e hora
-    avulsa guarda hora_inicio -- os dois precisam de uma chave de
-    ordenação comum."""
+    """Reservas de HOJE em diante (turno ou hora avulsa, qualquer status)
+    desse médico, com o nome do consultório já embutido -- usada na tela
+    "Minha Agenda" (pedido do Paulo em 10/09/2026). Ordenadas por
+    data/horário DECRESCENTE (mais atual primeiro -- pedido do Paulo em
+    23/09/2026, item 3, mesmo padrão já usado no Histórico de
+    transações), calculado em Python porque turno guarda só `periodo`
+    (sem hora_inicio) e hora avulsa guarda hora_inicio -- os dois
+    precisam de uma chave de ordenação comum.
+
+    Pedido do Paulo em 24/09/2026: "Minha agenda" não mostra mais dias
+    que já passaram -- filtra direto no banco (`data >= hoje`), mesmo
+    fuso fixo de Brasília (-03:00) usado no resto do sistema pra "hoje"
+    (ver reserva_service._checar_data_nao_passada). Reservas antigas
+    continuam intactas no banco (nada é apagado de verdade) -- só saem
+    desta lista; o histórico financeiro (créditos/débitos ligados a
+    elas) continua completo em listar_transacoes_medico."""
+    hoje = (datetime.utcnow() - timedelta(hours=3)).strftime("%Y-%m-%d")
     resp = (
         get_client()
         .table("reservas")
         .select("*, consultorios(nome), pacientes(nome_completo)")
         .eq("medico_id", medico_id)
+        .gte("data", hoje)
         .execute()
     )
     reservas = resp.data

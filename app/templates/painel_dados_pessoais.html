@@ -55,10 +55,20 @@
   .btn { background: var(--cyan); color:#fff; border:none; padding:11px 20px; border-radius:7px;
          font-family: var(--display); font-weight:700; font-size:13.5px; cursor:pointer; }
   .btn:disabled { background: var(--line-strong); color: var(--ink-faint); cursor: not-allowed; }
-  .btn-outline { background:transparent; color:var(--ink-muted); border:1px solid var(--line-strong); padding:10px 19px;
-                 border-radius:7px; font-family: var(--display); font-weight:700; font-size:13.5px; cursor:pointer; }
-  .btn-outline.ativo { border-color: var(--cyan); color: var(--cyan); }
   #status-msg { font-size:13px; margin-top:4px; }
+
+  /* Item 4 (pedido do Paulo em 24/09/2026): tela de "Parabéns" que
+     aparece quando o médico acabou de preencher os campos suficientes
+     pra liberar o agendamento (transição de incompleto -> completo). */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(14,42,59,.6); z-index:200;
+    align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.visivel { display:flex; }
+  .modal-parabens { background:#fff; border-radius:16px; max-width:420px; width:100%; padding:36px 28px 28px;
+    text-align:center; }
+  .modal-parabens .icone { font-size:44px; margin-bottom:10px; }
+  .modal-parabens h2 { font-family: var(--display); font-size:20px; color: var(--navy); margin-bottom:10px; }
+  .modal-parabens p { font-size:14px; color: var(--ink-muted); line-height:1.5; margin-bottom:24px; }
+  .modal-parabens .btn { padding:12px 28px; font-size:14px; }
 </style>
 </head>
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -82,8 +92,8 @@
 <header>
   <div class="brand">✎ Meus Dados</div>
   <div>
-    <a class="voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar ao painel</a>
-    <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
+    <a class="voltar" href="{{ url_for('medico_painel.painel') }}" id="link-voltar">← Voltar ao painel</a>
+    <a class="sair" href="{{ url_for('auth.logout') }}" id="link-sair">Sair</a>
   </div>
 </header>
 
@@ -92,16 +102,15 @@
     <div class="eyebrow">CADASTRO</div>
     <h1>Seus dados pessoais e profissionais</h1>
     <p>Esses são os dados que o sistema usa pra recibos, notas fiscais e informações que a IA
-       responde por WhatsApp. Já vêm preenchidos com o que já estava no seu cadastro — clique em
-       "Editar dados" pra corrigir ou completar qualquer campo.</p>
+       responde por WhatsApp. Já vêm preenchidos com o que já estava no seu cadastro — os campos já
+       ficam liberados pra editar direto, sem precisar clicar em nada antes.</p>
     <p><strong>Telefone, e-mail, especialidade, CPF, data de nascimento e endereço completo
        (CEP, rua, número, bairro, cidade e estado) são obrigatórios para poder reservar
        consultórios.</strong></p>
   </div>
 
   <div class="barra-acoes">
-    <button type="button" class="btn-outline" id="btn-editar">✎ Editar dados</button>
-    <button type="button" class="btn" id="btn-salvar" disabled>💾 Salvar</button>
+    <button type="button" class="btn" id="btn-salvar">💾 Salvar</button>
   </div>
   <div id="status-msg"></div>
 
@@ -114,33 +123,33 @@
       <div class="grid-2">
         <div>
           <label for="telefone">Telefone (login)</label>
-          <input type="text" id="telefone" name="telefone" value="{{ medico.telefone|telefone_sem_ddi if medico.telefone else '' }}" placeholder="31999999999" disabled>
+          <input type="text" id="telefone" name="telefone" value="{{ medico.telefone|telefone_sem_ddi if medico.telefone else '' }}" placeholder="31999999999">
         </div>
         <div>
           <label for="email">E-mail</label>
-          <input type="email" id="email" name="email" value="{{ medico.email or '' }}" disabled>
+          <input type="email" id="email" name="email" value="{{ medico.email or '' }}">
         </div>
       </div>
 
       <div class="grid-2">
         <div>
           <label for="cpf_cnpj">CPF / CNPJ</label>
-          <input type="text" id="cpf_cnpj" name="cpf_cnpj" value="{{ medico.cpf_cnpj or '' }}" placeholder="000.000.000-00" disabled>
+          <input type="text" id="cpf_cnpj" name="cpf_cnpj" value="{{ medico.cpf_cnpj or '' }}" placeholder="000.000.000-00">
         </div>
         <div>
           <label for="crm">CRM</label>
-          <input type="text" id="crm" name="crm" value="{{ medico.crm or '' }}" placeholder="CRM/MG 000000" disabled>
+          <input type="text" id="crm" name="crm" value="{{ medico.crm or '' }}" placeholder="CRM/MG 000000">
         </div>
       </div>
 
       <div class="grid-2">
         <div>
           <label for="especialidade">Especialidade</label>
-          <input type="text" id="especialidade" name="especialidade" value="{{ medico.especialidade or '' }}" disabled>
+          <input type="text" id="especialidade" name="especialidade" value="{{ medico.especialidade or '' }}">
         </div>
         <div>
           <label for="data_nascimento">Data de nascimento</label>
-          <input type="date" id="data_nascimento" name="data_nascimento" value="{{ medico.data_nascimento or '' }}" disabled>
+          <input type="date" id="data_nascimento" name="data_nascimento" value="{{ medico.data_nascimento or '' }}">
         </div>
       </div>
     </div>
@@ -150,33 +159,33 @@
       <div class="grid-2">
         <div>
           <label for="endereco_cep">CEP</label>
-          <input type="text" id="endereco_cep" name="endereco_cep" value="{{ medico.endereco_cep or '' }}" disabled>
+          <input type="text" id="endereco_cep" name="endereco_cep" value="{{ medico.endereco_cep or '' }}">
         </div>
         <div>
           <label for="endereco_estado">Estado (UF)</label>
-          <input type="text" id="endereco_estado" name="endereco_estado" value="{{ medico.endereco_estado or '' }}" maxlength="2" disabled>
+          <input type="text" id="endereco_estado" name="endereco_estado" value="{{ medico.endereco_estado or '' }}" maxlength="2">
         </div>
       </div>
       <label for="endereco_rua">Rua/Avenida</label>
-      <input type="text" id="endereco_rua" name="endereco_rua" value="{{ medico.endereco_rua or '' }}" disabled>
+      <input type="text" id="endereco_rua" name="endereco_rua" value="{{ medico.endereco_rua or '' }}">
       <div class="grid-2">
         <div>
           <label for="endereco_numero">Número</label>
-          <input type="text" id="endereco_numero" name="endereco_numero" value="{{ medico.endereco_numero or '' }}" disabled>
+          <input type="text" id="endereco_numero" name="endereco_numero" value="{{ medico.endereco_numero or '' }}">
         </div>
         <div>
           <label for="endereco_complemento">Complemento</label>
-          <input type="text" id="endereco_complemento" name="endereco_complemento" value="{{ medico.endereco_complemento or '' }}" disabled>
+          <input type="text" id="endereco_complemento" name="endereco_complemento" value="{{ medico.endereco_complemento or '' }}">
         </div>
       </div>
       <div class="grid-2">
         <div>
           <label for="endereco_bairro">Bairro</label>
-          <input type="text" id="endereco_bairro" name="endereco_bairro" value="{{ medico.endereco_bairro or '' }}" disabled>
+          <input type="text" id="endereco_bairro" name="endereco_bairro" value="{{ medico.endereco_bairro or '' }}">
         </div>
         <div>
           <label for="endereco_cidade">Cidade</label>
-          <input type="text" id="endereco_cidade" name="endereco_cidade" value="{{ medico.endereco_cidade or '' }}" disabled>
+          <input type="text" id="endereco_cidade" name="endereco_cidade" value="{{ medico.endereco_cidade or '' }}">
         </div>
       </div>
     </div>
@@ -187,65 +196,110 @@
       <div class="grid-2">
         <div>
           <label for="valor_consulta">Valor da consulta (R$)</label>
-          <input type="number" step="0.01" id="valor_consulta" name="valor_consulta" value="{{ medico.valor_consulta or '' }}" disabled>
+          <input type="number" step="0.01" id="valor_consulta" name="valor_consulta" value="{{ medico.valor_consulta or '' }}">
         </div>
         <div>
           <label for="tempo_consulta">Tempo médio de consulta</label>
-          <input type="text" id="tempo_consulta" name="tempo_consulta" value="{{ medico.tempo_consulta or '' }}" placeholder="ex: 30 minutos" disabled>
+          <input type="text" id="tempo_consulta" name="tempo_consulta" value="{{ medico.tempo_consulta or '' }}" placeholder="ex: 30 minutos">
         </div>
       </div>
 
       <label for="convenios">Convênios aceitos (separados por vírgula)</label>
-      <input type="text" id="convenios" name="convenios" value="{{ (medico.convenios or [])|join(', ') }}" placeholder="ex: Unimed, Bradesco Saúde" disabled>
+      <input type="text" id="convenios" name="convenios" value="{{ (medico.convenios or [])|join(', ') }}" placeholder="ex: Unimed, Bradesco Saúde">
 
       <label for="formas_pagamento">Formas de pagamento aceitas</label>
-      <input type="text" id="formas_pagamento" name="formas_pagamento" value="{{ medico.formas_pagamento or '' }}" placeholder="ex: Pix, cartão, dinheiro" disabled>
+      <input type="text" id="formas_pagamento" name="formas_pagamento" value="{{ medico.formas_pagamento or '' }}" placeholder="ex: Pix, cartão, dinheiro">
 
       <div class="grid-2">
         <div>
           <label for="retorno_particular">Retorno (particular)</label>
-          <input type="text" id="retorno_particular" name="retorno_particular" value="{{ medico.retorno_particular or '' }}" placeholder="ex: Grátis em até 30 dias" disabled>
+          <input type="text" id="retorno_particular" name="retorno_particular" value="{{ medico.retorno_particular or '' }}" placeholder="ex: Grátis em até 30 dias">
         </div>
         <div>
           <label for="retorno_convenio">Retorno (convênio)</label>
-          <input type="text" id="retorno_convenio" name="retorno_convenio" value="{{ medico.retorno_convenio or '' }}" disabled>
+          <input type="text" id="retorno_convenio" name="retorno_convenio" value="{{ medico.retorno_convenio or '' }}">
         </div>
       </div>
 
       <div class="grid-2">
         <div>
           <label for="idade_minima">Idade mínima atendida</label>
-          <input type="text" id="idade_minima" name="idade_minima" value="{{ medico.idade_minima or '' }}" placeholder="ex: Sem restrição" disabled>
+          <input type="text" id="idade_minima" name="idade_minima" value="{{ medico.idade_minima or '' }}" placeholder="ex: Sem restrição">
         </div>
         <div>
           <label for="politica_cancelamento">Política de cancelamento</label>
-          <input type="text" id="politica_cancelamento" name="politica_cancelamento" value="{{ medico.politica_cancelamento or '' }}" disabled>
+          <input type="text" id="politica_cancelamento" name="politica_cancelamento" value="{{ medico.politica_cancelamento or '' }}">
         </div>
       </div>
 
       <label for="observacoes_atendimento">Observações gerais</label>
-      <textarea id="observacoes_atendimento" name="observacoes_atendimento" disabled>{{ medico.observacoes_atendimento or '' }}</textarea>
+      <textarea id="observacoes_atendimento" name="observacoes_atendimento">{{ medico.observacoes_atendimento or '' }}</textarea>
     </div>
   </form>
 </div>
 
+<div class="modal-overlay" id="modal-parabens">
+  <div class="modal-parabens">
+    <div class="icone">🎉</div>
+    <h2>Parabéns, você completou o seu cadastro!</h2>
+    <p>Agora seus dados estão completos e você já pode reservar consultórios normalmente.</p>
+    <button type="button" class="btn" onclick="fecharModalParabensEVoltar()">Continuar</button>
+  </div>
+</div>
+
 <script>
-const camposEditaveis = () => document.querySelectorAll('#form-dados-pessoais input, #form-dados-pessoais textarea');
-const btnEditar = document.getElementById('btn-editar');
 const btnSalvar = document.getElementById('btn-salvar');
 const statusEl = document.getElementById('status-msg');
-let editando = false;
+const linkVoltar = document.getElementById('link-voltar');
+const linkSair = document.getElementById('link-sair');
 
-btnEditar.addEventListener('click', () => {
-  editando = !editando;
-  camposEditaveis().forEach(campo => { if (campo.id !== 'nome') campo.disabled = !editando; });
-  btnEditar.textContent = editando ? '✕ Cancelar edição' : '✎ Editar dados';
-  btnEditar.classList.toggle('ativo', editando);
-  btnSalvar.disabled = !editando;
-  statusEl.textContent = '';
+// Item 4 (pedido do Paulo em 24/09/2026): guarda se o cadastro JÁ estava
+// completo antes desta visita -- a tela de "Parabéns" só pode aparecer
+// na transição de incompleto pra completo, nunca de novo se o médico
+// voltar aqui só pra corrigir algo depois de já estar tudo liberado.
+let cadastroCompletoAntes = {{ 'true' if cadastro_completo_inicial else 'false' }};
+
+function fecharModalParabensEVoltar() {
+  window.location.href = "{{ url_for('medico_painel.painel') }}";
+}
+
+// Item 3 (pedido do Paulo em 24/09/2026): ao digitar o CEP (8 dígitos),
+// busca o endereço no ViaCEP e preenche sozinho rua, bairro, cidade e
+// estado -- o médico só confirma e completa o número/complemento. Só
+// sobrescreve os campos que o ViaCEP realmente devolveu (alguns CEPs
+// não têm bairro, por exemplo), e fica em silêncio se o CEP for
+// inválido ou a busca falhar -- o preenchimento manual continua
+// funcionando normalmente nesse caso.
+async function buscarEnderecoPorCep() {
+  const cepEl = document.getElementById('endereco_cep');
+  const cep = (cepEl.value || '').replace(/\D/g, '');
+  if (cep.length !== 8) return;
+  try {
+    const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const dados = await resp.json();
+    if (!resp.ok || dados.erro) return;
+    if (dados.logradouro) document.getElementById('endereco_rua').value = dados.logradouro;
+    if (dados.bairro) document.getElementById('endereco_bairro').value = dados.bairro;
+    if (dados.localidade) document.getElementById('endereco_cidade').value = dados.localidade;
+    if (dados.uf) document.getElementById('endereco_estado').value = dados.uf;
+  } catch (e) {
+    // Sem internet ou ViaCEP fora do ar -- o médico preenche manualmente.
+  }
+}
+document.getElementById('endereco_cep').addEventListener('blur', buscarEnderecoPorCep);
+document.getElementById('endereco_cep').addEventListener('input', () => {
+  if (document.getElementById('endereco_cep').value.replace(/\D/g, '').length === 8) buscarEnderecoPorCep();
 });
 
-btnSalvar.addEventListener('click', async () => {
+// Pedido do Paulo em 24/09/2026: não existe mais botão "Editar dados"
+// nem estado de edição -- os campos já chegam liberados (só "Nome"
+// continua travado, ver atributo disabled fixo no HTML) e o médico edita
+// direto. "Salvar" grava a qualquer momento, e clicar em "Voltar ao
+// painel" ou "Sair" também salva automaticamente antes de navegar pra
+// fora desta página (ver _autoSalvarAntesDeSair mais abaixo) -- os dois
+// caminhos reaproveitam a mesma função salvarDados() pra não duplicar a
+// lógica de chamada da API.
+async function salvarDados() {
   const form = document.getElementById('form-dados-pessoais');
   const dados = {};
   new FormData(form).forEach((valor, chave) => {
@@ -258,17 +312,12 @@ btnSalvar.addEventListener('click', async () => {
     }
   });
 
-  statusEl.textContent = 'Salvando...';
-  statusEl.style.color = 'var(--ink-muted)';
-  btnSalvar.disabled = true;
-
   try {
     const resp = await fetch('{{ url_for("medico_painel.salvar_dados_pessoais") }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dados),
     });
-
     let resultado;
     try {
       resultado = await resp.json();
@@ -276,30 +325,58 @@ btnSalvar.addEventListener('click', async () => {
       // a resposta não veio em JSON (ex: página de erro do servidor) --
       // mostra o status em vez do genérico "erro de conexão", que
       // escondia o problema real
-      statusEl.textContent = `Erro ao salvar (código ${resp.status}). Se continuar, avise o suporte técnico.`;
-      statusEl.style.color = 'var(--coral)';
-      btnSalvar.disabled = false;
-      return;
+      return { ok: false, erro: `Erro ao salvar (código ${resp.status}). Se continuar, avise o suporte técnico.` };
     }
-
     if (!resp.ok) {
-      statusEl.textContent = resultado.erro || 'Erro ao salvar.';
-      statusEl.style.color = 'var(--coral)';
-      btnSalvar.disabled = false;
-      return;
+      return { ok: false, erro: resultado.erro || 'Erro ao salvar.' };
     }
-    statusEl.textContent = '✅ Dados salvos com sucesso.';
-    statusEl.style.color = 'var(--cyan)';
-    editando = false;
-    camposEditaveis().forEach(campo => campo.disabled = true);
-    btnEditar.textContent = '✎ Editar dados';
-    btnEditar.classList.remove('ativo');
+    return { ok: true, resultado };
   } catch (e) {
-    statusEl.textContent = 'Erro de conexão com o servidor.';
-    statusEl.style.color = 'var(--coral)';
-    btnSalvar.disabled = false;
+    return { ok: false, erro: 'Erro de conexão com o servidor.' };
   }
+}
+
+btnSalvar.addEventListener('click', async () => {
+  statusEl.textContent = 'Salvando...';
+  statusEl.style.color = 'var(--ink-muted)';
+  btnSalvar.disabled = true;
+
+  const r = await salvarDados();
+  btnSalvar.disabled = false;
+
+  if (!r.ok) {
+    statusEl.textContent = r.erro;
+    statusEl.style.color = 'var(--coral)';
+    return;
+  }
+  statusEl.textContent = '✅ Dados salvos com sucesso.';
+  statusEl.style.color = 'var(--cyan)';
+
+  // Item 4: só abre a tela de "Parabéns" na transição de incompleto pra
+  // completo -- se já estava completo antes (ex: só corrigindo o
+  // telefone), não mostra de novo.
+  if (!cadastroCompletoAntes && r.resultado.cadastro_completo) {
+    document.getElementById('modal-parabens').classList.add('visivel');
+  }
+  cadastroCompletoAntes = r.resultado.cadastro_completo;
 });
+
+// Salva automaticamente ao clicar em "Voltar ao painel" ou "Sair" --
+// intercepta o clique, aguarda o salvamento terminar e só então navega
+// pro destino original do link. Sem mostrar a tela de "Parabéns" aqui
+// (o médico já está de saída, não faz sentido prender ele na página).
+function _autoSalvarAntesDeSair(link) {
+  link.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    const destino = link.href;
+    statusEl.textContent = 'Salvando...';
+    statusEl.style.color = 'var(--ink-muted)';
+    await salvarDados();
+    window.location.href = destino;
+  });
+}
+_autoSalvarAntesDeSair(linkVoltar);
+_autoSalvarAntesDeSair(linkSair);
 </script>
 
 </body>

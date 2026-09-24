@@ -62,6 +62,14 @@
   }
   .btn-voltar-header:hover { background: #DCEEEC; }
 
+  /* Saldo de horas no alto da página -- pedido do Paulo em 24/09/2026:
+     mesmo destaque visual do bloco "Saldo de horas" do hero do painel
+     (painel_medico.html), só que compacto pra caber ao lado do botão
+     "Voltar ao painel" aqui no header da Grade de Turnos. */
+  .saldo-header { text-align: right; }
+  .saldo-header .rotulo { font-size: 11px; color: #9FB8C4; text-transform: uppercase; letter-spacing: .03em; font-weight: 700; }
+  .saldo-header .valor { font-size: 22px; font-weight: 800; color: #fff; font-family: 'Manrope', sans-serif; }
+
   /* ---- botões "Reservar" / "Cancelar", no alto da página -- pedido do
      Paulo em 14/09/2026: em vez de preencher Data + Hora início +
      Quantidade de horas num formulário, o médico clica em "Reservar" e
@@ -168,6 +176,13 @@
   .bloco-reserva .nome { font-weight: 800; color: #10222E; overflow: hidden; text-overflow: ellipsis; }
   #aviso-12h { display:none; background: var(--coral-soft); color: var(--coral); padding:10px 12px; border-radius:8px; font-size:12.5px; margin-top:10px; font-weight:600; }
 
+  /* Pedido do Paulo em 24/09/2026 (item 1): o aviso de erro (ex: cadastro
+     incompleto, listando os campos que faltam em "Meus dados") precisa
+     de letra bem maior que o normal, pra não passar despercebido --
+     classe aplicada só quando a mensagem em #status-horas é um erro
+     (ver JS: toggla ".erro" junto com a cor vermelha). */
+  #status-horas.erro { font-size: 16px; font-weight: 800; line-height: 1.4; }
+
   #status-msg { font-size: 13px; margin-top: 12px; min-height: 18px; }
   #status-msg.ok { color: #1F8F5C; }
   #status-msg.erro { color: var(--coral); }
@@ -229,7 +244,14 @@
     <h1>Grade de Turnos — Lifemax</h1>
     <p>Veja a disponibilidade de todos os consultórios da semana. Clique em "Reservar" e depois no horário verde que deseja ocupar (1h por clique). Para cancelar, clique em "Cancelar" e depois no horário reservado por você (azul).</p>
   </div>
-  <div style="text-align:right;">
+  <div style="display:flex; align-items:center; gap:18px;">
+    {% if medico and medico.tipo_vinculo not in ('fixo', 'horista') %}
+    <div class="saldo-header">
+      <div class="rotulo">Saldo de horas</div>
+      <div class="valor" id="saldo-header-valor">{{ saldo_horas }}h</div>
+    </div>
+    {% endif %}
+    <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" class="btn-voltar-header">Meus dados</a>
     <a href="{{ url_for('medico_painel.painel') }}" class="btn-voltar-header">← Voltar ao painel</a>
   </div>
 </header>
@@ -613,9 +635,11 @@ function alternarModo(modo) {
   if (modoAtual === 'reservar') {
     statusEl.textContent = 'Clique num horário verde da grade abaixo para reservar.';
     statusEl.style.color = '#55707C';
+    statusEl.classList.remove('erro');
   } else if (modoAtual === 'cancelar') {
     statusEl.textContent = 'Clique num horário reservado por você (azul) na grade abaixo para cancelar.';
     statusEl.style.color = '#55707C';
+    statusEl.classList.remove('erro');
   } else {
     statusEl.textContent = '';
   }
@@ -627,6 +651,7 @@ async function clicarSlotLivre(consultorioId, dataIso, hora) {
   if (modoAtual !== 'reservar') {
     statusEl.textContent = 'Clique primeiro em "Reservar" e depois no horário desejado.';
     statusEl.style.color = '#D65C3F';
+    statusEl.classList.add('erro');
     return;
   }
 
@@ -638,11 +663,13 @@ async function clicarSlotLivre(consultorioId, dataIso, hora) {
   if (inicioEscolhido.getTime() < Date.now()) {
     statusEl.textContent = '⚠️ Esse horário já passou -- escolha um horário futuro.';
     statusEl.style.color = '#D65C3F';
+    statusEl.classList.add('erro');
     return;
   }
 
   statusEl.textContent = 'Reservando...';
   statusEl.style.color = '#55707C';
+  statusEl.classList.remove('erro');
 
   try {
     const resp = await fetch('/api/turnos/reservar-horas', {
@@ -658,6 +685,7 @@ async function clicarSlotLivre(consultorioId, dataIso, hora) {
     if (!resp.ok) {
       statusEl.textContent = resultado.erro || 'Erro ao reservar.';
       statusEl.style.color = '#D65C3F';
+      statusEl.classList.add('erro');
       return;
     }
 
@@ -665,6 +693,8 @@ async function clicarSlotLivre(consultorioId, dataIso, hora) {
       ? `Reservado! Essa foi uma reserva de teste grátis (cortesia de boas-vindas). Saldo atual: ${resultado.saldo_horas}h.`
       : `Reservado! Saldo atual: ${resultado.saldo_horas}h.`;
     statusEl.style.color = '#1F8F5C';
+    statusEl.classList.remove('erro');
+    _atualizarSaldoHeader(resultado.saldo_horas);
     // Atualiza a grade na hora, sem recarregar do servidor -- pedido do
     // Paulo em 15/09/2026: recarregar a semana inteira (todos os
     // consultórios) a cada clique deixava a resposta lenta. Como a API
@@ -675,6 +705,7 @@ async function clicarSlotLivre(consultorioId, dataIso, hora) {
   } catch (e) {
     statusEl.textContent = 'Erro de conexão.';
     statusEl.style.color = '#D65C3F';
+    statusEl.classList.add('erro');
   }
 }
 
@@ -683,6 +714,7 @@ async function clicarBlocoReservado(reservaId, dataIso, horaInicio) {
   if (modoAtual !== 'cancelar') {
     statusEl.textContent = 'Clique primeiro em "Cancelar" e depois no horário reservado por você.';
     statusEl.style.color = '#D65C3F';
+    statusEl.classList.add('erro');
     return;
   }
 
@@ -698,6 +730,7 @@ async function clicarBlocoReservado(reservaId, dataIso, horaInicio) {
 
   statusEl.textContent = 'Cancelando...';
   statusEl.style.color = '#55707C';
+  statusEl.classList.remove('erro');
 
   try {
     const resp = await fetch('/api/turnos/cancelar', {
@@ -710,16 +743,20 @@ async function clicarBlocoReservado(reservaId, dataIso, horaInicio) {
     if (!resp.ok) {
       statusEl.textContent = resultado.erro || 'Erro ao cancelar.';
       statusEl.style.color = '#D65C3F';
+      statusEl.classList.add('erro');
       return;
     }
 
     if (resultado.reembolsado) {
       statusEl.textContent = `Reserva cancelada. ${resultado.horas_reembolsadas}h devolvida(s). Saldo atual: ${resultado.saldo_horas}h.`;
       statusEl.style.color = '#1F8F5C';
+      statusEl.classList.remove('erro');
     } else {
       statusEl.textContent = `Reserva cancelada. Como faltavam menos de 12h, não houve reembolso de horas. Saldo atual: ${resultado.saldo_horas}h.`;
       statusEl.style.color = '#D65C3F';
+      statusEl.classList.add('erro');
     }
+    _atualizarSaldoHeader(resultado.saldo_horas);
 
     // Atualiza a grade na hora, sem recarregar do servidor -- mesmo
     // motivo do comentário em clicarSlotLivre logo acima.
@@ -728,7 +765,17 @@ async function clicarBlocoReservado(reservaId, dataIso, horaInicio) {
   } catch (e) {
     statusEl.textContent = 'Erro de conexão.';
     statusEl.style.color = '#D65C3F';
+    statusEl.classList.add('erro');
   }
+}
+
+// Atualiza o saldo mostrado no alto da página em tempo real depois de
+// reservar/cancelar, sem precisar recarregar -- pedido do Paulo em
+// 24/09/2026. O elemento só existe quando o médico é 'avulso' (mesma
+// condição do header no HTML), então checa se existe antes de mexer.
+function _atualizarSaldoHeader(saldoHoras) {
+  const el = document.getElementById('saldo-header-valor');
+  if (el && saldoHoras !== undefined) el.textContent = `${saldoHoras}h`;
 }
 
 document.getElementById('btn-anterior').addEventListener('click', () => {

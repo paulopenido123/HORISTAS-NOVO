@@ -31,7 +31,12 @@ turnos_bp = Blueprint("turnos", __name__)
 @requer_login_medico
 def pagina_turnos():
     medico = db.get_medico_by_id(medico_logado_id())
-    return render_template("turnos.html", medico=medico)
+    # Pedido do Paulo em 24/09/2026: o saldo de horas do médico precisa
+    # aparecer no alto desta página também (não só no painel dele) --
+    # mesma conversão em HORAS usada em todo o resto do sistema (ver
+    # creditos_service.saldo_em_horas_medico, painel_medico.html).
+    saldo_horas = creditos_db.saldo_em_horas_medico(medico["id"]) if medico else 0
+    return render_template("turnos.html", medico=medico, saldo_horas=saldo_horas)
 
 
 @turnos_bp.route("/api/turnos/medicos", methods=["GET"])

@@ -227,7 +227,18 @@ def comprar_creditos_cartao():
 @requer_termo_aceito
 def pagina_dados_pessoais():
     medico = db.get_medico_by_id(medico_logado_id())
-    return render_template("painel_dados_pessoais.html", medico=medico)
+    # Pedido do Paulo em 24/09/2026 (item 4): pra tela saber se o
+    # cadastro JÁ estava completo antes desta visita (e não disparar a
+    # tela de "Parabéns" à toa se ele só entrar aqui pra corrigir um
+    # campo depois de já estar tudo liberado) -- mesma checagem de
+    # reserva_service._campos_pessoais_faltando usada em todo o resto do
+    # sistema (fixo/horista não passam por essa exigência).
+    cadastro_completo_inicial = (
+        medico.get("tipo_vinculo") in ("fixo", "horista")
+        or not reserva_service._campos_pessoais_faltando(medico)
+    )
+    return render_template("painel_dados_pessoais.html", medico=medico,
+                            cadastro_completo_inicial=cadastro_completo_inicial)
 
 
 @medico_painel_bp.route("/api/perfil/dados-pessoais", methods=["POST"])
@@ -238,7 +249,16 @@ def salvar_dados_pessoais():
         medico = creditos_db.atualizar_dados_pessoais(medico_logado_id(), body)
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
-    return jsonify({"resultado": "Dados salvos com sucesso.", "medico": medico})
+    # Item 4 (pedido do Paulo em 24/09/2026): devolve se o cadastro ficou
+    # completo (o suficiente pra reservar) DEPOIS deste salvamento -- o
+    # front usa isso pra decidir se mostra a tela de "Parabéns" (só na
+    # transição de incompleto -> completo, ver painel_dados_pessoais.html).
+    cadastro_completo = (
+        medico.get("tipo_vinculo") in ("fixo", "horista")
+        or not reserva_service._campos_pessoais_faltando(medico)
+    )
+    return jsonify({"resultado": "Dados salvos com sucesso.", "medico": medico,
+                     "cadastro_completo": cadastro_completo})
 
 
 @medico_painel_bp.route("/painel/agenda")

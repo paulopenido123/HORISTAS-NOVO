@@ -107,7 +107,6 @@
 <div class="nav">
   <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
   <a href="{{ url_for('admin.matriz') }}" class="ativo">Gerar Matriz</a>
-  <a href="{{ url_for('admin.agenda_horistas') }}">Agenda Horistas</a>
   <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
   <a href="{{ url_for('admin.clientes') }}">Clientes</a>
   <a href="{{ url_for('admin.horas') }}">Horas</a>
@@ -222,9 +221,9 @@ async function alternarCelula(consultorioId, diaSemana, hora, el) {
   }
 }
 
-// Pedido do Paulo em 23/09/2026 (item 5): mesmo ajuste de turnos.html/
-// admin_agenda_horistas.html -- em vez de uma caixinha cinza por
-// horário bloqueado (ex: as 7 caixinhas de sábado/domingo à tarde),
+// Pedido do Paulo em 23/09/2026 (item 5): mesmo ajuste de turnos.html --
+// em vez de uma caixinha cinza por horário bloqueado (ex: as 7 caixinhas
+// de sábado/domingo à tarde),
 // calcula os intervalos CONTÍNUOS de horários bloqueados e desenha UM
 // retângulo cinza (.faixa-bege) cobrindo cada intervalo inteiro.
 function faixasBegeDoDiaSemana(consultorioId, diaSemana) {

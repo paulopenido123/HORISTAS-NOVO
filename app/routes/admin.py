@@ -430,7 +430,11 @@ def novo_cliente():
             nome=nome,
             telefone=telefone,
             especialidade=(request.form.get('especialidade') or '').strip(),
-            tipo_vinculo=(request.form.get('tipo_vinculo') or 'avulso').strip(),
+            # Pedido do Paulo em 30/09/2026: todo médico cadastrado é
+            # "avulso" -- não existe mais escolha de tipo de vínculo no
+            # formulário (a tela "Agenda Horistas" e a Agenda Fixos foram
+            # removidas do sistema).
+            tipo_vinculo='avulso',
             email=(request.form.get('email') or '').strip(),
             crm=(request.form.get('crm') or '').strip(),
             cpf_cnpj=(request.form.get('cpf_cnpj') or '').strip(),
@@ -522,7 +526,6 @@ def editar_cliente(medico_id):
             endereco_cidade=(request.form.get('endereco_cidade') or '').strip(),
             endereco_estado=(request.form.get('endereco_estado') or '').strip()[:2].upper(),
             convenios=convenios,
-            tipo_vinculo=(request.form.get('tipo_vinculo') or '').strip() or None,
         )
 
         # Item 1 (pedido do Paulo em 11/09/2026): se o e-mail mudou (ou
@@ -768,24 +771,15 @@ def matriz_visualizar_agenda():
     return render_template('admin_matriz_visualizar_agenda.html')
 
 
-@admin_bp.route('/agenda-horistas')
+@admin_bp.route('/api/matriz/grade', methods=['GET'])
 @_admin
-def agenda_horistas():
-    """Agenda Horistas -- pedido do Paulo em 14/09/2026: mesma grade que o
-    médico vê em /turnos (todos os consultórios, todos os turnos
-    disponíveis da semana), só que aqui, pra quem administra, o nome do
-    profissional aparece dentro do próprio campo de horário reservado.
-    O médico continua sem ver o nome de outros profissionais em /turnos
-    (ver redação em app/routes/turnos.py api_grade) -- só o admin vê
-    todos os nomes, porque essa tela é só de leitura (sem reservar/
-    cancelar por aqui, isso continua sendo feito pelo próprio médico ou
-    pela Matriz de Agendamento)."""
-    return render_template('admin_agenda_horistas.html')
-
-
-@admin_bp.route('/api/agenda-horistas/grade', methods=['GET'])
-@_admin
-def api_agenda_horistas_grade():
+def api_matriz_grade():
+    """Grade completa (todos os consultórios, todos os horários da semana,
+    com o nome do médico em cada reserva) -- usada pela tela "Visualizar
+    agenda" da Matriz. Morava em /api/agenda-horistas/grade (pedido do
+    Paulo em 14/09/2026) até a tela "Agenda Horistas" ser removida do
+    sistema em 30/09/2026 (todos os médicos viraram "avulso"); essa rota
+    continuou porque "Visualizar agenda" ainda depende dela."""
     data_inicio_str = request.args.get('data_inicio', date.today().isoformat())
     dias = int(request.args.get('dias', 7))
 
@@ -1088,71 +1082,6 @@ def api_matriz_intervalo_criado():
             'hoje': hoje.isoformat()}
 
 
-# ---------------------------------------------------------------------
-# Item 6 (pedido do Paulo em 21/09/2026): botões "Agendar para:" e
-# "Cancelar agendamento", só pro admin, na Agenda Horistas. Reaproveita
-# 100% da regra de saldo/conflito/reembolso já usada quando o próprio
-# médico reserva ou cancela (ver reserva_service.reservar_por_hora /
-# cancelar_reserva_admin) -- só passa criado_por_admin/cancelado_por_admin
-# =True, pra Grade de Turnos, Minha Agenda e o extrato de horas do médico
-# mostrarem que foi o administrador quem fez.
-# ---------------------------------------------------------------------
-
-@admin_bp.route('/api/agenda-horistas/medicos', methods=['GET'])
-@_admin
-def api_agenda_horistas_medicos():
-    """Lista pro seletor de "Agendar para:" -- pedido do Paulo em
-    23/09/2026 (item 6): TODOS os médicos ativos, não só os de tipo
-    'avulso' -- antes essa lista ficava restrita aos avulsos (que alugam
-    consultório por essa agenda por padrão), mas o admin também precisa
-    poder agendar manualmente pra um médico fixo/horista em algum
-    encaixe avulso, então a lista não filtra mais por tipo_vinculo."""
-    todos = db.get_client().table('medicos').select('id,nome,telefone,tipo_vinculo').eq('ativo', True).execute().data
-    todos.sort(key=lambda m: (m.get('nome') or '').lower())
-    return {'medicos': todos}
-
-
-@admin_bp.route('/api/agenda-horistas/agendar', methods=['POST'])
-@_admin
-def api_agenda_horistas_agendar():
-    body = request.get_json(force=True)
-    medico_id = body.get('medico_id')
-    celulas = body.get('celulas') or []
-    if not medico_id or not celulas:
-        return {'erro': 'Selecione o profissional e pelo menos um horário.'}, 400
-
-    sucesso = []
-    erros = []
-    for c in celulas:
-        consultorio_id = c.get('consultorio_id')
-        data_str = c.get('data')
-        hora_inicio = c.get('hora_inicio')
-        if not all([consultorio_id, data_str, hora_inicio]):
-            erros.append({'consultorio_id': consultorio_id, 'data': data_str, 'hora_inicio': hora_inicio,
-                          'erro': 'Célula inválida.'})
-            continue
-        try:
-            resultado = reserva_service.reservar_por_hora(
-                medico_id, consultorio_id, data_str, hora_inicio, 1, criado_por_admin=True,
-            )
-            # Pedido do Paulo em 23/09/2026 (item 7): deixa explícito no
-            # retorno se essa hora foi DEBITADA do saldo do médico ou se
-            # entrou como cortesia de tryout (as 3 primeiras reservas do
-            # médico em qualquer canal são grátis por design -- ver
-            # creditos_db.tryout_restante/debitar_credito_por_reserva) --
-            # sem isso não dava pra distinguir, na tela do admin, se o
-            # débito realmente aconteceu ou se essa reserva específica
-            # era, de fato, uma cortesia.
-            sucesso.append({'consultorio_id': consultorio_id, 'data': data_str, 'hora_inicio': hora_inicio,
-                            'reserva_id': resultado['reserva']['id'], 'tryout': resultado.get('tryout', False),
-                            'saldo_atual': resultado.get('saldo_atual')})
-        except Exception as e:
-            erros.append({'consultorio_id': consultorio_id, 'data': data_str, 'hora_inicio': hora_inicio,
-                          'erro': str(e)})
-
-    return {'sucesso': sucesso, 'erros': erros}
-
-
 @admin_bp.route('/controle-ia')
 @_admin
 def controle_ia():
@@ -1208,27 +1137,3 @@ def atualizar_precificacao_ia():
     return redirect(url_for('admin.controle_ia', mes=request.form.get('mes_valor')))
 
 
-@admin_bp.route('/api/agenda-horistas/cancelar', methods=['POST'])
-@_admin
-def api_agenda_horistas_cancelar():
-    """A tela de revisão (2º passo, com o nome de cada profissional antes
-    de confirmar de vez) é montada no próprio navegador a partir dos
-    dados que a grade já carregou -- não precisa de uma rota própria só
-    pra isso. Essa rota já é a confirmação FINAL: recebe os ids das
-    reservas escolhidas e cancela cada uma (com a mesma regra de
-    reembolso de 12h de sempre)."""
-    body = request.get_json(force=True)
-    reserva_ids = body.get('reserva_ids') or []
-    if not reserva_ids:
-        return {'erro': 'Selecione pelo menos um horário ocupado para cancelar.'}, 400
-
-    sucesso = []
-    erros = []
-    for reserva_id in reserva_ids:
-        try:
-            resultado = reserva_service.cancelar_reserva_admin(reserva_id)
-            sucesso.append({'reserva_id': reserva_id, **resultado})
-        except Exception as e:
-            erros.append({'reserva_id': reserva_id, 'erro': str(e)})
-
-    return {'sucesso': sucesso, 'erros': erros}

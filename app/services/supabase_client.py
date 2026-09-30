@@ -167,8 +167,7 @@ def criar_reserva(consultorio_id: str, medico_id: str, data: str, periodo: str,
 # reservas avulsas por hora. Ajuste aqui se os horários reais do
 # coworking forem diferentes.
 # "noite" começa às 17h30 (não 17h) -- pedido do Paulo em 21/09/2026:
-# pausa para limpeza das 17h às 17h30, mesma faixa que a agenda dos
-# médicos fixos já usava (agenda_fixos_service.TURNOS_HORARIOS).
+# pausa para limpeza das 17h às 17h30.
 PERIODOS_HORARIOS = {
     "manha": ("08:00", "12:00"),
     "tarde": ("13:00", "17:00"),
@@ -508,9 +507,8 @@ def andar_a_partir_do_nome(nome: str) -> str | None:
 def criar_consultorio(nome: str, descricao: str, preco_periodo: float, andar: str = "") -> dict:
     # `andar` deixou de ser digitado no formulário -- agora é sempre
     # derivado do nome (ver andar_a_partir_do_nome). O parâmetro
-    # continua aceito (e tem prioridade se vier preenchido) só pra não
-    # quebrar o import de agenda fixa em agenda_fixos_service.py, que
-    # ainda passa um andar explícito vindo da planilha.
+    # continua aceito (e tem prioridade se vier preenchido) pra uso
+    # futuro por outra rotina que precise passar um andar explícito.
     andar_final = andar.strip() if (andar or "").strip() else andar_a_partir_do_nome(nome)
     resp = (
         get_client()

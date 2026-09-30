@@ -28,8 +28,7 @@
   .subtitulo { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
 
   /* Botão "Voltar" -- pedido do Paulo em 24/09/2026 (item 1): mesmo
-     estilo usado nos outros botões de ação do admin (admin_matriz.html,
-     admin_agenda_horistas.html). */
+     estilo usado nos outros botões de ação do admin (admin_matriz.html). */
   .btn-admin-acao { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff;
     color: var(--navy); font-weight: 700; font-size: 13px; cursor: pointer; }
   .btn-admin-acao:hover { background: #F3F7F8; }
@@ -109,7 +108,6 @@
 <div class="nav">
   <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
   <a href="{{ url_for('admin.matriz') }}" class="ativo">Gerar Matriz</a>
-  <a href="{{ url_for('admin.agenda_horistas') }}">Agenda Horistas</a>
   <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
   <a href="{{ url_for('admin.clientes') }}">Clientes</a>
   <a href="{{ url_for('admin.horas') }}">Horas</a>
@@ -178,9 +176,9 @@ function formatarDataCurta(iso) {
   return { dia: DIAS_SEMANA[d.getDay()], numero: String(d.getDate()).padStart(2, '0'), mes: MESES_ABREV[d.getMonth()] };
 }
 
-// Mesma lógica de faixasBegeDoDia usada em admin_agenda_horistas.html /
-// turnos.html: junta os intervalos bloqueados consecutivos numa faixa
-// cinza só, em vez de caixinha por horário.
+// Mesma lógica de faixasBegeDoDia usada em turnos.html: junta os
+// intervalos bloqueados consecutivos numa faixa cinza só, em vez de
+// caixinha por horário.
 function faixasBegeDoDia(consultorioId, dataIso) {
   const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
   const bloqueiosTemplate = gradeAtual.bloqueios_template || [];
@@ -321,7 +319,7 @@ async function carregar() {
     const fFim = formatarDataCurta(intervalo.data_fim);
     periodoEl.textContent = `${fIni.numero}/${fIni.mes} até ${fFim.numero}/${fFim.mes} (${dias} dia${dias > 1 ? 's' : ''})`;
 
-    const resp = await fetch(`/admin/api/agenda-horistas/grade?data_inicio=${intervalo.data_inicio}&dias=${dias}`);
+    const resp = await fetch(`/admin/api/matriz/grade?data_inicio=${intervalo.data_inicio}&dias=${dias}`);
     gradeAtual = await resp.json();
     renderizarGrade();
   } catch (e) {

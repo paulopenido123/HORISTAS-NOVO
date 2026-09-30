@@ -20,7 +20,7 @@ def create_app():
     app = Flask(__name__)
     app.secret_key = Config.FLASK_SECRET_KEY
 
-    from app.services.agenda_fixos_service import telefone_sem_ddi
+    from app.services.telefone_utils import telefone_sem_ddi
     app.jinja_env.filters["telefone_sem_ddi"] = telefone_sem_ddi
 
     app.config["SESSION_COOKIE_HTTPONLY"] = True

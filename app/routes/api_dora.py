@@ -29,7 +29,7 @@ from app.services import supabase_client as db
 from app.services import creditos_service as creditos_db
 from app.services import reserva_service
 from app.services import template_service
-from app.services import agenda_fixos_service
+from app.services import telefone_utils
 
 api_dora_bp = Blueprint("api_dora", __name__, url_prefix="/api/dora")
 
@@ -48,11 +48,10 @@ def _exigir_api_key(view):
 def _medico_para_json(medico: dict) -> dict:
     saldo_horas = creditos_db.saldo_em_horas_medico(medico["id"])
     tryout_restante = creditos_db.tryout_restante(medico["id"])
-    # "avulso" é o único tipo que aluga consultório por essa agenda (ver
-    # reserva_service._checar_pode_alugar_avulso) -- 'fixo' e 'horista'
-    # têm agendas próprias, fora deste fluxo. A Dora usa esse campo pra
-    # saber se pode oferecer "reservar consultório" pra esse médico.
-    pode_reservar_avulso = (medico.get("tipo_vinculo") or "avulso") == "avulso" and medico.get("autorizado", True)
+    # Todo médico é "avulso" (pedido do Paulo em 30/09/2026: Agenda Fixos e
+    # Agenda Horistas foram removidas do sistema) -- a Dora usa esse campo
+    # pra saber se pode oferecer "reservar consultório" pra esse médico.
+    pode_reservar_avulso = medico.get("autorizado", True)
     return {
         "id": medico["id"],
         "nome": medico["nome"],
@@ -72,7 +71,7 @@ def api_dora_medico():
     escrevendo é um médico cadastrado aqui (por telefone) ou não --
     "encontrado": false significa que é paciente (ou não-cadastrado),
     e a Dora segue com o fluxo normal dela de paciente."""
-    telefone = agenda_fixos_service.normalizar_telefone(request.args.get("telefone", ""))
+    telefone = telefone_utils.normalizar_telefone(request.args.get("telefone", ""))
     if not telefone:
         return jsonify({"erro": "telefone é obrigatório."}), 400
     medico = db.get_medico_by_telefone(telefone)
@@ -146,7 +145,7 @@ def api_dora_reservar():
     (débito de saldo ou cortesia de tryout, checagem de conflito,
     notificações em segundo plano)."""
     body = request.get_json(force=True)
-    telefone = agenda_fixos_service.normalizar_telefone(body.get("telefone", ""))
+    telefone = telefone_utils.normalizar_telefone(body.get("telefone", ""))
     consultorio_id = body.get("consultorio_id")
     data_reserva = body.get("data")
     hora_inicio = body.get("hora_inicio")
@@ -176,8 +175,6 @@ def api_dora_reservar():
     except reserva_service.DadosPessoaisIncompletosError as e:
         return jsonify({"erro": str(e), "campos_faltando": e.campos_faltando}), 403
     except reserva_service.MatrizNaoGeradaError as e:
-        return jsonify({"erro": str(e)}), 403
-    except reserva_service.MedicoFixoNaoPodeAlugarError as e:
         return jsonify({"erro": str(e)}), 403
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400

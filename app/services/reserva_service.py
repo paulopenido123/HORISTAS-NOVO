@@ -100,35 +100,6 @@ class NaoAutorizadoError(Exception):
         )
 
 
-class MedicoFixoNaoPodeAlugarError(Exception):
-    """Médico mensalista/turno (tipo_vinculo='fixo') já tem consultório fixo
-    garantido pela grade -- não faz sentido (e não deixamos) ele também
-    alugar consultório avulso por hora/turno aqui. O seletor da tela de
-    turnos já filtra esses médicos fora, mas checamos de novo aqui como
-    defesa em profundidade (a rota da API pode ser chamada direto).
-
-    Também bloqueia tipo_vinculo='horista': esse é um tipo de médico
-    DIFERENTE do avulso -- não paga em R$/PIX aqui, tem saldo próprio em
-    HORAS (medicos.saldo_horas) creditado manualmente pela recepção, e
-    agenda pacientes através da recepção (matriz_liberacao +
-    agenda_consultas), num fluxo que não faz parte deste pacote. Sem essa
-    checagem, um horista real que fizesse login nesta tela veria um saldo
-    em R$ (saldo_creditos) que não é o dele e poderia ser levado a
-    "comprar" créditos via PIX que seu fluxo real nunca usa -- o saldo de
-    horas de verdade dele nunca seria tocado por essa reserva."""
-    def __init__(self, tipo_vinculo: str = "fixo"):
-        if tipo_vinculo == "horista":
-            super().__init__(
-                "Médicos horistas usam saldo de horas próprio, administrado pela recepção, "
-                "e não alugam consultório avulso por essa tela."
-            )
-        else:
-            super().__init__(
-                "Médicos mensalistas/turno já têm consultório fixo e não podem "
-                "alugar consultório avulso por essa tela."
-            )
-
-
 def _checar_data_nao_passada(data: str, hora_inicio: str | None = None):
     """Trava reserva de consultório numa data (ou horário, quando for por
     hora) que já passou -- pedido do Paulo em 11/09/2026: se o cliente
@@ -161,12 +132,15 @@ def _checar_data_nao_passada(data: str, hora_inicio: str | None = None):
 # especialidade, cpf e data de nascimento". Endereço conta como completo
 # com rua/número/bairro/cidade/estado/cep preenchidos (complemento
 # continua opcional). (rótulo, campo no banco)
+# Pedido do Paulo em 30/09/2026: "data de nascimento" não deve mais
+# impedir o médico de reservar -- removida da lista de obrigatórios (o
+# campo continua existindo em "Meus dados", só não bloqueia mais o
+# agendamento se ficar vazio).
 _CAMPOS_OBRIGATORIOS_PARA_RESERVAR = [
     ("telefone", "telefone"),
     ("e-mail", "email"),
     ("especialidade", "especialidade"),
     ("CPF", "cpf_cnpj"),
-    ("data de nascimento", "data_nascimento"),
     ("CEP", "endereco_cep"),
     ("rua/avenida", "endereco_rua"),
     ("número do endereço", "endereco_numero"),
@@ -189,23 +163,19 @@ def _checar_pode_alugar_avulso(medico: dict | None, criado_por_admin: bool = Fal
     reservar_turno/reservar_por_hora, e passa pra cá e pro resto da
     função reaproveitando o mesmo dict.)"""
     # Pedido do Paulo em 24/09/2026: o admin tem SEMPRE autonomia pra
-    # agendar (e cancelar) horário pra qualquer médico, de qualquer
-    # tipo_vinculo, mesmo sem acesso liberado ou cadastro completo --
-    # essas três checagens abaixo (autorização, tipo de vínculo, cadastro
-    # incompleto) existem pra proteger a RESERVA FEITA PELO PRÓPRIO
-    # MÉDICO nesta tela (avulso/site), não uma ação manual do admin em
-    # "Agendar para:" na Agenda Horistas. Por isso todas pulam quando
-    # criado_por_admin=True -- inclusive pra médico horista/fixo, que
-    # antes ficava bloqueado até nessa tela do admin (bug reportado pelo
-    # Paulo: tentou agendar pra uma médica horista e caiu no aviso
-    # "Médicos horistas usam saldo de horas próprio...", que só devia
-    # valer pra reserva feita pelo próprio médico avulso).
+    # agendar (e cancelar) horário pra qualquer médico, mesmo sem acesso
+    # liberado ou cadastro completo -- essas checagens abaixo (autorização,
+    # cadastro incompleto) existem pra proteger a RESERVA FEITA PELO
+    # PRÓPRIO MÉDICO nesta tela, não uma ação manual do admin. Por isso
+    # todas pulam quando criado_por_admin=True.
+    # Pedido do Paulo em 30/09/2026: removida a checagem de
+    # tipo_vinculo='fixo'/'horista' -- essas classificações e as agendas
+    # (Agenda Fixos, Agenda Horistas) que dependiam delas foram removidas
+    # do sistema; todo médico agora é 'avulso' e passa por este fluxo.
     if criado_por_admin:
         return
     if medico and not medico.get("autorizado", True):
         raise NaoAutorizadoError()
-    if medico and medico.get("tipo_vinculo") in ("fixo", "horista"):
-        raise MedicoFixoNaoPodeAlugarError(medico.get("tipo_vinculo"))
     if medico:
         faltando = _campos_pessoais_faltando(medico)
         if faltando:

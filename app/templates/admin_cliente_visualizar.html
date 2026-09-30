@@ -48,7 +48,7 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
 <div class="top"><strong>LIFEMAX ADMIN · CLIENTES</strong><span>Administrador</span></div>
 <div class="nav">
   <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a><a href="{{ url_for('admin.agenda_horistas') }}">Agenda Horistas</a>
+  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
   <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
   <a href="{{ url_for('admin.clientes') }}" class="active">Clientes</a>
   <a href="{{ url_for('admin.horas') }}">Horas</a>
@@ -68,7 +68,6 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
     <div class="topo-card">
       <div>
         <h2>{{ medico.nome }}</h2>
-        <span class="tag">{{ medico.tipo_vinculo or 'avulso' }}</span>
         {% if medico.autorizado %}
         <span class="status-tag liberado">Autorizado</span>
         {% else %}

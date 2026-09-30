@@ -48,12 +48,8 @@ def painel():
         r["pacientes_agendados"] = pacientes_agendados_por_reserva.get(r["id"], [])
     # Pedido do Paulo em 23/09/2026 (item 2): avisa no painel quais dados
     # ainda faltam pra poder reservar -- mesma lista de campos que
-    # reserva_service._checar_pode_alugar_avulso exige (só chega a
-    # mostrar o aviso pra quem realmente aluga consultório avulso; fixo
-    # e horista têm agenda própria e não passam por essa checagem).
-    campos_faltando = []
-    if medico.get("tipo_vinculo") not in ("fixo", "horista"):
-        campos_faltando = reserva_service._campos_pessoais_faltando(medico)
+    # reserva_service._checar_pode_alugar_avulso exige.
+    campos_faltando = reserva_service._campos_pessoais_faltando(medico)
     return render_template("painel_medico.html", medico=medico, saldo=saldo, saldo_horas=saldo_horas,
                             transacoes=transacoes, precos=precos,
                             horas_minimas=horas_minimas, preco_minimo=preco_minimo,
@@ -64,7 +60,7 @@ def painel():
                             campos_faltando=campos_faltando)
 
 
-def _resolver_pacote_salas(body: dict, medico: dict):
+def _resolver_pacote_salas(body: dict):
     """Lê `pacote_horas` do corpo da requisição (compra de um pacote
     fechado de horas -- 6/12/24/48h, ver creditos_db.listar_pacotes_horas)
     e devolve (pacote_ou_None, valor_salas, erro_ou_None, status_http).
@@ -80,15 +76,6 @@ def _resolver_pacote_salas(body: dict, medico: dict):
     except (TypeError, ValueError):
         return None, 0.0, "Pacote de horas inválido.", 400
 
-    if medico and medico.get("tipo_vinculo") in ("fixo", "horista"):
-        # Carteira "salas" só é gasta reservando consultório avulso por
-        # hora/turno (bloqueado pra fixo/horista em reserva_service) --
-        # deixar comprar aqui geraria um crédito em R$ que o médico nunca
-        # conseguiria usar. O crédito de IA continua liberado pra todo
-        # mundo, é uma carteira separada.
-        return None, 0.0, ("Médicos mensalistas/turno e horistas não usam a carteira de reserva "
-                            "de salas por essa tela — só o crédito de IA está disponível aqui."), 403
-
     pacote = creditos_db.obter_pacote_por_horas(pacote_horas)
     if not pacote:
         return None, 0.0, "Esse pacote de horas não existe (ou não está mais ativo).", 400
@@ -101,7 +88,7 @@ def comprar_creditos():
     body = request.get_json(force=True)
     medico = db.get_medico_by_id(medico_logado_id())
 
-    pacote, valor_salas, erro, status_erro = _resolver_pacote_salas(body, medico)
+    pacote, valor_salas, erro, status_erro = _resolver_pacote_salas(body)
     if erro:
         return jsonify({"erro": erro}), status_erro
 
@@ -154,7 +141,7 @@ def comprar_creditos_cartao():
     body = request.get_json(force=True)
     medico = db.get_medico_by_id(medico_logado_id())
 
-    pacote, valor_salas, erro, status_erro = _resolver_pacote_salas(body, medico)
+    pacote, valor_salas, erro, status_erro = _resolver_pacote_salas(body)
     if erro:
         return jsonify({"erro": erro}), status_erro
 
@@ -232,11 +219,8 @@ def pagina_dados_pessoais():
     # tela de "Parabéns" à toa se ele só entrar aqui pra corrigir um
     # campo depois de já estar tudo liberado) -- mesma checagem de
     # reserva_service._campos_pessoais_faltando usada em todo o resto do
-    # sistema (fixo/horista não passam por essa exigência).
-    cadastro_completo_inicial = (
-        medico.get("tipo_vinculo") in ("fixo", "horista")
-        or not reserva_service._campos_pessoais_faltando(medico)
-    )
+    # sistema.
+    cadastro_completo_inicial = not reserva_service._campos_pessoais_faltando(medico)
     return render_template("painel_dados_pessoais.html", medico=medico,
                             cadastro_completo_inicial=cadastro_completo_inicial)
 
@@ -253,10 +237,7 @@ def salvar_dados_pessoais():
     # completo (o suficiente pra reservar) DEPOIS deste salvamento -- o
     # front usa isso pra decidir se mostra a tela de "Parabéns" (só na
     # transição de incompleto -> completo, ver painel_dados_pessoais.html).
-    cadastro_completo = (
-        medico.get("tipo_vinculo") in ("fixo", "horista")
-        or not reserva_service._campos_pessoais_faltando(medico)
-    )
+    cadastro_completo = not reserva_service._campos_pessoais_faltando(medico)
     return jsonify({"resultado": "Dados salvos com sucesso.", "medico": medico,
                      "cadastro_completo": cadastro_completo})
 
@@ -454,13 +435,6 @@ def transferir_creditos():
     if origem not in ("salas", "ia"):
         return jsonify({"erro": "Carteira de origem inválida."}), 400
     destino = "ia" if origem == "salas" else "salas"
-
-    if medico and medico.get("tipo_vinculo") in ("fixo", "horista"):
-        # mesma regra da compra: médico fixo/horista não usa a carteira
-        # de salas (não consegue gastar), então não faz sentido mover
-        # saldo pra ela nem tirar saldo dela.
-        return jsonify({"erro": "Médicos mensalistas/turno e horistas não usam a carteira de "
-                                 "reserva de salas — não é possível transferir com ela."}), 403
 
     if origem == "salas":
         try:

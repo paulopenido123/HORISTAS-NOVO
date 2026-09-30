@@ -249,7 +249,7 @@
     <p>Veja a disponibilidade de todos os consultórios da semana. Clique em "Reservar" e depois no horário verde que deseja ocupar (1h por clique). Para cancelar, clique em "Cancelar" e depois no horário reservado por você (azul).</p>
   </div>
   <div style="display:flex; align-items:center; gap:18px;">
-    {% if medico and medico.tipo_vinculo not in ('fixo', 'horista') %}
+    {% if medico %}
     <div class="saldo-header">
       <div class="rotulo">Saldo de horas</div>
       <div class="valor" id="saldo-header-valor">{{ saldo_horas }}h</div>

@@ -6,8 +6,7 @@ Lifemax já usa (não mais por turno inteiro).
 
 Grade de horários fixos usada em todo o sistema (11 horários por dia,
 com intervalo de almoço entre 12h e 13h, e uma pausa para limpeza entre
-17h e 17h30 -- pedido do Paulo em 21/09/2026, mesma pausa que a agenda
-dos médicos fixos já usava, ver agenda_fixos_service.TURNOS_HORARIOS):
+17h e 17h30 -- pedido do Paulo em 21/09/2026):
   Manhã: 08:00, 09:00, 10:00, 11:00
   Tarde: 13:00, 14:00, 15:00, 16:00
   (pausa para limpeza: 17:00–17:30)

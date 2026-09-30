@@ -327,7 +327,6 @@ if ("serviceWorker" in navigator) {
         <h1>Seu painel Lifemax.</h1>
         <p class="lead">Acompanhe sua contratação, seu saldo de créditos e suas reservas.</p>
       </div>
-      {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
       <div class="hero-saldo-bloco">
         <div class="hero-saldo-titulo">Saldo de horas</div>
         <div class="hero-saldo-valor">{{ saldo_horas }}h</div>
@@ -337,7 +336,6 @@ if ("serviceWorker" in navigator) {
           <a class="btn-hero-verde" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}">Meus dados</a>
         </div>
       </div>
-      {% endif %}
     </div>
   </div>
 </section>
@@ -483,7 +481,6 @@ if ("serviceWorker" in navigator) {
   <div class="board">
     <div class="board-top"><span class="puck"></span>Visão geral da conta</div>
     <div class="board-grid">
-      {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
       <div class="cell">
         <div class="cell-label">Saldo para reserva de salas</div>
         <div class="total">{{ saldo_horas }}h</div>
@@ -493,7 +490,6 @@ if ("serviceWorker" in navigator) {
           <div class="aviso-saldo">⚠️ Saldo insuficiente para a reserva mínima de {{ horas_minimas }}h — compre mais horas para reservar.</div>
         {% endif %}
       </div>
-      {% endif %}
 
       <div class="cell">
         <div class="cell-label">Meu perfil</div>
@@ -521,11 +517,6 @@ if ("serviceWorker" in navigator) {
      bastidores para quem já tinha conectado pelo sistema maior — só não há
      tela aqui para conectar/desconectar. #}
 
-  {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
-  {# Aluguel de consultório por hora é só pra médico 'avulso' -- mensalista/
-     turno já tem consultório pela grade, e horista de verdade usa saldo de
-     horas próprio administrado pela recepção (fluxo fora deste pacote) --
-     nenhum dos dois usa essa tela (ver reserva_service.MedicoFixoNaoPodeAlugarError). #}
   <div class="painel">
     <h2>Venda de horas avulsas</h2>
     <table>
@@ -545,7 +536,6 @@ if ("serviceWorker" in navigator) {
     </table>
     <div class="kv"><span>Mínimo por reserva</span><span>{{ precos.horas_minimas }}h</span></div>
   </div>
-  {% endif %}
 
   {% if modulos %}
   <div class="painel">
@@ -627,7 +617,6 @@ if ("serviceWorker" in navigator) {
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal" id="modal-conteudo" style="max-width:480px;">
 
-    {% if medico.tipo_vinculo not in ('fixo', 'horista') %}
     <div class="passo-modal" id="passo-horas">
       <h3>Comprar horas</h3>
       <p style="margin-bottom:16px;">Escolha um pacote fechado — quanto mais horas de uma vez, menor o preço por hora. Esse crédito só serve pra reservar consultório.</p>
@@ -651,7 +640,6 @@ if ("serviceWorker" in navigator) {
       <button class="btn-gerar" onclick="irParaConfirmacao('horas')">Continuar</button>
       <button class="btn-fechar" onclick="fecharModal()">Cancelar</button>
     </div>
-    {% endif %}
 
     <div class="passo-modal" id="passo-ia" hidden>
       <h3>Comprar créditos de IA</h3>

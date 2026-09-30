@@ -42,14 +42,9 @@ def pagina_turnos():
 @turnos_bp.route("/api/turnos/medicos", methods=["GET"])
 @requer_login_medico
 def api_medicos():
-    # Médico "fixo" (mensalista/turno) já tem consultório fixo garantido pela
-    # grade_medico_fixo, e o "horista" de verdade usa saldo de horas próprio
-    # administrado pela recepção (fluxo totalmente diferente, fora deste
-    # pacote) -- nenhum dos dois aluga consultório avulso por hora/turno
-    # aqui. Essa lista só mostra o PRÓPRIO médico logado, quando ele é
-    # 'avulso' -- nunca todos os médicos.
+    # Essa lista só mostra o PRÓPRIO médico logado -- nunca todos os médicos.
     medico = db.get_medico_by_id(medico_logado_id())
-    if medico is None or medico.get("tipo_vinculo") in ("fixo", "horista"):
+    if medico is None:
         return jsonify([])
     return jsonify([medico])
 
@@ -68,7 +63,7 @@ def api_grade():
     # Privacidade -- pedido do Paulo em 14/09/2026: o médico pode ver que
     # um horário está ocupado, mas NUNCA o nome de outro profissional
     # (só o dele mesmo). Quem vê todos os nomes é só o administrador, na
-    # tela "Agenda Horistas" (app/routes/admin.py api_agenda_horistas_grade).
+    # tela "Visualizar agenda" da Matriz (app/routes/admin.py api_matriz_grade).
     medico_id_atual = medico_logado_id()
     for r in grade.get("reservas", []):
         if r.get("medico_id") != medico_id_atual:
@@ -111,8 +106,6 @@ def api_reservar():
     except reserva_service.DadosPessoaisIncompletosError as e:
         return jsonify({"erro": str(e), "campos_faltando": e.campos_faltando}), 403
     except reserva_service.MatrizNaoGeradaError as e:
-        return jsonify({"erro": str(e)}), 403
-    except reserva_service.MedicoFixoNaoPodeAlugarError as e:
         return jsonify({"erro": str(e)}), 403
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
@@ -157,8 +150,6 @@ def api_reservar_horas():
     except reserva_service.DadosPessoaisIncompletosError as e:
         return jsonify({"erro": str(e), "campos_faltando": e.campos_faltando}), 403
     except reserva_service.MatrizNaoGeradaError as e:
-        return jsonify({"erro": str(e)}), 403
-    except reserva_service.MedicoFixoNaoPodeAlugarError as e:
         return jsonify({"erro": str(e)}), 403
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400

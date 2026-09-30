@@ -58,7 +58,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
 <div class="top"><strong>LIFEMAX ADMIN · CLIENTES</strong><span>Administrador</span></div>
 <div class="nav">
   <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a><a href="{{ url_for('admin.agenda_horistas') }}">Agenda Horistas</a>
+  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
   <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
   <a href="{{ url_for('admin.clientes') }}" class="active">Clientes</a><a href="{{ url_for('admin.horas') }}">Horas</a><a href="{{ url_for('admin.relatorios') }}">Relatórios</a><a href="{{ url_for('admin.controle_ia') }}">Controle de IA</a>
   <a href="{{ url_for('admin.admin_logout') }}">Sair</a>
@@ -90,7 +90,6 @@ details.ajuste summary::-webkit-details-marker{display:none}
         <tr>
           <th>Nome</th>
           <th>Contato</th>
-          <th>Vínculo</th>
           <th>Acesso</th>
           <th>Saldo Salas/Horas</th>
           <th>Saldo IA</th>
@@ -102,7 +101,6 @@ details.ajuste summary::-webkit-details-marker{display:none}
         <tr>
           <td><strong class="{{ 'nome-bloqueado' if not m.autorizado else '' }}">{{ m.nome }}</strong>{% if not m.ativo %}<br><span class="muted">(inativo)</span>{% endif %}</td>
           <td class="muted">{{ m.telefone or '—' }}{% if m.email %}<br>{{ m.email }}{% if m.email_confirmado %} <span title="E-mail confirmado pelo médico">⭐</span>{% endif %}{% endif %}</td>
-          <td><span class="tag">{{ m.tipo_vinculo or 'avulso' }}</span></td>
           <td>
             {% if m.autorizado %}
             <span class="status-tag liberado">Autorizado</span>

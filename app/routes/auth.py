@@ -8,7 +8,7 @@ from app.services import supabase_client as db
 from app.services import creditos_service as creditos_db
 from app.services import auth_service
 from app.services import recuperacao_senha_service as rec_senha
-from app.services import agenda_fixos_service
+from app.services import telefone_utils
 from app.extensions import limiter
 
 auth_bp = Blueprint("auth", __name__)
@@ -23,7 +23,7 @@ def primeiro_acesso():
 
     if request.method == "POST":
         etapa_enviada = request.form.get("etapa", "telefone")
-        telefone_digitado = agenda_fixos_service.normalizar_telefone(request.form.get("telefone", "")) or ""
+        telefone_digitado = telefone_utils.normalizar_telefone(request.form.get("telefone", "")) or ""
 
         if etapa_enviada == "telefone":
             medico = db.get_medico_by_telefone(telefone_digitado) if telefone_digitado else None
@@ -136,7 +136,7 @@ def confirmar_email(token):
 def login():
     erro = None
     if request.method == "POST":
-        telefone = agenda_fixos_service.normalizar_telefone(request.form.get("telefone", ""))
+        telefone = telefone_utils.normalizar_telefone(request.form.get("telefone", ""))
         senha = request.form.get("senha", "")
 
         medico = db.get_medico_by_telefone(telefone) if telefone else None
@@ -161,7 +161,7 @@ def logout():
 def esqueci_senha():
     enviado = False
     if request.method == "POST":
-        telefone = agenda_fixos_service.normalizar_telefone(request.form.get("telefone", "")) or ""
+        telefone = telefone_utils.normalizar_telefone(request.form.get("telefone", "")) or ""
         rec_senha.solicitar_recuperacao("medico", telefone)
         # Mensagem sempre igual, telefone cadastrado ou não -- evita que
         # alguém descubra, tentando telefones ao acaso, quais têm conta.
@@ -207,7 +207,7 @@ def redefinir_senha():
         email_form = request.form.get("email", email_valor)
 
         if primeiro_acesso:
-            telefone_valor = agenda_fixos_service.normalizar_telefone(telefone_form) or ""
+            telefone_valor = telefone_utils.normalizar_telefone(telefone_form) or ""
             email_valor = (email_form or "").strip()
 
         if len(senha) < 6:

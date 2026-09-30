@@ -630,18 +630,12 @@ def _modulos_ia_ativados_por_medico() -> dict:
 # ---------- Consultas para o dashboard admin ----------
 
 def listar_medicos_com_saldo(mes: int | None = None, ano: int | None = None) -> list[dict]:
-    """Quadro de clientes do Dashboard Admin -- TODOS os médicos (avulso,
-    fixo e horista), cada um aparecendo aqui sozinho assim que se
-    cadastra, sem nenhum passo manual. Cada linha já vem com os módulos
-    que aquele médico usa marcados (m['modulos_ia'], m['google_calendar_conectado'],
-    m['assistente_ativo'], m['tipo_vinculo']), pra tela desenhar as colunas
-    de módulo automaticamente.
-
-    Pros horistas, pula de propósito as contas de crédito em R$/PIX
-    (valor_gasto, horas_compradas, horas_gastas, tem_pagamento ficam
-    None) -- eles usam saldo_horas (Módulo 1: crédito de horas), não
-    créditos_transacoes/pagamentos_pix, então essas contas sempre dariam
-    zero/vazio pra eles.
+    """Quadro de clientes do Dashboard Admin -- TODOS os médicos, cada um
+    aparecendo aqui sozinho assim que se cadastra, sem nenhum passo
+    manual. Cada linha já vem com os módulos que aquele médico usa
+    marcados (m['modulos_ia'], m['google_calendar_conectado'],
+    m['assistente_ativo']), pra tela desenhar as colunas de módulo
+    automaticamente.
 
     IMPORTANTE (motivo do Dashboard ficar lento, resolvido em
     08/09/2026): antes, cada médico não-horista custava 5 idas separadas
@@ -664,60 +658,52 @@ def listar_medicos_com_saldo(mes: int | None = None, ano: int | None = None) -> 
     modulos_ia_por_medico = _modulos_ia_ativados_por_medico()
     pacotes_atuais = listar_pacotes_horas()  # busca uma vez só (era buscado de novo a cada médico, mesmo problema)
 
-    ids_nao_horistas = [m["id"] for m in medicos if m.get("tipo_vinculo") != "horista"]
+    ids_medicos = [m["id"] for m in medicos]
 
     compras_por_medico: dict[str, list] = {}
     consumos_por_medico: dict[str, list] = {}
     medicos_com_pagamento: set = set()
 
-    if ids_nao_horistas:
+    if ids_medicos:
         compras = (
             client.table("creditos_transacoes").select("medico_id, valor, quantidade_horas, criado_em")
-            .in_("medico_id", ids_nao_horistas).eq("tipo", "compra").execute().data
+            .in_("medico_id", ids_medicos).eq("tipo", "compra").execute().data
         )
         for c in compras:
             compras_por_medico.setdefault(c["medico_id"], []).append(c)
 
         consumos = (
             client.table("creditos_transacoes").select("medico_id, quantidade_horas, criado_em")
-            .in_("medico_id", ids_nao_horistas).eq("tipo", "consumo").execute().data
+            .in_("medico_id", ids_medicos).eq("tipo", "consumo").execute().data
         )
         for c in consumos:
             consumos_por_medico.setdefault(c["medico_id"], []).append(c)
 
         pagos = (
             client.table("pagamentos_pix").select("medico_id")
-            .in_("medico_id", ids_nao_horistas).eq("status", "pago").execute().data
+            .in_("medico_id", ids_medicos).eq("status", "pago").execute().data
         )
         medicos_com_pagamento = {p["medico_id"] for p in pagos}
 
     for m in medicos:
-        if m.get("tipo_vinculo") == "horista":
-            m["valor_gasto"] = None
-            m["horas_compradas"] = None
-            m["horas_gastas"] = None
-            m["tem_pagamento"] = False
-            # m["saldo_horas"] já veio certo direto da consulta acima
-            # (é o saldo de horas de verdade do horista, Módulo 1)
-        else:
-            compras_filtradas = _filtrar_por_mes_ano(compras_por_medico.get(m["id"], []), mes, ano)
-            consumos_filtrados = _filtrar_por_mes_ano(consumos_por_medico.get(m["id"], []), mes, ano)
-            valor_gasto = round(sum(float(t["valor"]) for t in compras_filtradas), 2)
+        compras_filtradas = _filtrar_por_mes_ano(compras_por_medico.get(m["id"], []), mes, ano)
+        consumos_filtrados = _filtrar_por_mes_ano(consumos_por_medico.get(m["id"], []), mes, ano)
+        valor_gasto = round(sum(float(t["valor"]) for t in compras_filtradas), 2)
 
-            # Desde 10/09/2026, compra de pacote fechado (ver
-            # listar_pacotes_horas) grava a quantidade EXATA de horas na
-            # própria transação -- soma essas direto (sem estimativa) e só
-            # estima (pelo preço da hora avulsa) o que sobrar de compras
-            # antigas/livres que não têm quantidade_horas gravada.
-            horas_exatas = sum(int(t["quantidade_horas"]) for t in compras_filtradas if t.get("quantidade_horas"))
-            valor_sem_horas_exatas = round(
-                sum(float(t["valor"]) for t in compras_filtradas if not t.get("quantidade_horas")), 2
-            )
-            m["valor_gasto"] = valor_gasto
-            m["horas_compradas"] = horas_exatas + estimar_horas_compraveis(valor_sem_horas_exatas, pacotes_atuais)
-            m["horas_gastas"] = sum(int(t["quantidade_horas"] or 0) for t in consumos_filtrados)
-            m["saldo_horas"] = estimar_horas_compraveis(float(m.get("saldo_creditos") or 0), pacotes_atuais)
-            m["tem_pagamento"] = m["id"] in medicos_com_pagamento
+        # Desde 10/09/2026, compra de pacote fechado (ver
+        # listar_pacotes_horas) grava a quantidade EXATA de horas na
+        # própria transação -- soma essas direto (sem estimativa) e só
+        # estima (pelo preço da hora avulsa) o que sobrar de compras
+        # antigas/livres que não têm quantidade_horas gravada.
+        horas_exatas = sum(int(t["quantidade_horas"]) for t in compras_filtradas if t.get("quantidade_horas"))
+        valor_sem_horas_exatas = round(
+            sum(float(t["valor"]) for t in compras_filtradas if not t.get("quantidade_horas")), 2
+        )
+        m["valor_gasto"] = valor_gasto
+        m["horas_compradas"] = horas_exatas + estimar_horas_compraveis(valor_sem_horas_exatas, pacotes_atuais)
+        m["horas_gastas"] = sum(int(t["quantidade_horas"] or 0) for t in consumos_filtrados)
+        m["saldo_horas"] = estimar_horas_compraveis(float(m.get("saldo_creditos") or 0), pacotes_atuais)
+        m["tem_pagamento"] = m["id"] in medicos_com_pagamento
         m["modulos_ia"] = modulos_ia_por_medico.get(m["id"], set())
 
     return medicos
@@ -735,7 +721,7 @@ def estatisticas_gerais(mes: int | None = None, ano: int | None = None) -> dict:
         .data
     )
     medicos = (
-        client.table("medicos").select("id, saldo_creditos").neq("tipo_vinculo", "horista").execute().data
+        client.table("medicos").select("id, saldo_creditos").execute().data
     )
 
     compras_filtradas = _filtrar_por_mes_ano(compras, mes, ano)
@@ -823,8 +809,7 @@ def estatisticas_horas(mes: int | None = None, ano: int | None = None) -> dict:
         .execute().data
     )
     medicos = (
-        client.table("medicos").select("id, saldo_creditos, tipo_vinculo")
-        .neq("tipo_vinculo", "horista")  # horista usa outro mecanismo de crédito de horas, não essa carteira
+        client.table("medicos").select("id, saldo_creditos")
         .execute().data
     )
 
@@ -918,7 +903,7 @@ def atualizar_dados_pessoais(medico_id: str, dados: dict) -> dict:
     if not payload:
         raise ValueError("Nenhum dado pra salvar.")
     if "telefone" in payload:
-        from app.services.agenda_fixos_service import normalizar_telefone
+        from app.services.telefone_utils import normalizar_telefone
         # a tela mostra e recebe o telefone SEM o "55" (pedido do Paulo)
         # -- aqui é onde ele volta a ganhar o "55" antes de ir pro banco,
         # senão o WhatsApp para de reconhecer esse médico

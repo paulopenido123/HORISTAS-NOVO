@@ -30,11 +30,16 @@
      DENTRO do próprio .hero, sem o header separado. */
   .hero-topo {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 18px 28px 22px; flex-wrap: wrap; gap: 10px;
+    padding: 10px 28px 6px; flex-wrap: wrap; gap: 14px;
   }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; color: var(--onnavy-ink); }
   .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan-glow); box-shadow: 0 0 10px var(--cyan-glow); }
   .brand-logo { height: 66px; width: auto; display: block; }
+  /* Pedido do Paulo em 19/10/2026: título da área do cliente na mesma altura da logo, ao centro do topo. */
+  .hero-titulo { flex: 1; min-width: 240px; }
+  .hero-titulo .eyebrow { font-size: 12px; margin-bottom: 2px; }
+  .hero-titulo h1 { font-size: clamp(22px, 2.6vw, 30px); }
+  .hero-titulo .lead { font-size: 13.5px; margin-top: 2px; max-width: none; line-height: 1.4; }
   .hero-topo-direita { display: flex; align-items: center; gap: 16px; }
   .hero-nome { font-weight: 700; font-size: 15px; color: var(--onnavy-ink); }
   /* Pedido do Paulo em 23/09/2026 (item 2): todo botão de fundo branco
@@ -47,7 +52,7 @@
   .sair:hover { background: #187A4D; }
 
   /* ---------- HERO (Área do cliente) ---------- */
-  .hero { padding: 0 0 40px; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%); }
+  .hero { padding: 0 0 22px; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%); }
   .eyebrow { font-size: 13.5px; font-weight: 700; color: var(--cyan-glow); letter-spacing: 0.04em; margin-bottom: 10px; text-transform: uppercase; }
   .hero h1 { font-weight: 800; font-size: clamp(26px, 3.6vw, 44px); line-height: 1.12; letter-spacing: -0.01em; color: #fff; }
   .lead { color: rgba(234,242,245,0.82); font-size: 15.5px; margin-top: 10px; max-width: 520px; line-height: 1.6; }
@@ -55,10 +60,10 @@
   /* ---------- Saldo de horas + botão "Reservar consultórios" no hero --
      pedido do Paulo em 14/09/2026: sobem pra faixa azul escura do topo,
      do lado direito, em vez de ficarem num bloco separado mais abaixo. ---- */
-  .hero-linha { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
-  .hero-saldo-bloco { text-align: right; flex-shrink: 0; }
-  .hero-saldo-titulo { font-weight: 800; font-size: clamp(26px, 3.6vw, 44px); line-height: 1.12; letter-spacing: -0.01em; color: #fff; margin: 0; }
-  .hero-saldo-valor { font-weight: 800; font-size: 30px; color: #fff; margin: 4px 0 14px; }
+  .hero-saldo-bloco { text-align: center; padding: 0 24px; }
+  .hero-saldo-linha { display: flex; align-items: baseline; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+  .hero-saldo-titulo { font-weight: 800; font-size: clamp(22px, 2.6vw, 32px); line-height: 1.12; letter-spacing: -0.01em; color: #fff; margin: 0; }
+  .hero-saldo-valor { font-weight: 800; font-size: clamp(22px, 2.6vw, 32px); color: #fff; margin: 0; }
   /* ---------- Botões do hero (Comprar horas / Reservar consultórios /
      Meus dados) -- pedido do Paulo em 23/09/2026 (item 1): os 3 com
      EXATAMENTE o mesmo formato/cor/tamanho (antes "Reservar" era um
@@ -68,19 +73,13 @@
      do board mais abaixo (.btn-cyan, var(--cyan)), aqui um pouco mais
      forte (--verde) pra ter contraste suficiente sobre o fundo azul
      escuro do hero. ---- */
-  .hero-botoes-linha { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .hero-botoes-linha { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   .btn-hero-verde {
     background: var(--verde); color: #fff; border: 1px solid var(--verde); padding: 12px 22px; border-radius: 7px;
     font-family: var(--display); font-weight: 800; font-size: 15.5px; cursor: pointer; text-decoration: none;
     display: inline-block; text-align: center; transition: background 0.15s;
   }
   .btn-hero-verde:hover { background: #187A4D; }
-
-  @media (max-width: 640px) {
-    .hero-botoes-linha { justify-content: flex-start; }
-    .hero-linha { flex-direction: column; }
-    .hero-saldo-bloco { text-align: left; }
-  }
 
   /* ---------- total (padrão "área do cliente") ---------- */
   .total { font-weight: 800; font-size: 38px; color: var(--ink); font-family: var(--display); line-height: 1.1; margin: 4px 0 2px; }
@@ -315,27 +314,25 @@ if ("serviceWorker" in navigator) {
 <section class="hero">
   <div class="hero-topo">
     <div class="brand"><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
+    <div class="hero-titulo">
+      <div class="eyebrow">Área do cliente</div>
+      <h1>Seu painel Lifemax.</h1>
+      <p class="lead">Acompanhe sua contratação, seu saldo de créditos e suas reservas.</p>
+    </div>
     <div class="hero-topo-direita">
       <div class="hero-nome">Bem-vindo, {{ medico.nome }}</div>
       <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
     </div>
   </div>
-  <div class="container" style="padding-top:0; padding-bottom:0;">
-    <div class="hero-linha">
-      <div>
-        <div class="eyebrow">Área do cliente</div>
-        <h1>Seu painel Lifemax.</h1>
-        <p class="lead">Acompanhe sua contratação, seu saldo de créditos e suas reservas.</p>
-      </div>
-      <div class="hero-saldo-bloco">
-        <div class="hero-saldo-titulo">Saldo de horas</div>
-        <div class="hero-saldo-valor">{{ saldo_horas }}h</div>
-        <div class="hero-botoes-linha">
-          <button type="button" class="btn-hero-verde" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
-          <a class="btn-hero-verde" href="{{ url_for('turnos.pagina_turnos') }}">Reservar consultórios</a>
-          <a class="btn-hero-verde" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}">Meus dados</a>
-        </div>
-      </div>
+  <div class="hero-saldo-bloco">
+    <div class="hero-saldo-linha">
+      <span class="hero-saldo-titulo">Saldo de horas</span>
+      <span class="hero-saldo-valor">{{ saldo_horas }}h</span>
+    </div>
+    <div class="hero-botoes-linha">
+      <button type="button" class="btn-hero-verde" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
+      <a class="btn-hero-verde" href="{{ url_for('turnos.pagina_turnos') }}">Reservar consultórios</a>
+      <a class="btn-hero-verde" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}">Meus dados</a>
     </div>
   </div>
 </section>

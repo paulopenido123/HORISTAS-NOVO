@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
+<head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Meu painel — Lifemax</title>
@@ -34,7 +34,7 @@
   }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; color: var(--onnavy-ink); }
   .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan-glow); box-shadow: 0 0 10px var(--cyan-glow); }
-  .brand-logo { height: 66px; width: auto; display: block; }
+  .brand-logo { height: 52px; width: auto; display: block; background: #fff; border-radius: 8px; padding: 5px 10px; }
   /* Pedido do Paulo em 19/10/2026: título da área do cliente na mesma altura da logo, ao centro do topo. */
   .hero-titulo { flex: 1; min-width: 240px; }
   .hero-titulo .eyebrow { font-size: 12px; margin-bottom: 2px; }
@@ -113,7 +113,7 @@
   .board { background: linear-gradient(165deg, var(--panel) 0%, var(--panel-2) 100%); border: 1px solid var(--line-strong); border-radius: 10px; overflow: hidden; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(14,42,58,0.05); }
   .board-top { display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--ink-faint); }
   .board-top .puck { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
-  .board-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--line); }
+  .board-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
   @media (max-width: 860px) { .board-grid { grid-template-columns: 1fr; } }
   .cell { background: var(--panel); padding: 24px; }
   .cell-label { font-weight: 700; font-size: 13px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 16px; }
@@ -283,7 +283,7 @@
 </style>
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#0E2A3B">
-<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Lifemax">

@@ -60,8 +60,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
   <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
   <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
   <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
-  <a href="{{ url_for('admin.clientes') }}" class="active">Clientes</a><a href="{{ url_for('admin.horas') }}">Horas</a><a href="{{ url_for('admin.relatorios') }}">Relatórios</a><a href="{{ url_for('admin.controle_ia') }}">Controle de IA</a>
-  <a href="{{ url_for('admin.admin_logout') }}">Sair</a>
+  <a href="{{ url_for('admin.clientes') }}" class="active">Clientes</a><a href="{{ url_for('admin.horas') }}">Horas</a><a href="{{ url_for('admin.relatorios') }}">Relatórios</a><a href="{{ url_for('admin.admin_logout') }}">Sair</a>
 </div>
 <div class="wrap">
   {% with mensagens = get_flashed_messages(with_categories=true) %}
@@ -92,7 +91,6 @@ details.ajuste summary::-webkit-details-marker{display:none}
           <th>Contato</th>
           <th>Acesso</th>
           <th>Saldo Salas/Horas</th>
-          <th>Saldo IA</th>
           <th>Ação</th>
         </tr>
       </thead>
@@ -132,11 +130,6 @@ details.ajuste summary::-webkit-details-marker{display:none}
               <form class="form-ajuste" method="post" action="{{ url_for('admin.ajustar_saldo_cliente', medico_id=m.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="busca" value="{{ busca }}">
-                <label>Carteira</label>
-                <select name="carteira" required onchange="atualizarUnidadeAjusteLista(this)">
-                  <option value="salas">Salas/Horas (medido em horas)</option>
-                  <option value="ia">IA (medido em R$)</option>
-                </select>
                 <label class="lbl-quantidade">Quantas horas? (negativo pra debitar)</label>
                 <input type="number" step="1" name="quantidade" class="input-quantidade" placeholder="ex: 15 ou -5" required>
                 <label>Motivo (opcional)</label>
@@ -145,7 +138,6 @@ details.ajuste summary::-webkit-details-marker{display:none}
               </form>
             </details>
           </td>
-          <td>R$ {{ "%.2f"|format(m.saldo_ia) }}</td>
           <td>
             <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.visualizar_cliente', medico_id=m.id) }}">🔍 Visualizar</a>
             <details class="ajuste">
@@ -162,7 +154,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="7" class="muted">Nenhum cliente encontrado.</td></tr>
+        <tr><td colspan="5" class="muted">Nenhum cliente encontrado.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -213,22 +205,6 @@ details.ajuste summary::-webkit-details-marker{display:none}
 </div>
 
 <script>
-function atualizarUnidadeAjusteLista(select) {
-  if (!select) return;
-  const form = select.closest('form');
-  const label = form.querySelector('.lbl-quantidade');
-  const input = form.querySelector('.input-quantidade');
-  if (select.value === 'ia') {
-    label.textContent = 'Valor em R$ (negativo pra debitar)';
-    input.step = '0.01';
-    input.placeholder = 'ex: 150 ou -50';
-  } else {
-    label.textContent = 'Quantas horas? (negativo pra debitar)';
-    input.step = '1';
-    input.placeholder = 'ex: 15 ou -5';
-  }
-}
-
 function csrfHeader() {
   return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
 }

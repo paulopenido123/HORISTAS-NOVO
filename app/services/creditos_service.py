@@ -196,19 +196,6 @@ def tryout_restante(medico_id: str) -> int:
     return 0
 
 
-def obter_saldo_ia(medico_id: str) -> float:
-    """Se a migração que criou a coluna saldo_ia ainda não rodou no banco
-    (ex: código já foi publicado, mas a migração SQL ainda não), devolve
-    0 em vez de quebrar a tela inteira do médico -- roda
-    sql/migration_saldo_ia_separado.sql pra isso funcionar de verdade."""
-    try:
-        resp = get_client().table("medicos").select("saldo_ia").eq("id", medico_id).execute()
-        return float(resp.data[0]["saldo_ia"]) if resp.data else 0.0
-    except Exception as e:
-        print(f"[creditos_service] saldo_ia indisponível (rode a migração?): {e}")
-        return 0.0
-
-
 def registrar_transacao(medico_id: str, tipo: str, valor: float, descricao: str,
                          reserva_id: str | None = None, pagamento_id: str | None = None,
                          quantidade_horas: int | None = None, categoria: str = "horas",
@@ -219,29 +206,25 @@ def registrar_transacao(medico_id: str, tipo: str, valor: float, descricao: str,
     valor: positivo para compra/ajuste-crédito, negativo para consumo.
     quantidade_horas: quantas horas essa reserva ocupou (só faz sentido
     para tipo='consumo' — usado nos relatórios do dashboard por hora).
-    categoria: 'horas' (padrão, reserva de consultório) ou 'ia' (uso do
-    assistente de IA) — usado nos relatórios.
+    categoria: 'horas' (reserva de consultório) — usado nos relatórios.
 
-    `carteira`: 'salas' (padrão, mexe em saldo_creditos) ou 'ia' (mexe
-    em saldo_ia) -- desde a divisão pedida pelo Paulo em 08/09/2026,
-    são DUAS carteiras de verdade, cada uma com seu próprio saldo e seu
-    próprio alerta de saldo baixo (antes era um saldo só).
+    `carteira`: só existe a 'salas' (saldo_creditos). A carteira de IA
+    foi removida do sistema a pedido do Paulo em 19/10/2026.
     """
-    if carteira not in ("salas", "ia"):
+    if carteira != "salas":
         raise ValueError(f"Carteira inválida: {carteira}")
 
-    campo_saldo = "saldo_creditos" if carteira == "salas" else "saldo_ia"
-    campo_alerta = "alerta_saldo_baixo_enviado" if carteira == "salas" else "alerta_saldo_ia_baixo_enviado"
-    obter = obter_saldo if carteira == "salas" else obter_saldo_ia
+    campo_saldo = "saldo_creditos"
+    campo_alerta = "alerta_saldo_baixo_enviado"
 
     client = get_client()
-    saldo_atual = obter(medico_id)
+    saldo_atual = obter_saldo(medico_id)
     novo_saldo = round(saldo_atual + valor, 2)
 
     update_medico = {campo_saldo: novo_saldo}
     if valor > 0:
         # sempre que o saldo sobe (compra ou ajuste positivo), destrava o
-        # alerta de saldo baixo DESSA carteira, pra poder ser enviado de
+        # alerta de saldo baixo, pra poder ser enviado de
         # novo no futuro se o saldo cair de novo
         update_medico[campo_alerta] = False
     client.table("medicos").update(update_medico).eq("id", medico_id).execute()
@@ -310,6 +293,7 @@ def listar_transacoes_medico(medico_id: str, limite: int = 50) -> list[dict]:
         .table("creditos_transacoes")
         .select("*")
         .eq("medico_id", medico_id)
+        .eq("carteira", "salas")  # IA foi removida do sistema (19/10/2026) -- movimentos antigos dessa carteira não aparecem mais
         .order("criado_em", desc=True)
         .limit(limite)
         .execute()
@@ -326,7 +310,7 @@ def enriquecer_transacoes_com_horas(transacoes: list[dict]) -> list[dict]:
     compra de pacote); quando não tem (transações antigas, ou algum
     lançamento que não grava isso), estima a partir do valor em R$ pelo
     preço atual da hora avulsa -- mesma lógica de `saldo_em_horas_medico`.
-    Transações da carteira 'ia' não são mexidas, continuam em R$."""
+    """
     preco_h = preco_hora_avulsa()
     for t in transacoes:
         if (t.get("carteira") or "salas") != "salas":
@@ -414,75 +398,22 @@ def saldo_em_horas_medico(medico_id: str) -> int:
     return estimar_horas_compraveis(obter_saldo(medico_id))
 
 
-# ---------- Transferência entre carteiras (salas <-> IA) ----------
-
-def transferir_saldo(medico_id: str, origem: str, valor: float) -> dict:
-    """Move `valor` (em R$) de uma carteira do médico pra outra --
-    'salas' (saldo_creditos, só serve pra reservar consultório) <->
-    'ia' (saldo_ia, só serve pros módulos de assistente de IA).
-    Pedido do Paulo em 10/09/2026: o médico pode preferir mover saldo
-    de uma conta pra outra em vez de pagar de novo via Asaas.
-
-    Registrado como DUAS transações tipo='ajuste' (uma negativa na
-    origem, uma positiva no destino, mesmo pagamento_id=None) -- mantém
-    o extrato de cada carteira auditável, igual a qualquer outro
-    movimento de saldo."""
-    if origem not in ("salas", "ia"):
-        raise ValueError("Carteira de origem inválida.")
-    destino = "ia" if origem == "salas" else "salas"
-
-    if valor <= 0:
-        raise ValueError("O valor da transferência precisa ser maior que zero.")
-
-    saldo_origem = obter_saldo(medico_id) if origem == "salas" else obter_saldo_ia(medico_id)
-    if round(valor, 2) > round(saldo_origem, 2):
-        raise ValueError(f"Saldo insuficiente na carteira de origem (você tem R$ {saldo_origem:.2f}).")
-
-    nome_origem = "IA" if origem == "ia" else "horas/salas"
-    nome_destino = "IA" if destino == "ia" else "horas/salas"
-
-    # A perna que toca a carteira 'salas' grava quantidade_horas (mesmo
-    # preço da hora avulsa usado em todo o resto do sistema) -- pedido do
-    # Paulo em 10/09/2026: a carteira de Salas/Horas é medida em horas em
-    # qualquer lugar, inclusive no extrato de uma transferência, nunca só
-    # em R$ (ver enriquecer_transacoes_com_horas, que também cobre o caso
-    # de uma transferência antiga sem isso gravado).
-    preco_h = preco_hora_avulsa()
-    horas_equivalentes = round(valor / preco_h, 1) if preco_h > 0 else None
-
-    registrar_transacao(
-        medico_id, tipo="ajuste", valor=-valor,
-        descricao=f"Transferência de saldo para a carteira de {nome_destino}",
-        carteira=origem,
-        quantidade_horas=horas_equivalentes if origem == "salas" else None,
-    )
-    resultado = registrar_transacao(
-        medico_id, tipo="ajuste", valor=valor,
-        descricao=f"Transferência de saldo vinda da carteira de {nome_origem}",
-        carteira=destino,
-        quantidade_horas=horas_equivalentes if destino == "salas" else None,
-    )
-    return resultado
-
-
 # ---------- Pagamentos PIX ----------
 
 def criar_registro_pagamento(medico_id: str, asaas_payment_id: str, asaas_customer_id: str,
                               valor: float, qr_code_base64: str, copia_e_cola: str,
-                              valor_salas: float | None = None, valor_ia: float = 0.0,
+                              valor_salas: float | None = None,
                               horas_pacote: int | None = None) -> dict:
-    """`valor_salas`/`valor_ia`: quanto do total é pra cada carteira --
-    o webhook usa isso pra saber como dividir o crédito quando o Asaas
-    confirmar o pagamento (ver webhooks_asaas.py). Se `valor_salas` não
-    for informado, assume que é tudo pra salas (comportamento de
-    sempre, antes da divisão de carteiras).
+    """`valor_salas`: quanto do total vira crédito de horas quando o
+    Asaas confirmar o pagamento (ver webhooks_asaas.py). Se não for
+    informado, assume que é o valor todo.
 
     `horas_pacote`: se a compra foi de um pacote fechado (ver
     listar_pacotes_horas), guarda quantas horas ele vale -- é o que
     permite creditar a quantidade EXATA de horas no webhook, em vez de
     estimar a partir do valor pago."""
     if valor_salas is None:
-        valor_salas = valor - valor_ia
+        valor_salas = valor
     resp = (
         get_client()
         .table("pagamentos_pix")
@@ -492,7 +423,6 @@ def criar_registro_pagamento(medico_id: str, asaas_payment_id: str, asaas_custom
             "asaas_customer_id": asaas_customer_id,
             "valor": valor,
             "valor_salas": valor_salas,
-            "valor_ia": valor_ia,
             "status": "pendente",
             "forma_pagamento": "pix",
             "qr_code_base64": qr_code_base64,
@@ -506,10 +436,10 @@ def criar_registro_pagamento(medico_id: str, asaas_payment_id: str, asaas_custom
 
 def criar_registro_pagamento_cartao(medico_id: str, asaas_payment_id: str, asaas_customer_id: str,
                                      valor: float, invoice_url: str,
-                                     valor_salas: float | None = None, valor_ia: float = 0.0,
+                                     valor_salas: float | None = None,
                                      horas_pacote: int | None = None, parcelas: int = 1) -> dict:
     if valor_salas is None:
-        valor_salas = valor - valor_ia
+        valor_salas = valor
     resp = (
         get_client()
         .table("pagamentos_pix")
@@ -519,7 +449,6 @@ def criar_registro_pagamento_cartao(medico_id: str, asaas_payment_id: str, asaas
             "asaas_customer_id": asaas_customer_id,
             "valor": valor,
             "valor_salas": valor_salas,
-            "valor_ia": valor_ia,
             "status": "pendente",
             "forma_pagamento": "cartao",
             "invoice_url": invoice_url,
@@ -613,29 +542,13 @@ def marcar_nota_fiscal_enviada(pagamento_id: str) -> dict:
     return resp.data[0]
 
 
-def _modulos_ia_ativados_por_medico() -> dict:
-    """P/ o quadro de clientes do Dashboard Admin: quais módulos de IA
-    (secretaria/prontuario/financeiro) cada médico já ativou pelo menos
-    uma vez -- existe uma linha em medico_modulos_ia = já usou de
-    verdade (ver app/services/ia_uso_service.py, que é quem cria essa
-    linha no primeiro uso). 1 consulta só pra todo mundo, não por
-    médico, pra não multiplicar o tempo de carregamento da tela."""
-    resp = get_client().table("medico_modulos_ia").select("medico_id, modulo_slug").execute()
-    resultado: dict = {}
-    for linha in resp.data:
-        resultado.setdefault(linha["medico_id"], set()).add(linha["modulo_slug"])
-    return resultado
-
-
 # ---------- Consultas para o dashboard admin ----------
 
 def listar_medicos_com_saldo(mes: int | None = None, ano: int | None = None) -> list[dict]:
     """Quadro de clientes do Dashboard Admin -- TODOS os médicos, cada um
     aparecendo aqui sozinho assim que se cadastra, sem nenhum passo
     manual. Cada linha já vem com os módulos que aquele médico usa
-    marcados (m['modulos_ia'], m['google_calendar_conectado'],
-    m['assistente_ativo']), pra tela desenhar as colunas de módulo
-    automaticamente.
+    marcados (m['google_calendar_conectado'], m['assistente_ativo']).
 
     IMPORTANTE (motivo do Dashboard ficar lento, resolvido em
     08/09/2026): antes, cada médico não-horista custava 5 idas separadas
@@ -655,7 +568,6 @@ def listar_medicos_com_saldo(mes: int | None = None, ano: int | None = None) -> 
         .execute()
     )
     medicos = resp.data
-    modulos_ia_por_medico = _modulos_ia_ativados_por_medico()
     pacotes_atuais = listar_pacotes_horas()  # busca uma vez só (era buscado de novo a cada médico, mesmo problema)
 
     ids_medicos = [m["id"] for m in medicos]
@@ -704,7 +616,6 @@ def listar_medicos_com_saldo(mes: int | None = None, ano: int | None = None) -> 
         m["horas_gastas"] = sum(int(t["quantidade_horas"] or 0) for t in consumos_filtrados)
         m["saldo_horas"] = estimar_horas_compraveis(float(m.get("saldo_creditos") or 0), pacotes_atuais)
         m["tem_pagamento"] = m["id"] in medicos_com_pagamento
-        m["modulos_ia"] = modulos_ia_por_medico.get(m["id"], set())
 
     return medicos
 
@@ -837,9 +748,8 @@ def estatisticas_horas(mes: int | None = None, ano: int | None = None) -> dict:
     }
 
 
-def marcar_alerta_saldo_baixo_enviado(medico_id: str, carteira: str = "salas"):
-    campo = "alerta_saldo_baixo_enviado" if carteira == "salas" else "alerta_saldo_ia_baixo_enviado"
-    get_client().table("medicos").update({campo: True}).eq("id", medico_id).execute()
+def marcar_alerta_saldo_baixo_enviado(medico_id: str):
+    get_client().table("medicos").update({"alerta_saldo_baixo_enviado": True}).eq("id", medico_id).execute()
 
 
 def medico_tem_pagamento_confirmado(medico_id: str) -> bool:

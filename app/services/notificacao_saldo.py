@@ -54,9 +54,9 @@ def verificar_e_notificar_saldo_baixo(medico: dict, saldo_atual: float):
         creditos_db.marcar_alerta_saldo_baixo_enviado(medico["id"])
 
 
-def verificar_e_notificar_saldo_baixo_fixo(medico: dict, saldo_atual: float, carteira: str):
-    """Pedido do Paulo (08/09/2026): quando QUALQUER uma das duas
-    carteiras (salas ou IA) chegar a R$ 100 ou menos, manda um e-mail
+def verificar_e_notificar_saldo_baixo_fixo(medico: dict, saldo_atual: float):
+    """Pedido do Paulo (08/09/2026): quando a
+    carteira (salas) chegar a R$ 100 ou menos, manda um e-mail
     com o link de login -- uma vez só até o saldo subir de novo (o
     flag reseta sozinho em registrar_transacao quando o saldo sobe).
     Sempre por e-mail (diferente do alerta de cima, que tenta WhatsApp
@@ -64,20 +64,18 @@ def verificar_e_notificar_saldo_baixo_fixo(medico: dict, saldo_atual: float, car
     if saldo_atual > LIMITE_ALERTA_SALDO_BAIXO:
         return
 
-    campo_alerta = "alerta_saldo_baixo_enviado" if carteira == "salas" else "alerta_saldo_ia_baixo_enviado"
-    if medico.get(campo_alerta):
+    if medico.get("alerta_saldo_baixo_enviado"):
         return
     if not medico.get("email"):
         return
 
     from flask import url_for
     link_login = url_for("auth.login", _external=True)
-    rotulo_carteira = "reserva de salas" if carteira == "salas" else "uso de IA"
 
     corpo_html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px;">
         <p>Prezado(a) Sr(a). {medico['nome']},</p>
-        <p>Seus créditos de {rotulo_carteira} estão com saldo de <strong>R$ {saldo_atual:.2f}</strong>.</p>
+        <p>Seus créditos de reserva de salas estão com saldo de <strong>R$ {saldo_atual:.2f}</strong>.</p>
         <p>Estamos enviando o link para evitar que sua conta fique sem saldo.</p>
         <p>
             <a href="{link_login}" style="background:#1a3c5e; color:white; padding:10px 18px;
@@ -92,6 +90,6 @@ def verificar_e_notificar_saldo_baixo_fixo(medico: dict, saldo_atual: float, car
         from app.services import email_service
         enviado = email_service.enviar_email([medico["email"]], "Saldo baixo — Lifemax", corpo_html)
         if enviado:
-            creditos_db.marcar_alerta_saldo_baixo_enviado(medico["id"], carteira)
+            creditos_db.marcar_alerta_saldo_baixo_enviado(medico["id"])
     except Exception as e:
-        print(f"[notificacao_saldo] Falha ao enviar e-mail de saldo baixo ({carteira}): {e}")
+        print(f"[notificacao_saldo] Falha ao enviar e-mail de saldo baixo: {e}")

@@ -7,7 +7,6 @@ from app.services import supabase_client as db
 from app.services import creditos_service as creditos_db
 from app.services import asaas_client
 from app.services import modulos_service
-from app.services import ia_uso_service as ia_uso
 from app.services import pacientes_service
 from app.services import reserva_service
 from app.services.auth_service import requer_login_medico, medico_logado_id
@@ -30,8 +29,6 @@ def painel():
     pacotes_horas = creditos_db.listar_pacotes_horas()
     notas_fiscais = creditos_db.listar_pagamentos_com_nota_medico(medico["id"])
     modulos = modulos_service.listar_modulos_visiveis(medico)
-    status_ia = ia_uso.status_ia_medico(medico["id"])
-    extrato_ia = ia_uso.extrato_uso_ia(medico["id"], limite=10)
     # "Minha agenda" -- pedido do Paulo em 11/09/2026: deixou de ser uma
     # tela separada (/painel/agenda, atrás de um botão) e passou a
     # aparecer direto aqui no topo do painel, logo no início, antes do
@@ -55,7 +52,6 @@ def painel():
                             horas_minimas=horas_minimas, preco_minimo=preco_minimo,
                             pacotes_horas=pacotes_horas,
                             notas_fiscais=notas_fiscais, modulos=modulos,
-                            status_ia=status_ia, extrato_ia=extrato_ia,
                             reservas=reservas, pacientes=pacientes,
                             campos_faltando=campos_faltando)
 
@@ -92,14 +88,7 @@ def comprar_creditos():
     if erro:
         return jsonify({"erro": erro}), status_erro
 
-    try:
-        valor_ia = float(body.get("valor_ia", 0) or 0)
-    except (TypeError, ValueError):
-        return jsonify({"erro": "Valor inválido."}), 400
-    if valor_ia < 0:
-        return jsonify({"erro": "O valor não pode ser negativo."}), 400
-
-    valor = round(valor_salas + valor_ia, 2)
+    valor = round(valor_salas, 2)
     if valor < 10:
         return jsonify({"erro": "O valor total mínimo para recarga é R$ 10,00."}), 400
 
@@ -123,7 +112,7 @@ def comprar_creditos():
         valor=valor,
         qr_code_base64=qrcode.get("encodedImage", ""),
         copia_e_cola=qrcode.get("payload", ""),
-        valor_salas=valor_salas, valor_ia=valor_ia,
+        valor_salas=valor_salas,
         horas_pacote=(pacote["horas"] if pacote else None),
     )
 
@@ -145,14 +134,7 @@ def comprar_creditos_cartao():
     if erro:
         return jsonify({"erro": erro}), status_erro
 
-    try:
-        valor_ia = float(body.get("valor_ia", 0) or 0)
-    except (TypeError, ValueError):
-        return jsonify({"erro": "Valor inválido."}), 400
-    if valor_ia < 0:
-        return jsonify({"erro": "O valor não pode ser negativo."}), 400
-
-    valor = round(valor_salas + valor_ia, 2)
+    valor = round(valor_salas, 2)
     if valor < 10:
         return jsonify({"erro": "O valor total mínimo para recarga é R$ 10,00."}), 400
 
@@ -182,7 +164,7 @@ def comprar_creditos_cartao():
         asaas_customer_id=customer_id,
         valor=valor,
         invoice_url=cobranca.get("invoiceUrl", ""),
-        valor_salas=valor_salas, valor_ia=valor_ia,
+        valor_salas=valor_salas,
         horas_pacote=(pacote["horas"] if pacote else None),
         parcelas=parcelas,
     )
@@ -193,20 +175,6 @@ def comprar_creditos_cartao():
         "valor": valor,
     })
 
-
-    # Rotas "/painel/ia" (tela "Painel de IA") e "/api/ia/modulo" (toggle
-    # de módulo de IA) removidas a pedido do Paulo em 23/09/2026 (item 6)
-    # -- eram uma tela vestigial desse recorte do sistema (este pacote,
-    # "Reserva de Horas", não implementa os módulos de IA via WhatsApp
-    # de verdade, ver comentário no topo de painel_medico.html sobre
-    # Agenda/Prontuário/Assistente de IA pertencerem ao sistema maior da
-    # Lifemax). O template app/templates/painel_ia.html também foi
-    # removido. `ia_uso_service.status_ia_medico` continua em uso (mostra
-    # o saldo em R$ no card "Saldo para IA" do painel principal); as
-    # funções `obter_modulos_ativados`/`definir_modulo_ativado` (usadas só
-    # por essa tela removida) ficaram sem chamador, mas continuam no
-    # serviço -- fazem parte do mecanismo de ativação opt-in de módulo de
-    # IA que pertence ao sistema maior, não dessa tela específica.
 
 
 @medico_painel_bp.route("/painel/dados-pessoais")
@@ -412,55 +380,3 @@ def status_pagamento(pagamento_id):
 
     saldo_atual = creditos_db.obter_saldo(medico_logado_id())
     return jsonify({"status": pagamento["status"], "saldo_atual": saldo_atual})
-
-
-@medico_painel_bp.route("/api/creditos/transferir", methods=["POST"])
-@requer_login_medico
-def transferir_creditos():
-    """Move saldo entre a carteira de horas/salas e a de IA do próprio
-    médico, sem passar pelo Asaas -- pedido do Paulo em 10/09/2026, pra
-    quem prefere realocar crédito já comprado em vez de pagar de novo.
-
-    A carteira de Salas/Horas é medida em HORAS (não em R$) em qualquer
-    lugar do sistema -- então, saindo dela (origem='salas'), o médico
-    informa `horas` (quantas horas quer converter em crédito de IA), não
-    um valor em R$; a conversão pro valor interno em R$ é feita aqui, no
-    preço vigente da hora avulsa. Saindo da carteira de IA
-    (origem='ia'), que é mesmo medida em dinheiro, continua sendo um
-    `valor` em R$ normal."""
-    body = request.get_json(force=True)
-    medico = db.get_medico_by_id(medico_logado_id())
-
-    origem = body.get("origem")
-    if origem not in ("salas", "ia"):
-        return jsonify({"erro": "Carteira de origem inválida."}), 400
-    destino = "ia" if origem == "salas" else "salas"
-
-    if origem == "salas":
-        try:
-            horas = float(body.get("horas", 0) or 0)
-        except (TypeError, ValueError):
-            return jsonify({"erro": "Quantidade de horas inválida."}), 400
-        valor = round(horas * creditos_db.preco_hora_avulsa(), 2)
-    else:
-        try:
-            valor = float(body.get("valor", 0) or 0)
-        except (TypeError, ValueError):
-            return jsonify({"erro": "Valor inválido."}), 400
-
-    try:
-        creditos_db.transferir_saldo(medico["id"], origem, valor)
-    except ValueError as e:
-        return jsonify({"erro": str(e)}), 400
-
-    if destino == "ia":
-        resultado_texto = f"Transferido o equivalente a R$ {valor:.2f} de horas para a carteira de IA."
-    else:
-        resultado_texto = f"Transferido R$ {valor:.2f} da carteira de IA para a carteira de horas."
-
-    return jsonify({
-        "resultado": resultado_texto,
-        "saldo_salas": creditos_db.obter_saldo(medico["id"]),
-        "saldo_horas": creditos_db.saldo_em_horas_medico(medico["id"]),
-        "saldo_ia": creditos_db.obter_saldo_ia(medico["id"]),
-    })

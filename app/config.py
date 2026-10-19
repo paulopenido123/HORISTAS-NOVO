@@ -40,49 +40,8 @@ class Config:
     # QUALQUER chamada (ver app/routes/api_dora.py _exigir_api_key).
     DORA_API_KEY = os.getenv("DORA_API_KEY")
 
-    # --- Claude API (Anthropic) ---
-    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-    CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
-
-    # --- OpenAI API (GPT-5.6) — provedor usado por padrão no serviço pago
-    # de assistente de IA pros clientes (ver app/services/ia_uso_service.py).
-    # Decidido com o Paulo em 03/09/2026: GPT-5.6 Luna (o mais barato) pra
-    # quase tudo (secretaria, WhatsApp, agenda, financeiro, recibos,
-    # perguntas gerais); GPT-5.6 Sol só pra análise de prontuário/exame
-    # quando o caso realmente precisa de raciocínio mais forte. ---
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    # Confira o nome/preço atual em https://platform.openai.com/docs/models
-    # antes de ativar pra valer — modelo padrão pra quase tudo: o mais
-    # barato da família (Luna).
-    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
-
-    # Modelo mais forte (e mais caro), usado só quando o caso não é tão
-    # simples: análise de prontuário com alerta crítico detectado pela
-    # camada de segurança, ou que precisou buscar evidência no PubMed
-    # (ver assistente_medico_ia_service.py -> _modelo_complexo_para).
-    OPENAI_MODEL_PRONTUARIO_COMPLEXO = os.getenv("OPENAI_MODEL_PRONTUARIO_COMPLEXO", "gpt-5.6-sol")
-
-    # --- Gemini API (Google) — opção alternativa, não usada por padrão
-    # desde a virada pra OpenAI (03/09/2026). Fica disponível caso queira
-    # trocar algum módulo de volta pra Gemini. ---
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    # Confira o nome/preço do modelo mais barato disponível em
-    # https://ai.google.dev/gemini-api/docs/pricing antes de ativar pra valer.
-    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
-    GEMINI_MODEL_PRONTUARIO_COMPLEXO = os.getenv("GEMINI_MODEL_PRONTUARIO_COMPLEXO", "gemini-3.5-flash")
-    # Se o Módulo 7/8 estiver rodando no Claude, o "modelo forte" pra esses
-    # mesmos casos (Sonnet já é robusto, mas deixo configurável caso queira
-    # usar um modelo ainda mais cuidadoso).
-    CLAUDE_MODEL_PRONTUARIO_COMPLEXO = os.getenv("CLAUDE_MODEL_PRONTUARIO_COMPLEXO", "claude-sonnet-4-6")
-
-    # --- Qual provedor de IA cada módulo usa: 'openai', 'claude' ou 'gemini' ---
-    # (ver app/services/ai_provider.py -> obter_provider). Padrão: OpenAI
-    # (GPT-5.6 Luna/Sol) em todos os módulos do serviço pago de IA — troque
-    # pra 'claude' ou 'gemini' módulo por módulo se preferir, mas então
-    # configure a respectiva chave (ANTHROPIC_API_KEY/GEMINI_API_KEY).
-    IA_PROVEDOR_SECRETARIA = os.getenv("IA_PROVEDOR_SECRETARIA", "openai")
-    IA_PROVEDOR_PRONTUARIO = os.getenv("IA_PROVEDOR_PRONTUARIO", "openai")
-    IA_PROVEDOR_FINANCEIRO = os.getenv("IA_PROVEDOR_FINANCEIRO", "openai")
+    # (Chaves/modelos de IA -- Claude, OpenAI, Gemini -- removidos em 19/10/2026:
+    # todo o recurso de IA saiu do sistema a pedido do Paulo.)
 
     # --- Banco de dados (Neon — Postgres serverless) ---
     # Migrado do Supabase em 10/09/2026 (pedido do Paulo). DATABASE_URL é a

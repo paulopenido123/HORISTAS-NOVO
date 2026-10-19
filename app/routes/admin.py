@@ -10,7 +10,6 @@ from app.services import recuperacao_senha_service as rec_senha
 from app.services import nfe_service
 from app.services import template_service
 from app.services import reserva_service
-from app.services import ia_uso_service as ia_uso
 from app.extensions import csrf
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -128,25 +127,22 @@ def clientes():
             or busca in (m.get('telefone') or '')
             or busca in (m.get('email') or '').lower()
         ]
-    # Saldo de horas (carteira "salas") e saldo de IA (em R$) de cada um,
-    # pra mostrar na lista.
+    # Saldo de horas de cada um, pra mostrar na lista.
     #
     # ⚠️ Corrigido em 11/09/2026 (a tela estava demorando muito pra abrir
     # depois da migração dos ~130 médicos horistas do Life Max): antes,
-    # esse loop chamava creditos_db.saldo_em_horas_medico(m['id']) e
-    # creditos_db.obter_saldo_ia(m['id']) PRA CADA MÉDICO -- e
+    # esse loop chamava creditos_db.saldo_em_horas_medico(m['id']) PRA CADA MÉDICO -- e
     # saldo_em_horas_medico, por baixo dos panos, ainda rebuscava a lista
     # de pacotes de hora (listar_pacotes_horas()) do zero a cada chamada.
     # Isso dava 3 consultas SEPARADAS ao banco por médico (~390 no total
     # com 130 médicos) só pra abrir essa tela -- e o "*" do select acima
-    # já tinha trazido saldo_creditos/saldo_ia de todo mundo de uma vez!
+    # já tinha trazido saldo_creditos de todo mundo de uma vez!
     # Agora: busca os pacotes de hora UMA única vez (fora do loop) e
-    # calcula o saldo em horas/IA direto dos dados que já vieram no
+    # calcula o saldo em horas direto dos dados que já vieram no
     # select("*"), sem nenhuma consulta extra por médico.
     pacotes_horas = creditos_db.listar_pacotes_horas()
     for m in lista:
         m['saldo_horas'] = creditos_db.estimar_horas_compraveis(m.get('saldo_creditos') or 0, pacotes_horas)
-        m['saldo_ia'] = float(m.get('saldo_ia') or 0)
     return render_template('admin_clientes.html', medicos=lista, busca=request.args.get('busca') or '')
 
 
@@ -233,7 +229,7 @@ def enviar_link_cliente(medico_id):
 @_admin
 def ajustar_saldo_cliente(medico_id):
     """Credita (valor positivo) ou debita (valor negativo) saldo de um
-    médico direto pelo painel admin, numa das duas carteiras -- vira uma
+    médico direto pelo painel admin -- vira uma
     transação tipo 'ajuste' em creditos_transacoes, igual qualquer outro
     lançamento (fica no histórico do médico, não é uma mudança
     "invisível" direto no banco).
@@ -243,9 +239,7 @@ def ajustar_saldo_cliente(medico_id):
     esse ajuste também é feito em horas quando a carteira é 'salas' -- o
     admin digita "15" (horas), e aqui a gente converte pro valor em R$
     equivalente (preço da hora avulsa) só pra manter o mesmo mecanismo
-    interno de saldo que o resto do sistema usa. A carteira de IA continua
-    em R$ direto, sem conversão (essa carteira é mesmo medida em dinheiro,
-    não em horas).
+    interno de saldo que o resto do sistema usa.
 
     ⚠️ Em 11/09/2026 o botão "Alterar saldo" saiu da lista de clientes e
     foi pra dentro da tela "Visualizar" de cada cliente (pedido do Paulo)
@@ -256,16 +250,10 @@ def ajustar_saldo_cliente(medico_id):
         flash('Cliente não encontrado.', 'erro')
         return redirect(url_for('admin.clientes'))
 
-    carteira = request.form.get('carteira', 'salas')
-    if carteira not in ('salas', 'ia'):
-        flash('Carteira inválida.', 'erro')
-        return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
-
     try:
         quantidade = float((request.form.get('quantidade') or '0').replace(',', '.'))
     except ValueError:
-        unidade = 'horas' if carteira == 'salas' else 'reais'
-        flash(f'Quantidade inválida -- use só números ({unidade}, ex: 15 ou -5).', 'erro')
+        flash('Quantidade inválida -- use só números (horas, ex: 15 ou -5).', 'erro')
         return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
     if quantidade == 0:
@@ -274,20 +262,16 @@ def ajustar_saldo_cliente(medico_id):
 
     descricao = (request.form.get('descricao') or '').strip() or 'Ajuste manual pelo admin'
 
-    if carteira == 'salas':
-        horas = round(quantidade)  # carteira de horas trabalha sempre em números inteiros de hora
-        if horas == 0:
-            flash('Informe uma quantidade de horas diferente de zero.', 'erro')
-            return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
-        valor = round(horas * creditos_db.preco_hora_avulsa(), 2)
-        quantidade_horas_param = abs(horas)
-    else:
-        valor = quantidade
-        quantidade_horas_param = None
+    horas = round(quantidade)  # carteira de horas trabalha sempre em números inteiros de hora
+    if horas == 0:
+        flash('Informe uma quantidade de horas diferente de zero.', 'erro')
+        return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
+    valor = round(horas * creditos_db.preco_hora_avulsa(), 2)
+    quantidade_horas_param = abs(horas)
 
     try:
         creditos_db.registrar_transacao(
-            medico_id, tipo='ajuste', valor=valor, descricao=descricao, carteira=carteira,
+            medico_id, tipo='ajuste', valor=valor, descricao=descricao, carteira='salas',
             quantidade_horas=quantidade_horas_param,
         )
     except Exception as e:
@@ -295,10 +279,7 @@ def ajustar_saldo_cliente(medico_id):
         return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
     acao = 'creditado' if quantidade > 0 else 'debitado'
-    if carteira == 'salas':
-        flash(f'Saldo de Salas/Horas de {medico["nome"]} {acao} em {abs(horas)}h.', 'ok')
-    else:
-        flash(f'Saldo de IA de {medico["nome"]} {acao} em R$ {abs(valor):.2f}.', 'ok')
+    flash(f'Saldo de Salas/Horas de {medico["nome"]} {acao} em {abs(horas)}h.', 'ok')
     return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
 
@@ -481,7 +462,6 @@ def visualizar_cliente(medico_id):
         flash('Cliente não encontrado.', 'erro')
         return redirect(url_for('admin.clientes'))
     medico['saldo_horas'] = creditos_db.saldo_em_horas_medico(medico_id)
-    medico['saldo_ia'] = creditos_db.obter_saldo_ia(medico_id)
     transacoes = creditos_db.listar_transacoes_medico(medico_id, limite=200)
     return render_template('admin_cliente_visualizar.html', medico=medico, transacoes=transacoes)
 
@@ -1080,60 +1060,3 @@ def api_matriz_intervalo_criado():
     dias = (data_fim - data_inicio).days + 1
     return {'data_inicio': data_inicio.isoformat(), 'data_fim': data_fim.isoformat(), 'dias': dias,
             'hoje': hoje.isoformat()}
-
-
-@admin_bp.route('/controle-ia')
-@_admin
-def controle_ia():
-    """"Controle de IA" (pedido do Paulo em 21/09/2026): quanto cada
-    médico gastou de IA (GPT/Luna), o custo real total pago pra OpenAI e
-    o lucro da operação (o que foi cobrado dos médicos menos esse custo
-    real) num mês escolhido -- mesmo filtro de mês/ano da tela "Horas".
-    Também é aqui que o admin edita a margem cobrada em cima do custo
-    real (ver ia_uso_service.atualizar_config_precificacao_ia)."""
-    hoje = date.today()
-    mes_valor = request.args.get('mes') or f"{hoje.year:04d}-{hoje.month:02d}"
-    try:
-        ano, mes = (int(p) for p in mes_valor.split('-', 1))
-        if not (1 <= mes <= 12):
-            raise ValueError
-    except ValueError:
-        ano, mes = hoje.year, hoje.month
-        mes_valor = f"{ano:04d}-{mes:02d}"
-
-    stats = ia_uso.estatisticas_uso_ia(mes, ano)
-    stats_total = ia_uso.estatisticas_uso_ia()
-    por_medico = ia_uso.estatisticas_uso_ia_por_medico(mes, ano)
-    config_precificacao = ia_uso.obter_config_precificacao_ia()
-    return render_template(
-        'admin_controle_ia.html', stats=stats, stats_total=stats_total, por_medico=por_medico,
-        config=config_precificacao, mes=mes, ano=ano, mes_valor=mes_valor, mes_nome=_NOMES_MESES[mes],
-    )
-
-
-@admin_bp.route('/controle-ia/precificacao', methods=['POST'])
-@_admin
-def atualizar_precificacao_ia():
-    """Salva o percentual de aumento e os preços por 1.000 tokens
-    editados na tela "Controle de IA"."""
-    try:
-        percentual_aumento = float((request.form.get('percentual_aumento') or '0').replace(',', '.'))
-        preco_entrada_usd_1k = float((request.form.get('preco_entrada_usd_1k') or '0').replace(',', '.'))
-        preco_saida_usd_1k = float((request.form.get('preco_saida_usd_1k') or '0').replace(',', '.'))
-        usd_para_brl = float((request.form.get('usd_para_brl') or '0').replace(',', '.'))
-    except ValueError:
-        flash('Valores inválidos -- confira os campos numéricos.', 'erro')
-        return redirect(url_for('admin.controle_ia', mes=request.form.get('mes_valor')))
-
-    try:
-        ia_uso.atualizar_config_precificacao_ia(
-            percentual_aumento, preco_entrada_usd_1k, preco_saida_usd_1k, usd_para_brl,
-        )
-    except ValueError as e:
-        flash(str(e), 'erro')
-        return redirect(url_for('admin.controle_ia', mes=request.form.get('mes_valor')))
-
-    flash('Precificação de IA atualizada.', 'ok')
-    return redirect(url_for('admin.controle_ia', mes=request.form.get('mes_valor')))
-
-

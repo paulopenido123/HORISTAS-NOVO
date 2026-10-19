@@ -555,7 +555,6 @@ def _notificar_cancelamento_por_email(medico_id: str, reserva: dict):
                 horario=descricao_periodo,
                 destinatario=medico["email"],
                 saldo_horas=creditos_db.saldo_em_horas_medico(medico_id),
-                saldo_ia=creditos_db.obter_saldo_ia(medico_id),
             )
     except Exception as e:
         print(f"[reserva_service] Erro ao mandar confirmação de cancelamento pro médico: {e}")
@@ -732,7 +731,6 @@ def _pos_reserva(medico_id: str, consultorio_id: str, reserva: dict):
                 horario=descricao_periodo,
                 destinatario=medico["email"],
                 saldo_horas=creditos_db.saldo_em_horas_medico(medico_id),
-                saldo_ia=creditos_db.obter_saldo_ia(medico_id),
             )
         except Exception as e:
             print(f"[reserva_service] Erro ao mandar confirmação de agendamento pro médico: {e}")
@@ -750,6 +748,6 @@ def _pos_reserva(medico_id: str, consultorio_id: str, reserva: dict):
         try:
             saldo_apos = creditos_db.obter_saldo(medico_id)
             notificacao_saldo.verificar_e_notificar_saldo_baixo(medico, saldo_apos)
-            notificacao_saldo.verificar_e_notificar_saldo_baixo_fixo(medico, saldo_apos, carteira="salas")
+            notificacao_saldo.verificar_e_notificar_saldo_baixo_fixo(medico, saldo_apos)
         except Exception as e:
             print(f"[reserva_service] Erro ao verificar alerta de saldo baixo: {e}")

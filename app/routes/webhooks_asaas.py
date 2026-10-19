@@ -39,13 +39,9 @@ def confirmar_pagamento_e_creditar(asaas_payment_id: str) -> bool:
 
     creditos_db.marcar_pagamento_pago(pagamento["id"])
 
-    # Divide o crédito entre as duas carteiras conforme o médico
-    # escolheu na hora de comprar (ver medico_painel.comprar_creditos) --
-    # pagamento antigo, de antes da divisão de carteiras, não tem
-    # valor_salas/valor_ia preenchidos -- nesse caso vai tudo pra salas,
-    # igual sempre funcionou.
+    # Credita as horas compradas (ver medico_painel.comprar_creditos) --
+    # pagamento antigo, sem valor_salas preenchido, credita o valor todo.
     valor_salas = float(pagamento.get("valor_salas") or pagamento["valor"])
-    valor_ia = float(pagamento.get("valor_ia") or 0)
     horas_pacote = pagamento.get("horas_pacote")
 
     if valor_salas > 0:
@@ -61,12 +57,6 @@ def confirmar_pagamento_e_creditar(asaas_payment_id: str) -> bool:
             descricao=descricao,
             pagamento_id=pagamento["id"], carteira="salas",
             quantidade_horas=horas_pacote,
-        )
-    if valor_ia > 0:
-        creditos_db.registrar_transacao(
-            medico_id=medico_id, tipo="compra", valor=valor_ia,
-            descricao="Recarga via PIX (Asaas) — créditos de IA",
-            pagamento_id=pagamento["id"], carteira="ia", categoria="ia",
         )
 
     # Item 4 (pedido do Paulo em 11/09/2026): recibo por e-mail da compra

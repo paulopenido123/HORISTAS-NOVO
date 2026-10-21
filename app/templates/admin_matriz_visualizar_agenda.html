@@ -3,6 +3,7 @@
 <head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Visualizar agenda — Lifemax Admin</title>
 <style>
   :root {
@@ -97,6 +98,49 @@
 
   .aviso-vazio { background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted); }
 
+
+  /* ---- Matriz v2 (21/10/2026) ---- */
+  .barra-acoes { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .btn-modo { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--navy);
+    font-weight: 700; font-size: 13px; cursor: pointer; }
+  .btn-modo:hover { background: #F3F7F8; }
+  .btn-modo.ativo { background: var(--coral); border-color: var(--coral); color: #fff; }
+  .aviso-modo { display: none; background: #FFF4E5; border: 1px solid #F2C27A; color: #7A4B00; border-radius: 8px;
+    padding: 8px 12px; font-size: 12.5px; font-weight: 600; margin-bottom: 10px; }
+  .aviso-modo.visivel { display: block; }
+  #lista-consultorios.modo-bloqueio .slot-vago,
+  #lista-consultorios.modo-bloqueio .bloco-reserva.bloqueado { cursor: pointer; outline-offset: -2px; }
+  #lista-consultorios.modo-bloqueio .slot-vago:hover,
+  #lista-consultorios.modo-bloqueio .bloco-reserva.bloqueado:hover { outline: 2px solid var(--coral); }
+  .slot-vago, .bloco-reserva { cursor: context-menu; }
+  .btn-dia { display: block; margin: 3px auto 0; width: 15px; height: 15px; border-radius: 50%; border: 2px solid #1E9E4A;
+    background: #2FD067; cursor: pointer; padding: 0; }
+  .btn-dia:hover { box-shadow: 0 0 0 3px rgba(47,208,103,.35); }
+  .btn-dia.oculto { border-color: #B2402B; background: #E8604A; }
+  .btn-dia.oculto:hover { box-shadow: 0 0 0 3px rgba(232,96,74,.35); }
+  .grade-cabecalho .col-dia.oculto { background: #F6E1DC; }
+  .coluna-dia.dia-oculto { background-color: #F3E4E0;
+    background-image: repeating-linear-gradient(135deg, rgba(178,64,43,.10) 0, rgba(178,64,43,.10) 6px, transparent 6px, transparent 12px); }
+  .dot.oculto { background: #E8604A; }
+  .corpo-bloco { min-height: 60px; }
+
+  #dica-flutuante { position: fixed; z-index: 300; max-width: 300px; background: #10222E; color: #fff; font-size: 12.5px;
+    line-height: 1.45; padding: 8px 11px; border-radius: 8px; pointer-events: none; display: none;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+  #menu-nome { position: fixed; z-index: 250; display: none; width: 290px; background: #fff; border: 1px solid var(--line);
+    border-radius: 12px; box-shadow: 0 10px 34px rgba(14,42,59,.28); padding: 14px; }
+  #menu-nome h3 { margin: 0 0 2px; font-size: 13.5px; color: var(--navy); }
+  #menu-nome .sub { font-size: 11.5px; color: var(--muted); margin-bottom: 10px; }
+  #menu-nome input { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13.5px;
+    font-family: inherit; margin-bottom: 10px; }
+  #menu-nome .botoes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  #menu-nome button { padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--muted);
+    font-weight: 700; font-size: 12.5px; cursor: pointer; }
+  #menu-nome button.principal { background: var(--teal); border-color: var(--teal); color: #fff; }
+  #aviso-toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 400; background: #10222E; color: #fff;
+    padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; display: none; max-width: 90vw; }
+  #aviso-toast.erro { background: #B2402B; }
+
   @media (max-width: 760px) {
     .top, .nav { padding: 14px 16px; }
     .container { padding: 14px 12px 50px; }
@@ -115,22 +159,43 @@
 </div>
 
 <div class="container">
-  <a href="{{ url_for('admin.matriz') }}" class="btn-admin-acao" style="text-decoration:none; display:inline-flex; align-items:center; margin-bottom:12px;">← Voltar</a>
+  <a href="{{ url_for('admin.matriz') }}" data-dica="Volta para a tela da Matriz de Agendamento." class="btn-admin-acao" style="text-decoration:none; display:inline-flex; align-items:center; margin-bottom:12px;">← Voltar</a>
   <h1>Visualizar agenda</h1>
-  <p class="subtitulo">Agenda completa, somente leitura, com todos os dias que já têm matriz replicada (via "Replicar matriz por período" ou "por mês"). Use a barra de rolagem horizontal para ver os outros dias, e a vertical para ver os outros horários.</p>
+  <p class="subtitulo">Agenda completa com todos os dias que já têm matriz replicada. Use a barra de rolagem horizontal para ver os outros dias. Clique com o <strong>botão direito</strong> num horário para dar o nome do médico que vai usá-lo.</p>
 
   <div class="barra-controles">
     <div class="legenda">
-      <span><span class="dot livre"></span> Livre</span>
-      <span><span class="dot reservado"></span> Reservado (nome do profissional)</span>
-      <span><span class="dot bloqueado"></span> Bloqueado pelo administrador</span>
-      <span><span class="dot bege"></span> Indisponível</span>
+      <span data-dica="Horário sem reserva e sem bloqueio: os médicos podem reservar."><span class="dot livre"></span> Livre</span>
+      <span data-dica="Horário reservado por um médico (o nome aparece só aqui, para o administrador)."><span class="dot reservado"></span> Reservado (nome do profissional)</span>
+      <span data-dica="Horário bloqueado pelo administrador (pela matriz ou à mão). Se tiver nome, é o médico que vai usá-lo."><span class="dot bloqueado"></span> Bloqueado pelo administrador</span>
+      <span data-dica="Horário cinza: indisponível pela regra fixa (domingo, sábado à tarde/noite)."><span class="dot bege"></span> Indisponível</span>
+      <span data-dica="Dia com o botão vermelho: oculto. Os médicos não veem esse dia nem conseguem reservar nele."><span class="dot oculto"></span> Dia oculto para os médicos</span>
     </div>
     <div class="periodo-atual" id="periodo-atual">Carregando...</div>
   </div>
 
+  <div class="barra-acoes">
+    <button type="button" class="btn-modo" id="btn-modo-bloqueio" data-dica="Liga/desliga o modo de bloqueio. Com ele ligado, clique num horário livre para bloqueá-lo, ou num horário bloqueado para desbloqueá-lo." onclick="alternarModoBloqueio()">🔒 Bloquear/desbloquear horários</button>
+    <span class="muted" style="font-size:12.5px;color:var(--muted)">O círculo verde sobre cada dia oculta/exibe aquele dia para os médicos.</span>
+  </div>
+  <div class="aviso-modo" id="aviso-modo">Modo bloquear/desbloquear ligado: clique num horário <strong>livre</strong> para bloquear ou num horário <strong>bloqueado</strong> para desbloquear. Clique no botão de novo para sair.</div>
+
   <div id="lista-consultorios"><div class="aviso-vazio">Carregando...</div></div>
 </div>
+
+<div id="menu-nome">
+  <h3 id="menu-nome-titulo">Nome do médico</h3>
+  <div class="sub" id="menu-nome-sub"></div>
+  <input type="text" id="menu-nome-input" list="lista-medicos" placeholder="Nome do médico que vai usar" maxlength="80" autocomplete="off">
+  <datalist id="lista-medicos"></datalist>
+  <div class="botoes">
+    <button type="button" data-dica="Fecha sem alterar nada." onclick="fecharMenuNome()">Cancelar</button>
+    <button type="button" id="menu-nome-remover" data-dica="Apaga o nome deste horário (o bloqueio continua)." onclick="salvarNome('')">Remover nome</button>
+    <button type="button" class="principal" data-dica="Grava o nome neste horário. Se estava livre, ele passa a ficar bloqueado com esse nome." onclick="salvarNome(document.getElementById('menu-nome-input').value)">Salvar</button>
+  </div>
+</div>
+<div id="dica-flutuante"></div>
+<div id="aviso-toast"></div>
 
 <script>
 const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:30', '18:30', '19:30'];
@@ -152,12 +217,22 @@ const HORARIOS_DO_TURNO = {
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-let gradeAtual = { consultorios: [], reservas: [], reservas_admin: [], bloqueios_template: [] };
+let gradeAtual = { consultorios: [], reservas: [], reservas_admin: [], bloqueios_template: [], dias_ocultos: [] };
 let diasAtual = [];
 // Data de hoje (YYYY-MM-DD, vinda do backend) -- usada só pra marcar
 // visualmente as colunas de dias passados com um tom mais escuro (item
 // 2, pedido do Paulo em 24/09/2026).
 let hojeAtual = null;
+// Estruturas de consulta rápida (21/10/2026): antes cada célula varria a
+// lista de bloqueios inteira (~1.100 itens) -- era o que deixava a tela lenta.
+let bloqSet = new Set();      // "consultorio|dia_semana|hora"
+let ocupacao = {};            // "consultorio|data|hora" -> {nome, bloqueado}
+let ocultosSet = new Set();   // datas ocultas para os médicos
+let modoBloqueio = false;
+
+function csrfHeader() {
+  return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
+}
 
 function _minutosDeHora(hora) {
   const [hh, mm] = hora.split(':').map(Number);
@@ -175,18 +250,25 @@ function formatarDataCurta(iso) {
   return { dia: DIAS_SEMANA[d.getDay()], numero: String(d.getDate()).padStart(2, '0'), mes: MESES_ABREV[d.getMonth()] };
 }
 
+function _esc(t) { return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function _dataBR(iso) { return `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`; }
+
+function avisar(texto, erro) {
+  const el = document.getElementById('aviso-toast');
+  el.textContent = texto;
+  el.className = erro ? 'erro' : '';
+  el.style.display = 'block';
+  clearTimeout(avisar._t);
+  avisar._t = setTimeout(() => { el.style.display = 'none'; }, erro ? 5000 : 2500);
+}
+
 // Mesma lógica de faixasBegeDoDia usada em turnos.html: junta os
 // intervalos bloqueados consecutivos numa faixa cinza só, em vez de
 // caixinha por horário.
 function faixasBegeDoDia(consultorioId, dataIso) {
   const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
-  const bloqueiosTemplate = gradeAtual.bloqueios_template || [];
-  const bloqueadoNoHorario = (hora) => bloqueiosTemplate.some(b =>
-    b.consultorio_id === consultorioId && b.dia_semana === diaSemana && b.hora_inicio === hora
-  );
-
   const intervalosReservaveis = HORARIOS
-    .filter(hora => !bloqueadoNoHorario(hora))
+    .filter(hora => !bloqSet.has(`${consultorioId}|${diaSemana}|${hora}`))
     .map(hora => { const inicio = _minutosDeHora(hora); return [inicio, inicio + 60]; })
     .sort((a, b) => a[0] - b[0]);
 
@@ -203,32 +285,11 @@ function faixasBegeDoDia(consultorioId, dataIso) {
   return faixas;
 }
 
-function renderizarGrade() {
-  const dias = diasAtual;
-  const colunasTemplate = `${LARGURA_COL_HORA}px repeat(${dias.length}, ${LARGURA_COL_DIA}px)`;
-  const larguraTotal = LARGURA_COL_HORA + dias.length * LARGURA_COL_DIA;
-
-  const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
-    dias.map(d => {
-      const { dia, numero, mes } = formatarDataCurta(d);
-      const passado = hojeAtual && d < hojeAtual ? ' passado' : '';
-      return `<div class="col-dia${passado}">${dia}<div class="numero">${numero}</div><div class="mes">${mes}</div></div>`;
-    }).join('');
-
-  const alturaTotal = (GRID_FIM_MIN - GRID_INICIO_MIN) * PX_POR_MIN;
-
-  let colunaHoras = `<div class="coluna-horas" style="height:${alturaTotal}px;">`;
-  MARCAS_GRADE.forEach(h => {
-    const top = (_minutosDeHora(h) - GRID_INICIO_MIN) * PX_POR_MIN;
-    colunaHoras += `<div class="marca-hora" style="top:${top}px;">${h}</div>`;
-  });
-  colunaHoras += `</div>`;
-
-  // ocupação: pra cada consultório+data+hora, o nome de quem reservou --
-  // visão do administrador, nunca oculta o nome.
-  const ocupacao = {};
+function montarOcupacao() {
+  ocupacao = {};
+  // bloqueios do administrador (nome = médico que vai usar, se o admin deu um)
   for (const h of (gradeAtual.reservas_admin || [])) {
-    ocupacao[`${h.consultorio_id}|${h.data}|${h.horario.slice(0,5)}`] = { nome: h.descricao || 'Bloqueado', bloqueado: true };
+    ocupacao[`${h.consultorio_id}|${h.data}|${h.horario.slice(0, 5)}`] = { nome: h.descricao || '', bloqueado: true };
   }
   for (const r of (gradeAtual.reservas || [])) {
     const nomeMedico = (r.medicos && r.medicos.nome) || 'Reservado';
@@ -245,58 +306,291 @@ function renderizarGrade() {
       ocupacao[`${r.consultorio_id}|${r.data}|${h}`] = { nome: nomeMedico, bloqueado: false };
     }
   }
+}
 
-  const blocosHtml = (gradeAtual.consultorios || []).map(consultorio => {
-    const colunasDias = dias.map(dataIso => {
-      const passado = hojeAtual && dataIso < hojeAtual ? ' passado' : '';
-      let html = `<div class="coluna-dia${passado}" style="height:${alturaTotal}px;">`;
+const ALTURA_TOTAL = (GRID_FIM_MIN - GRID_INICIO_MIN) * PX_POR_MIN;
 
-      faixasBegeDoDia(consultorio.id, dataIso).forEach(([inicio, fim]) => {
-        const top = (inicio - GRID_INICIO_MIN) * PX_POR_MIN;
-        const altura = (fim - inicio) * PX_POR_MIN;
-        html += `<div class="faixa-bege" style="top:${top}px; height:${altura}px;"></div>`;
-      });
+// HTML de UMA célula (livre, bloqueada ou reservada por médico). Usada na
+// montagem e também pra repintar só aquela célula depois de um clique.
+function htmlCelula(consultorioId, dataIso, hora) {
+  const minutos = _minutosDeHora(hora);
+  const top = (minutos - GRID_INICIO_MIN) * PX_POR_MIN;
+  const altura = 60 * PX_POR_MIN;
+  const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
+  const ocupado = ocupacao[`${consultorioId}|${dataIso}|${hora}`];
+  const attrs = `data-c="${consultorioId}" data-dt="${dataIso}" data-h="${hora}"`;
+  if (ocupado) {
+    const classe = ocupado.bloqueado ? 'bloqueado' : 'reservado';
+    const rotulo = ocupado.bloqueado ? (ocupado.nome || 'Bloqueado') : ocupado.nome;
+    return `<div class="bloco-reserva ${classe}" style="top:${top}px; height:${altura}px;" ${attrs} data-tipo="${classe}" data-nome="${_esc(ocupado.nome)}">
+      <div class="h">${hora}</div><div class="nome">${_esc(rotulo)}</div>
+    </div>`;
+  }
+  if (bloqSet.has(`${consultorioId}|${diaSemana}|${hora}`)) return '';  // faixa-bege já cobre
+  return `<div class="slot-vago" style="top:${top}px; height:${altura}px;" ${attrs} data-tipo="livre"></div>`;
+}
 
-      HORARIOS.forEach(hora => {
-        const minutos = _minutosDeHora(hora);
-        if (minutos < GRID_INICIO_MIN || minutos >= GRID_FIM_MIN) return;
-        const top = (minutos - GRID_INICIO_MIN) * PX_POR_MIN;
-        const altura = 60 * PX_POR_MIN;
-        const chave = `${consultorio.id}|${dataIso}|${hora}`;
-        const ocupado = ocupacao[chave];
-        const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
-        const indisponivel = (gradeAtual.bloqueios_template || []).some(b =>
-          b.consultorio_id === consultorio.id && b.dia_semana === diaSemana && b.hora_inicio === hora
-        );
+function htmlCorpoBloco(consultorio) {
+  const dias = diasAtual;
+  const colunasTemplate = `${LARGURA_COL_HORA}px repeat(${dias.length}, ${LARGURA_COL_DIA}px)`;
+  const larguraTotal = LARGURA_COL_HORA + dias.length * LARGURA_COL_DIA;
 
-        if (ocupado) {
-          const classe = ocupado.bloqueado ? 'bloqueado' : 'reservado';
-          html += `<div class="bloco-reserva ${classe}" style="top:${top}px; height:${altura}px;" title="${ocupado.nome}">
-            <div class="h">${hora}</div><div class="nome">${ocupado.nome}</div>
-          </div>`;
-        } else if (indisponivel) {
-          // faixa-bege já cobre o intervalo inteiro -- sem caixinha por horário.
-        } else {
-          html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;" title="Livre"></div>`;
-        }
-      });
-
-      html += `</div>`;
-      return html;
+  const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
+    dias.map(d => {
+      const { dia, numero, mes } = formatarDataCurta(d);
+      const passado = hojeAtual && d < hojeAtual ? ' passado' : '';
+      const oculto = ocultosSet.has(d);
+      return `<div class="col-dia${passado}${oculto ? ' oculto' : ''}" data-dia-cab="${d}">${dia}<div class="numero">${numero}</div><div class="mes">${mes}</div>
+        <button type="button" class="btn-dia${oculto ? ' oculto' : ''}" data-dia="${d}" aria-label="Ocultar ou exibir o dia ${numero}/${mes} para os médicos"></button></div>`;
     }).join('');
 
-    return `<div class="bloco-consultorio">
-      <div class="bloco-consultorio-header">${consultorio.nome}</div>
-      <div class="grade-scroll-vertical">
-        <div class="grade-cabecalho" style="grid-template-columns:${colunasTemplate}; min-width:${larguraTotal}px;">${cabecalhoDiasHtml}</div>
-        <div class="grade-corpo" style="grid-template-columns:${colunasTemplate}; min-width:${larguraTotal}px;">${colunaHoras + colunasDias}</div>
-      </div>
-    </div>`;
+  let colunaHoras = `<div class="coluna-horas" style="height:${ALTURA_TOTAL}px;">`;
+  MARCAS_GRADE.forEach(h => {
+    const top = (_minutosDeHora(h) - GRID_INICIO_MIN) * PX_POR_MIN;
+    colunaHoras += `<div class="marca-hora" style="top:${top}px;">${h}</div>`;
+  });
+  colunaHoras += `</div>`;
+
+  const colunasDias = dias.map(dataIso => {
+    const passado = hojeAtual && dataIso < hojeAtual ? ' passado' : '';
+    const oculto = ocultosSet.has(dataIso) ? ' dia-oculto' : '';
+    let html = `<div class="coluna-dia${passado}${oculto}" data-dt-col="${dataIso}" style="height:${ALTURA_TOTAL}px;">`;
+    faixasBegeDoDia(consultorio.id, dataIso).forEach(([inicio, fim]) => {
+      const top = (inicio - GRID_INICIO_MIN) * PX_POR_MIN;
+      const altura = (fim - inicio) * PX_POR_MIN;
+      html += `<div class="faixa-bege" style="top:${top}px; height:${altura}px;"></div>`;
+    });
+    HORARIOS.forEach(hora => {
+      const minutos = _minutosDeHora(hora);
+      if (minutos < GRID_INICIO_MIN || minutos >= GRID_FIM_MIN) return;
+      html += htmlCelula(consultorio.id, dataIso, hora);
+    });
+    return html + `</div>`;
   }).join('');
 
-  document.getElementById('lista-consultorios').innerHTML = blocosHtml ||
-    '<div class="aviso-vazio">Nenhum consultório cadastrado ainda.</div>';
+  return `<div class="grade-scroll-vertical">
+    <div class="grade-cabecalho" style="grid-template-columns:${colunasTemplate}; min-width:${larguraTotal}px;">${cabecalhoDiasHtml}</div>
+    <div class="grade-corpo" style="grid-template-columns:${colunasTemplate}; min-width:${larguraTotal}px;">${colunaHoras + colunasDias}</div>
+  </div>`;
 }
+
+// Cada consultório só é desenhado quando chega perto da tela (rolagem) --
+// são dezenas de consultórios x dezenas de dias; desenhar tudo de uma vez
+// era o que travava a página. 21/10/2026.
+let observador = null;
+function preencherBloco(el) {
+  if (el.dataset.pronto === '1') return;
+  const consultorio = (gradeAtual.consultorios || []).find(c => c.id === el.dataset.bloco);
+  if (!consultorio) return;
+  el.querySelector('.corpo-bloco').innerHTML = htmlCorpoBloco(consultorio);
+  el.dataset.pronto = '1';
+}
+
+function renderizarGrade() {
+  montarOcupacao();
+  bloqSet = new Set((gradeAtual.bloqueios_template || []).map(b => `${b.consultorio_id}|${b.dia_semana}|${b.hora_inicio}`));
+  ocultosSet = new Set(gradeAtual.dias_ocultos || []);
+  const listaEl = document.getElementById('lista-consultorios');
+  if (observador) observador.disconnect();
+  const blocos = (gradeAtual.consultorios || []).map(c =>
+    `<div class="bloco-consultorio" data-bloco="${c.id}">
+       <div class="bloco-consultorio-header">${_esc(c.nome)}</div>
+       <div class="corpo-bloco" style="min-height:${Math.round(ALTURA_TOTAL + 60)}px;"></div>
+     </div>`).join('');
+  listaEl.innerHTML = blocos || '<div class="aviso-vazio">Nenhum consultório cadastrado ainda.</div>';
+  const elementos = listaEl.querySelectorAll('.bloco-consultorio');
+  if ('IntersectionObserver' in window) {
+    observador = new IntersectionObserver((entradas) => {
+      entradas.forEach(en => { if (en.isIntersecting) { preencherBloco(en.target); observador.unobserve(en.target); } });
+    }, { rootMargin: '700px 0px' });
+    elementos.forEach(el => observador.observe(el));
+  } else {
+    elementos.forEach(preencherBloco);
+  }
+}
+
+// ---- Repintar uma célula depois de uma alteração ---------------------
+
+function repintarCelula(consultorioId, dataIso, hora) {
+  document.querySelectorAll(`[data-c="${consultorioId}"][data-dt="${dataIso}"][data-h="${hora}"]`).forEach(el => {
+    const colunaPai = el.parentElement;
+    const novo = htmlCelula(consultorioId, dataIso, hora);
+    if (novo) el.outerHTML = novo; else el.remove();
+  });
+}
+
+function _celulaDoEvento(e) { return e.target.closest && e.target.closest('[data-c]'); }
+
+async function chamarApi(url, corpo) {
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeader() }, body: JSON.stringify(corpo) });
+  let x = {};
+  try { x = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error(x.erro || 'Não consegui salvar. Tente de novo.');
+  return x;
+}
+
+// ---- Bloquear / desbloquear (clique, com o modo ligado) ------------------
+
+function alternarModoBloqueio() {
+  modoBloqueio = !modoBloqueio;
+  document.getElementById('btn-modo-bloqueio').classList.toggle('ativo', modoBloqueio);
+  document.getElementById('aviso-modo').classList.toggle('visivel', modoBloqueio);
+  document.getElementById('lista-consultorios').classList.toggle('modo-bloqueio', modoBloqueio);
+  fecharMenuNome();
+}
+
+async function clicarCelula(el) {
+  const c = el.dataset.c, dt = el.dataset.dt, h = el.dataset.h;
+  if (el.dataset.tipo === 'reservado') {
+    avisar(`Esse horário tem reserva de ${el.dataset.nome}. Cancele a reserva antes de bloquear.`, true);
+    return;
+  }
+  if (el.dataset.travado === '1') return;
+  el.dataset.travado = '1';
+  const chave = `${c}|${dt}|${h}`;
+  const antes = ocupacao[chave];
+  // visual imediato; volta ao que era se o servidor recusar
+  if (antes) delete ocupacao[chave]; else ocupacao[chave] = { nome: '', bloqueado: true };
+  repintarCelula(c, dt, h);
+  try {
+    const x = await chamarApi('/admin/api/matriz/celula/bloquear', { consultorio_id: c, data: dt, horario: h });
+    avisar(x.status === 'bloqueado' ? 'Horário bloqueado.' : 'Horário desbloqueado.');
+  } catch (err) {
+    if (antes) ocupacao[chave] = antes; else delete ocupacao[chave];
+    repintarCelula(c, dt, h);
+    avisar(err.message, true);
+  }
+}
+
+// ---- Botão direito: nome do médico ------------------------------------------
+
+let celulaDoMenu = null;
+function fecharMenuNome() {
+  document.getElementById('menu-nome').style.display = 'none';
+  celulaDoMenu = null;
+}
+
+function abrirMenuNome(el, x, y) {
+  if (el.dataset.tipo === 'reservado') {
+    avisar(`Esse horário já tem reserva de ${el.dataset.nome}.`, true);
+    return;
+  }
+  celulaDoMenu = { c: el.dataset.c, dt: el.dataset.dt, h: el.dataset.h };
+  const consultorio = (gradeAtual.consultorios || []).find(k => k.id === celulaDoMenu.c);
+  document.getElementById('menu-nome-titulo').textContent = 'Nome do médico neste horário';
+  document.getElementById('menu-nome-sub').textContent =
+    `${consultorio ? consultorio.nome : ''} — ${_dataBR(celulaDoMenu.dt)} às ${celulaDoMenu.h}`;
+  const entrada = document.getElementById('menu-nome-input');
+  entrada.value = el.dataset.tipo === 'bloqueado' ? (el.dataset.nome || '') : '';
+  document.getElementById('menu-nome-remover').style.display = (el.dataset.tipo === 'bloqueado' && el.dataset.nome) ? '' : 'none';
+  const menu = document.getElementById('menu-nome');
+  menu.style.display = 'block';
+  const larg = menu.offsetWidth, alt = menu.offsetHeight;
+  menu.style.left = Math.max(8, Math.min(x, window.innerWidth - larg - 8)) + 'px';
+  menu.style.top = Math.max(8, Math.min(y, window.innerHeight - alt - 8)) + 'px';
+  entrada.focus(); entrada.select();
+}
+
+async function salvarNome(nome) {
+  if (!celulaDoMenu) return;
+  const { c, dt, h } = celulaDoMenu;
+  const chave = `${c}|${dt}|${h}`;
+  nome = (nome || '').trim();
+  try {
+    const x = await chamarApi('/admin/api/matriz/celula/nome', { consultorio_id: c, data: dt, horario: h, nome });
+    if (x.status !== 'sem_alteracao') ocupacao[chave] = { nome: x.descricao || '', bloqueado: true };
+    repintarCelula(c, dt, h);
+    fecharMenuNome();
+    avisar(nome ? 'Nome salvo.' : 'Nome removido.');
+  } catch (err) {
+    avisar(err.message, true);
+  }
+}
+
+// ---- Ocultar / exibir um dia para os médicos ------------------------------------
+
+async function alternarDiaOculto(btn) {
+  const dia = btn.dataset.dia;
+  if (btn.dataset.travado === '1') return;
+  btn.dataset.travado = '1';
+  try {
+    const x = await chamarApi('/admin/api/matriz/dia/ocultar', { data: dia });
+    if (x.oculto) ocultosSet.add(dia); else ocultosSet.delete(dia);
+    document.querySelectorAll(`.btn-dia[data-dia="${dia}"]`).forEach(b => b.classList.toggle('oculto', x.oculto));
+    document.querySelectorAll(`[data-dia-cab="${dia}"]`).forEach(h => h.classList.toggle('oculto', x.oculto));
+    document.querySelectorAll(`[data-dt-col="${dia}"]`).forEach(col => col.classList.toggle('dia-oculto', x.oculto));
+    avisar(x.oculto ? `Dia ${_dataBR(dia)} ocultado: os médicos não o veem mais.` : `Dia ${_dataBR(dia)} visível de novo para os médicos.`);
+  } catch (err) {
+    avisar(err.message, true);
+  } finally {
+    btn.dataset.travado = '0';
+  }
+}
+
+// ---- Eventos (um ouvinte só pra lista inteira) ---------------------------------
+
+const listaEvento = document.getElementById('lista-consultorios');
+listaEvento.addEventListener('click', (e) => {
+  const botaoDia = e.target.closest && e.target.closest('.btn-dia');
+  if (botaoDia) { alternarDiaOculto(botaoDia); return; }
+  const el = _celulaDoEvento(e);
+  if (el && modoBloqueio) clicarCelula(el);
+});
+listaEvento.addEventListener('contextmenu', (e) => {
+  const el = _celulaDoEvento(e);
+  if (!el) return;
+  e.preventDefault();
+  abrirMenuNome(el, e.clientX, e.clientY);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') fecharMenuNome();
+  if (e.key === 'Enter' && celulaDoMenu && document.activeElement === document.getElementById('menu-nome-input')) {
+    salvarNome(document.getElementById('menu-nome-input').value);
+  }
+});
+document.addEventListener('mousedown', (e) => {
+  if (celulaDoMenu && !e.target.closest('#menu-nome')) fecharMenuNome();
+});
+
+// ---- Dicas ao passar o mouse ---------------------------------------------------------
+
+function dicaDaCelula(el) {
+  const tipo = el.dataset.tipo;
+  const modo = modoBloqueio ? ' (modo bloqueio ligado: clique para ' : ' (';
+  if (tipo === 'reservado') return `Reservado por ${el.dataset.nome}. Para liberar o horário, cancele a reserva.`;
+  if (tipo === 'bloqueado') {
+    const quem = el.dataset.nome ? `Bloqueado para ${el.dataset.nome}.` : 'Bloqueado pelo administrador.';
+    return `${quem} Botão direito: ${el.dataset.nome ? 'editar o nome' : 'dar nome de médico'}. ${modoBloqueio ? 'Clique para desbloquear.' : 'Ligue "Bloquear/desbloquear horários" para desbloquear com um clique.'}`;
+  }
+  return `Livre. Botão direito: dar nome de médico (bloqueia o horário). ${modoBloqueio ? 'Clique para bloquear.' : 'Ligue "Bloquear/desbloquear horários" para bloquear com um clique.'}`;
+}
+
+(function () {
+  const caixa = document.getElementById('dica-flutuante');
+  function mostrar(e) {
+    const alvo = e.target.closest && e.target.closest('[data-dica], [data-c], .btn-dia');
+    if (!alvo) { caixa.style.display = 'none'; return; }
+    let texto;
+    if (alvo.dataset.dica) texto = alvo.dataset.dica;
+    else if (alvo.classList.contains('btn-dia')) {
+      texto = alvo.classList.contains('oculto')
+        ? 'Dia OCULTO: os médicos não o veem nem reservam nele. Clique para voltar a exibi-lo.'
+        : 'Dia visível para os médicos. Clique para ocultar este dia (todas as salas somem da agenda dos médicos).';
+    } else texto = dicaDaCelula(alvo);
+    caixa.textContent = texto;
+    caixa.style.display = 'block';
+    const margem = 14;
+    let x = e.clientX + margem, y = e.clientY + margem;
+    const larg = caixa.offsetWidth, alt = caixa.offsetHeight;
+    if (x + larg > window.innerWidth - 8) x = Math.max(8, e.clientX - larg - margem);
+    if (y + alt > window.innerHeight - 8) y = Math.max(8, e.clientY - alt - margem);
+    caixa.style.left = x + 'px'; caixa.style.top = y + 'px';
+  }
+  document.addEventListener('mouseover', mostrar);
+  document.addEventListener('mousemove', mostrar);
+  document.addEventListener('mouseleave', () => { caixa.style.display = 'none'; });
+  document.addEventListener('click', () => { caixa.style.display = 'none'; }, true);
+})();
 
 async function carregar() {
   const periodoEl = document.getElementById('periodo-atual');
@@ -320,6 +614,7 @@ async function carregar() {
 
     const resp = await fetch(`/admin/api/matriz/grade?data_inicio=${intervalo.data_inicio}&dias=${dias}`);
     gradeAtual = await resp.json();
+    document.getElementById('lista-medicos').innerHTML = (gradeAtual.medicos_nomes || []).map(n => `<option value="${_esc(n)}">`).join('');
     renderizarGrade();
   } catch (e) {
     listaEl.innerHTML = '<div class="aviso-vazio">Erro ao carregar a agenda.</div>';

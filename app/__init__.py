@@ -70,20 +70,29 @@ def create_app():
     def home():
         return render_template("home_reserva_horas.html")
 
+    # Unidades (pedido do Paulo em 20/10/2026): /consultorios virou a
+    # escolha entre os dois endereços. Os consultórios de hoje (todos os
+    # que estão cadastrados) ficam na Rua Gonçalves Dias; a Av. Barão Homem
+    # de Melo ainda não tem consultórios -- página "em breve" por enquanto.
     @app.route("/consultorios")
     def consultorios_publicos():
+        return render_template("consultorios_publicos.html", modo="unidades")
+
+    @app.route("/consultorios/rua-goncalves-dias")
+    def consultorios_goncalves_dias():
         from app.services import supabase_client as db
-        # A página deixou de mostrar um card por consultório (com nome/
-        # número e descrição) -- pedido do Paulo em 11/09/2026: agora é um
-        # carrossel só, com as fotos de TODOS os consultórios ativos
-        # juntas, uma bem grande por vez, passando sozinho. `fotos` é essa
-        # lista já achatada (cada consultório pode ter várias fotos).
+        # A página mostra um carrossel só, com as fotos de TODOS os
+        # consultórios ativos juntas (pedido do Paulo em 11/09/2026).
         try:
             consultorios = db.listar_todos_consultorios()
         except Exception:
             consultorios = []
         fotos = [foto for c in consultorios for foto in (c.get("fotos") or [])]
-        return render_template("consultorios_publicos.html", fotos=fotos)
+        return render_template("consultorios_publicos.html", modo="goncalves", fotos=fotos)
+
+    @app.route("/consultorios/av-barao-homem-de-melo")
+    def consultorios_barao_homem_de_melo():
+        return render_template("consultorios_publicos.html", modo="barao")
 
     @app.route("/health")
     def health():

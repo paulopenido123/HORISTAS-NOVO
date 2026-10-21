@@ -130,6 +130,8 @@ def api_dora_disponibilidade():
     for h in holds:
         ocupados.add(str(h["horario"])[:5])
 
+    if template_service.dia_esta_oculto(data_str):
+        return jsonify({"data": data_str, "consultorio_id": consultorio_id, "horarios_livres": []})
     livres = [
         h for h in template_service.HORARIOS_DO_DIA
         if h not in ocupados and not template_service.esta_bloqueado(bloqueios, consultorio_id, dia_semana, h)

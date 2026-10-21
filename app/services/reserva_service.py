@@ -196,6 +196,8 @@ def reservar_turno(medico_id: str, consultorio_id: str, data: str, periodo: str,
     _checar_data_nao_passada(data, db.PERIODOS_HORARIOS[periodo][0])
     if not criado_por_admin and not template_service.data_tem_matriz_gerada(data):
         raise MatrizNaoGeradaError()
+    if not criado_por_admin and template_service.dia_esta_oculto(data):
+        raise ConflitoDeReservaError("Esse dia não está disponível para reserva.")
 
     horarios_do_turno = template_service.HORARIOS_POR_PERIODO[periodo]
     if not template_service.verificar_disponibilidade(consultorio_id, data, horarios_do_turno):
@@ -260,6 +262,8 @@ def reservar_por_hora(medico_id: str, consultorio_id: str, data: str,
     _checar_data_nao_passada(data, hora_inicio)
     if not criado_por_admin and not template_service.data_tem_matriz_gerada(data):
         raise MatrizNaoGeradaError()
+    if not criado_por_admin and template_service.dia_esta_oculto(data):
+        raise ConflitoDeReservaError("Esse dia não está disponível para reserva.")
 
     precos = creditos_db.obter_precos()
     horas_minimas = int(precos.get("horas_minimas", 1))

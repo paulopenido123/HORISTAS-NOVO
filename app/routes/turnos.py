@@ -77,7 +77,12 @@ def api_grade():
     # aparecem em rosa e não podem ser escolhidos pelo médico.
     inicio = data_inicio.isoformat(); fim = data_fim.isoformat()
     grade["reservas_admin"] = (db.get_client().table("matriz_reservas_admin")
-        .select("*").gte("data", inicio).lte("data", fim).execute().data)
+        .select("consultorio_id,data,horario").gte("data", inicio).lte("data", fim).execute().data)
+    # (só consultorio/data/horario: o nome que o admin dá a um horário em
+    # "Visualizar agenda" é só dele -- nunca vai pro navegador do médico.)
+    # Dias que o admin ocultou: a tela do médico não desenha essas colunas
+    # (como se o dia não existisse) -- 21/10/2026.
+    grade["dias_ocultos"] = template_service.listar_dias_ocultos(inicio, fim)
     return jsonify(grade)
 
 

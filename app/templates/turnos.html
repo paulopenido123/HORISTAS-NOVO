@@ -480,12 +480,22 @@ function _minutosDeHora(hora) {
 // pausa para limpeza das 17h às 17h30) pra trabalhar por MINUTO em vez
 // de assumir que todo horário reservável começa em hora cheia -- os
 // horários da noite agora começam às 17:30/18:30/19:30.
+// Conjunto "consultorio|dia_semana|hora" dos horários bloqueados -- montado
+// uma vez por carga da grade (antes cada célula varria a lista inteira,
+// ~1.100 itens, o que deixava a tela lenta).
+let _bloqSetCache = { ref: null, set: null };
+function conjuntoBloqueios() {
+  const lista = gradeAtual.bloqueios_template || [];
+  if (_bloqSetCache.ref !== lista) {
+    _bloqSetCache = { ref: lista, set: new Set(lista.map(b => `${b.consultorio_id}|${b.dia_semana}|${b.hora_inicio}`)) };
+  }
+  return _bloqSetCache.set;
+}
+
 function faixasBegeDoDia(consultorioId, dataIso) {
   const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
-  const bloqueiosTemplate = gradeAtual.bloqueios_template || [];
-  const bloqueadoNoHorario = (hora) => bloqueiosTemplate.some(b =>
-    b.consultorio_id === consultorioId && b.dia_semana === diaSemana && b.hora_inicio === hora
-  );
+  const bloqSet = conjuntoBloqueios();
+  const bloqueadoNoHorario = (hora) => bloqSet.has(`${consultorioId}|${diaSemana}|${hora}`);
 
   // Intervalos [início,fim) em minutos cobertos por um horário
   // reservável (que NÃO esteja bloqueado pelo admin), ordenados.
@@ -511,9 +521,14 @@ function faixasBegeDoDia(consultorioId, dataIso) {
 // -- pedido do Paulo em 11/09/2026: todos os consultórios aparecem de
 // uma vez, empilhados, em vez de escolher um por vez num seletor.
 function renderizarGrade() {
-  const dias = [];
-  for (let i = 0; i < 7; i++) dias.push(somarDias(dataInicioAtual, i));
-  atualizarMesAno(dias[0], dias[dias.length - 1]);
+  const diasDaSemana = [];
+  for (let i = 0; i < 7; i++) diasDaSemana.push(somarDias(dataInicioAtual, i));
+  atualizarMesAno(diasDaSemana[0], diasDaSemana[diasDaSemana.length - 1]);
+  // Dias que o administrador ocultou somem da grade (todas as salas), como
+  // se não existissem -- 21/10/2026.
+  const ocultos = new Set(gradeAtual.dias_ocultos || []);
+  const dias = diasDaSemana.filter(d => !ocultos.has(d));
+  const estiloGrade = `grid-template-columns:64px repeat(${Math.max(dias.length, 1)}, 1fr); min-width:${Math.max(64 + dias.length * 96, 280)}px;`;
 
   const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
     dias.map(d => {
@@ -575,9 +590,7 @@ function renderizarGrade() {
         const chave = `${consultorio.id}|${dataIso}|${hora}`;
         const ocupado = ocupacao[chave];
         const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
-        const indisponivel = (gradeAtual.bloqueios_template || []).some(b =>
-          b.consultorio_id === consultorio.id && b.dia_semana === diaSemana && b.hora_inicio === hora
-        );
+        const indisponivel = bloqSet.has(`${consultorio.id}|${diaSemana}|${hora}`);
 
         if (ocupado) {
           const minha = !ocupado.admin && ocupado.medicoId === MEDICO_ATUAL_ID;
@@ -613,15 +626,15 @@ function renderizarGrade() {
         <button type="button" class="btn-ver-foto" onclick="abrirFotoConsultorio('${consultorio.id}')">📷 Ver foto</button>
       </div>
       <div class="grade-scroll-vertical">
-        <div class="grade-cabecalho">${cabecalhoDiasHtml}</div>
-        <div class="grade-corpo">${colunaHoras + colunasDias}</div>
+        <div class="grade-cabecalho" style="${estiloGrade}">${cabecalhoDiasHtml}</div>
+        <div class="grade-corpo" style="${estiloGrade}">${colunaHoras + colunasDias}</div>
       </div>
     </div>`;
   }).join('');
 
   const listaEl = document.getElementById('lista-consultorios');
   listaEl.className = modoAtual ? `modo-${modoAtual}` : '';
-  listaEl.innerHTML = blocosHtml ||
+  listaEl.innerHTML = (dias.length === 0 && (gradeAtual.consultorios || []).length ? '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum dia disponível para reserva nesta semana. Use as setas para ver outra semana.</div>' : blocosHtml) ||
     '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum consultório cadastrado ainda.</div>';
 }
 

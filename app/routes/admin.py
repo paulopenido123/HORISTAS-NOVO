@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.services import supabase_client as db
@@ -773,10 +773,20 @@ def api_matriz_grade():
     grade['data_inicio'] = data_inicio.isoformat()
     grade['data_fim'] = data_fim.isoformat()
     grade['dias'] = dias
+    # A tela do admin não usa as fotos dos consultórios (listas de URLs
+    # que engordavam a resposta à toa) -- 21/10/2026, velocidade.
+    for c in grade.get('consultorios', []):
+        c.pop('fotos', None)
     grade['bloqueios_template'] = template_service.listar_bloqueios()
     inicio = data_inicio.isoformat(); fim = data_fim.isoformat()
-    grade['reservas_admin'] = (db.get_client().table('matriz_reservas_admin')
-        .select('*').gte('data', inicio).lte('data', fim).execute().data)
+    client = db.get_client()
+    grade['reservas_admin'] = (client.table('matriz_reservas_admin')
+        .select('id,consultorio_id,data,horario,descricao,criado_por')
+        .gte('data', inicio).lte('data', fim).execute().data)
+    grade['dias_ocultos'] = template_service.listar_dias_ocultos(inicio, fim)
+    # Nomes pra sugestão ao dar nome a um horário (botão direito) -- só
+    # nome, texto livre continua permitido.
+    grade['medicos_nomes'] = sorted({m['nome'] for m in db.listar_medicos_ativos() if m.get('nome')})
     return grade
 
 
@@ -805,8 +815,8 @@ def api_matriz_template():
     "reservado" em vez de "bloqueado". Esse padrão depois é REPLICADO em
     cima de datas reais pelos botões "Replicar por período"/"por mês"."""
     client = db.get_client()
-    consultorios = db.ordenar_consultorios(client.table('consultorios').select('*').execute().data)
-    template = client.table('matriz_template').select('*').execute().data
+    consultorios = db.ordenar_consultorios(client.table('consultorios').select('id,nome,andar').execute().data)
+    template = client.table('matriz_template').select('consultorio_id,dia_semana,horario').execute().data
     # Mesmos bloqueios da Semana Padrão (inclui a regra fixa de fim de
     # semana) -- pra Matriz não deixar marcar como "reservado" um
     # horário que já está bloqueado pra reserva em qualquer consultório.
@@ -824,11 +834,12 @@ def api_matriz_template_toggle():
     if consultorio_id is None or dia_semana is None or not horario:
         return {'erro': 'consultorio_id, dia_semana e horario são obrigatórios'}, 400
     client = db.get_client()
-    existente = (client.table('matriz_template').select('id')
+    # Uma ida ao banco no caso de "liberar" (DELETE ... RETURNING) e duas
+    # só no de "marcar" -- antes eram sempre duas (SELECT + DELETE/INSERT).
+    removidos = (client.table('matriz_template').delete()
                  .eq('consultorio_id', consultorio_id).eq('dia_semana', dia_semana).eq('horario', horario)
                  .execute().data)
-    if existente:
-        client.table('matriz_template').delete().eq('id', existente[0]['id']).execute()
+    if removidos:
         return {'status': 'removido'}
     client.table('matriz_template').insert(
         {'consultorio_id': consultorio_id, 'dia_semana': dia_semana, 'horario': horario}
@@ -936,20 +947,22 @@ def _aplicar_template_no_periodo(data_inicio: date, data_fim: date, tipo: str, c
 
     # Estado atual da Matriz nesse período.
     existentes_rows = (
-        client.table('matriz_reservas_admin').select('id,consultorio_id,data,horario')
+        client.table('matriz_reservas_admin').select('id,consultorio_id,data,horario,descricao,criado_por')
         .gte('data', data_inicio.isoformat()).lte('data', data_fim.isoformat()).execute().data
     )
     existentes = {
-        (h['consultorio_id'], _data_str(h['data']), _hora_str(h['horario'])): h['id']
+        (h['consultorio_id'], _data_str(h['data']), _hora_str(h['horario'])): h
         for h in existentes_rows
     }
 
     # Libera (remove) o que uma replicação anterior tinha marcado e que
     # não faz mais parte do padrão semanal atual -- é a "sobreposição"
     # no sentido de liberar horários, pedido do Paulo em 24/09/2026.
-    a_remover = [rid for chave, rid in existentes.items() if chave not in alvo]
-    for rid in a_remover:
-        client.table('matriz_reservas_admin').delete().eq('id', rid).execute()
+    # 21/10/2026: só mexe no que a PRÓPRIA matriz criou (criado_por='admin');
+    # bloqueio feito/nomeado à mão em Visualizar agenda ('admin-manual')
+    # nunca é liberado por uma replicação.
+    a_remover = [h for chave, h in existentes.items()
+                 if chave not in alvo and (h.get('criado_por') or 'admin') == 'admin']
 
     # Cria o que o padrão atual quer reservar e ainda não existe (as
     # células em conflito já foram liberadas acima ao cancelar a reserva
@@ -958,13 +971,49 @@ def _aplicar_template_no_periodo(data_inicio: date, data_fim: date, tipo: str, c
         {'consultorio_id': c, 'data': dt, 'horario': h, 'descricao': '', 'criado_por': 'admin'}
         for (c, dt, h) in alvo if (c, dt, h) not in existentes
     ]
+
+    # Registro da replicação ANTES de mexer nos bloqueios, com o detalhe
+    # item a item (matriz_replicacao_itens) -- é o que permite "Desfazer a
+    # matriz" depois (pedido do Paulo em 21/10/2026).
+    base_registro = {'tipo': tipo, 'data_inicio': data_inicio.isoformat(), 'data_fim': data_fim.isoformat(),
+                     'aplicados': len(novos), 'conflitos': len(conflitos)}
+    try:
+        replicacao = client.table('matriz_replicacoes').insert({
+            **base_registro, 'liberados': len(a_remover),
+            'canceladas_medico': canceladas, 'com_registro': True,
+        }).execute().data[0]
+    except Exception as e:
+        # Migração sql/migration_matriz_desfazer_e_ocultar_dias.sql ainda não
+        # rodada: replica do jeito antigo (sem poder desfazer) em vez de quebrar.
+        print(f'[matriz] colunas novas ausentes em matriz_replicacoes ({e}); registrando no formato antigo.')
+        replicacao = client.table('matriz_replicacoes').insert(base_registro).execute().data[0]
+        itens_ok = False
+    else:
+        itens_ok = True
+
+    itens = (
+        [{'replicacao_id': replicacao['id'], 'acao': 'liberou', 'consultorio_id': h['consultorio_id'],
+          'data': _data_str(h['data']), 'horario': _hora_str(h['horario']), 'descricao': h.get('descricao') or ''}
+         for h in a_remover]
+        + [{'replicacao_id': replicacao['id'], 'acao': 'criou', 'consultorio_id': n['consultorio_id'],
+            'data': n['data'], 'horario': n['horario'], 'descricao': ''} for n in novos]
+    )
+    if itens and itens_ok:
+        try:
+            client.table('matriz_replicacao_itens').insert(itens).execute()
+        except Exception as e:
+            print(f'[matriz] não consegui gravar o detalhe da replicação ({e}); não poderá ser desfeita.')
+            try:
+                client.table('matriz_replicacoes').update({'com_registro': False}).eq('id', replicacao['id']).execute()
+            except Exception:
+                pass
+
+    # Operações em LOTE (uma ida ao banco cada) -- antes o "liberar" apagava
+    # um por um, o que deixava a replicação lenta.
+    if a_remover:
+        client.table('matriz_reservas_admin').delete().in_('id', [h['id'] for h in a_remover]).execute()
     if novos:
         client.table('matriz_reservas_admin').insert(novos).execute()
-
-    client.table('matriz_replicacoes').insert({
-        'tipo': tipo, 'data_inicio': data_inicio.isoformat(), 'data_fim': data_fim.isoformat(),
-        'aplicados': len(novos), 'conflitos': len(conflitos),
-    }).execute()
 
     return {'aplicados': len(novos), 'liberados': len(a_remover), 'conflitos': len(conflitos),
             'canceladas_medico': canceladas,
@@ -1049,6 +1098,7 @@ def api_matriz_intervalo_criado():
     hoje = date.today()
     limite_antigo = (hoje - timedelta(days=DIAS_PASSADOS_VISUALIZAR_AGENDA)).isoformat()
     cliente.table('matriz_reservas_admin').delete().lt('data', limite_antigo).execute()
+    cliente.table('matriz_replicacao_itens').delete().lt('data', limite_antigo).execute()
 
     ultima = cliente.table('matriz_reservas_admin').select('data').order('data', desc=True).limit(1).execute().data
     if not ultima:
@@ -1060,3 +1110,243 @@ def api_matriz_intervalo_criado():
     dias = (data_fim - data_inicio).days + 1
     return {'data_inicio': data_inicio.isoformat(), 'data_fim': data_fim.isoformat(), 'dias': dias,
             'hoje': hoje.isoformat()}
+
+
+# =====================================================================
+# Matriz v2 (pedido do Paulo em 21/10/2026)
+#   - Matrizes geradas / Desfazer a matriz
+#   - Visualizar agenda: bloquear/desbloquear célula, nome do médico na
+#     célula (botão direito) e ocultar/exibir um dia para os médicos
+# =====================================================================
+
+_FUSO_BRASILIA = timezone(timedelta(hours=-3))
+
+
+def _data_hora_br(v):
+    """criado_em/desfeita_em -> 'dd/mm/aaaa hh:mm' no horário de Brasília."""
+    if not v:
+        return ''
+    if isinstance(v, str):
+        try:
+            v = datetime.fromisoformat(v.replace('Z', '+00:00'))
+        except ValueError:
+            return v
+    if v.tzinfo is None:
+        v = v.replace(tzinfo=timezone.utc)
+    return v.astimezone(_FUSO_BRASILIA).strftime('%d/%m/%Y %H:%M')
+
+
+def _data_br(v):
+    s = _data_str(v)
+    return f'{s[8:10]}/{s[5:7]}/{s[0:4]}'
+
+
+@admin_bp.route('/api/matriz/replicacoes', methods=['GET'])
+@_admin
+def api_matriz_replicacoes():
+    """Botão "Matrizes geradas": as 5 últimas replicações (mais recente
+    primeiro), com data/hora de geração em horário de Brasília."""
+    linhas = (db.get_client().table('matriz_replicacoes').select('*')
+              .order('criado_em', desc=True).limit(5).execute().data)
+    saida = []
+    for r in linhas:
+        desfeita = bool(r.get('desfeita_em'))
+        com_registro = bool(r.get('com_registro'))
+        saida.append({
+            'id': r['id'],
+            'gerada_em': _data_hora_br(r.get('criado_em')),
+            'tipo': r.get('tipo'),
+            'periodo': f"{_data_br(r['data_inicio'])} a {_data_br(r['data_fim'])}",
+            'aplicados': r.get('aplicados') or 0,
+            'liberados': r.get('liberados') or 0,
+            'canceladas_medico': r.get('canceladas_medico') or 0,
+            'desfeita': desfeita,
+            'desfeita_em': _data_hora_br(r.get('desfeita_em')) if desfeita else '',
+            'pode_desfazer': com_registro and not desfeita,
+            'motivo_sem_desfazer': ('Já foi desfeita.' if desfeita else
+                                    'Gerada antes desta função existir: não há registro do que ela mudou.'
+                                    if not com_registro else ''),
+        })
+    return {'replicacoes': saida}
+
+
+@admin_bp.route('/api/matriz/replicacoes/<replicacao_id>/desfazer', methods=['POST'])
+@_admin
+def api_matriz_desfazer_replicacao(replicacao_id):
+    """"Desfazer a matriz": devolve matriz_reservas_admin ao estado de ANTES
+    daquela replicação -- apaga o que ela criou e recria o que ela liberou.
+    Não mexe em bloqueios feitos/nomeados à mão (criado_por='admin-manual')
+    nem em reservas de médicos (as que a replicação cancelou NÃO voltam:
+    o médico já foi avisado e reembolsado conforme a regra das 12h)."""
+    client = db.get_client()
+    achadas = client.table('matriz_replicacoes').select('*').eq('id', replicacao_id).limit(1).execute().data
+    if not achadas:
+        return {'erro': 'Matriz gerada não encontrada.'}, 404
+    rep = achadas[0]
+    if rep.get('desfeita_em'):
+        return {'erro': 'Essa matriz já foi desfeita.'}, 400
+    if not rep.get('com_registro'):
+        return {'erro': 'Essa matriz foi gerada antes desta função existir; não há registro do que ela mudou, '
+                        'então não dá pra desfazer com segurança.'}, 400
+
+    itens = client.table('matriz_replicacao_itens').select('*').eq('replicacao_id', replicacao_id).execute().data
+    criados = [i for i in itens if i['acao'] == 'criou']
+    liberados = [i for i in itens if i['acao'] == 'liberou']
+
+    # 1) apaga o que a replicação criou (só se continua "da matriz", ou seja,
+    #    sem ter sido nomeado/editado à mão depois)
+    removidos = 0
+    if criados:
+        chaves = {(i['consultorio_id'], _data_str(i['data']), _hora_str(i['horario'])) for i in criados}
+        datas = sorted({k[1] for k in chaves})
+        atuais = (client.table('matriz_reservas_admin').select('id,consultorio_id,data,horario,criado_por')
+                  .gte('data', datas[0]).lte('data', datas[-1]).execute().data)
+        ids = [a['id'] for a in atuais
+               if (a['consultorio_id'], _data_str(a['data']), _hora_str(a['horario'])) in chaves
+               and (a.get('criado_por') or 'admin') == 'admin']
+        if ids:
+            client.table('matriz_reservas_admin').delete().in_('id', ids).execute()
+        removidos = len(ids)
+
+    # 2) recria o que a replicação liberou (se a célula já não estiver ocupada)
+    recriados = 0
+    if liberados:
+        datas = sorted({_data_str(i['data']) for i in liberados})
+        atuais = (client.table('matriz_reservas_admin').select('consultorio_id,data,horario')
+                  .gte('data', datas[0]).lte('data', datas[-1]).execute().data)
+        ocupadas = {(a['consultorio_id'], _data_str(a['data']), _hora_str(a['horario'])) for a in atuais}
+        a_criar = [
+            {'consultorio_id': i['consultorio_id'], 'data': _data_str(i['data']), 'horario': _hora_str(i['horario']),
+             'descricao': i.get('descricao') or '', 'criado_por': 'admin'}
+            for i in liberados
+            if (i['consultorio_id'], _data_str(i['data']), _hora_str(i['horario'])) not in ocupadas
+        ]
+        if a_criar:
+            client.table('matriz_reservas_admin').insert(a_criar).execute()
+        recriados = len(a_criar)
+
+    client.table('matriz_replicacoes').update(
+        {'desfeita_em': db.agora_iso()}
+    ).eq('id', replicacao_id).execute()
+    return {'desfeita': True, 'removidos': removidos, 'recriados': recriados,
+            'canceladas_medico_nao_restauradas': rep.get('canceladas_medico') or 0}
+
+
+# ---------- Visualizar agenda: células ----------
+
+def _horarios_cobertos_pela_reserva(r: dict) -> list[str]:
+    if r.get('tipo_reserva') == 'hora' and r.get('hora_inicio'):
+        return template_service.horas_da_reserva_por_hora(_hora_str(r['hora_inicio']), r.get('quantidade_horas') or 1)
+    return template_service.HORARIOS_POR_PERIODO.get(r.get('periodo'), [])
+
+
+def _validar_celula(body):
+    """Valida consultorio_id/data/horario do corpo; devolve (dados, erro)."""
+    consultorio_id = body.get('consultorio_id')
+    data_iso = body.get('data')
+    horario = (body.get('horario') or '')[:5]
+    if not consultorio_id or not data_iso or horario not in template_service.HORARIOS_DO_DIA:
+        return None, ({'erro': 'consultorio_id, data e horario (um dos horários da grade) são obrigatórios.'}, 400)
+    try:
+        date.fromisoformat(data_iso)
+    except ValueError:
+        return None, ({'erro': 'Data inválida.'}, 400)
+    return (consultorio_id, data_iso, horario), None
+
+
+def _reserva_de_medico_na_celula(client, consultorio_id, data_iso, horario):
+    """Nome do médico se há reserva REAL (não cancelada) cobrindo essa célula; senão None."""
+    reservas = (client.table('reservas')
+                .select('id,consultorio_id,data,tipo_reserva,hora_inicio,quantidade_horas,periodo,medico_id,medicos(nome)')
+                .eq('consultorio_id', consultorio_id).eq('data', data_iso).neq('status', 'cancelada').execute().data)
+    for r in reservas:
+        if horario in _horarios_cobertos_pela_reserva(r):
+            return (r.get('medicos') or {}).get('nome') or 'um médico'
+    return None
+
+
+def _celula_indisponivel_semana_padrao(consultorio_id, data_iso, horario):
+    return template_service.esta_bloqueado(
+        template_service.listar_bloqueios(), consultorio_id, template_service.dia_semana_de(data_iso), horario)
+
+
+@admin_bp.route('/api/matriz/celula/bloquear', methods=['POST'])
+@_admin
+def api_matriz_celula_bloquear():
+    """Botão "Bloquear/desbloquear horários" (Visualizar agenda): se a célula
+    está livre, bloqueia; se já está bloqueada pelo administrador, desbloqueia."""
+    dados, erro = _validar_celula(request.get_json(force=True))
+    if erro:
+        return erro
+    consultorio_id, data_iso, horario = dados
+    client = db.get_client()
+
+    removidos = (client.table('matriz_reservas_admin').delete()
+                 .eq('consultorio_id', consultorio_id).eq('data', data_iso).eq('horario', horario)
+                 .execute().data)
+    if removidos:
+        return {'status': 'liberado'}
+
+    if _celula_indisponivel_semana_padrao(consultorio_id, data_iso, horario):
+        return {'erro': 'Esse horário é indisponível pela regra fixa (fim de semana/semana padrão).'}, 400
+    medico = _reserva_de_medico_na_celula(client, consultorio_id, data_iso, horario)
+    if medico:
+        return {'erro': f'Esse horário tem reserva de {medico}. Cancele a reserva antes de bloquear.'}, 409
+    client.table('matriz_reservas_admin').insert({
+        'consultorio_id': consultorio_id, 'data': data_iso, 'horario': horario,
+        'descricao': '', 'criado_por': 'admin-manual',
+    }).execute()
+    return {'status': 'bloqueado', 'descricao': ''}
+
+
+@admin_bp.route('/api/matriz/celula/nome', methods=['POST'])
+@_admin
+def api_matriz_celula_nome():
+    """Botão direito numa célula: define (ou apaga) o nome do médico que vai
+    usar o horário. Se a célula estava livre, ela passa a ficar bloqueada com
+    esse nome. Nome vazio mantém o bloqueio e só apaga o nome."""
+    body = request.get_json(force=True)
+    dados, erro = _validar_celula(body)
+    if erro:
+        return erro
+    consultorio_id, data_iso, horario = dados
+    nome = (body.get('nome') or '').strip()[:80]
+    client = db.get_client()
+
+    atualizados = (client.table('matriz_reservas_admin')
+                   .update({'descricao': nome, 'criado_por': 'admin-manual'})
+                   .eq('consultorio_id', consultorio_id).eq('data', data_iso).eq('horario', horario)
+                   .execute().data)
+    if atualizados:
+        return {'status': 'nome_salvo', 'descricao': nome}
+
+    if _celula_indisponivel_semana_padrao(consultorio_id, data_iso, horario):
+        return {'erro': 'Esse horário é indisponível pela regra fixa (fim de semana/semana padrão).'}, 400
+    medico = _reserva_de_medico_na_celula(client, consultorio_id, data_iso, horario)
+    if medico:
+        return {'erro': f'Esse horário já tem reserva de {medico}.'}, 409
+    if not nome:
+        return {'status': 'sem_alteracao', 'descricao': ''}
+    client.table('matriz_reservas_admin').insert({
+        'consultorio_id': consultorio_id, 'data': data_iso, 'horario': horario,
+        'descricao': nome, 'criado_por': 'admin-manual',
+    }).execute()
+    return {'status': 'bloqueado_com_nome', 'descricao': nome}
+
+
+@admin_bp.route('/api/matriz/dia/ocultar', methods=['POST'])
+@_admin
+def api_matriz_dia_ocultar():
+    """Botão "o" verde sobre cada dia: oculta/exibe o dia inteiro para os
+    médicos (alterna). Devolve o novo estado."""
+    data_iso = (request.get_json(force=True).get('data') or '')[:10]
+    try:
+        date.fromisoformat(data_iso)
+    except ValueError:
+        return {'erro': 'Data inválida.'}, 400
+    client = db.get_client()
+    removidos = client.table('dias_ocultos').delete().eq('data', data_iso).execute().data
+    if removidos:
+        return {'oculto': False, 'data': data_iso}
+    client.table('dias_ocultos').insert({'data': data_iso}).execute()
+    return {'oculto': True, 'data': data_iso}

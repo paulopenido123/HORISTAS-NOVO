@@ -95,6 +95,21 @@
   .lista-conflitos-vermelha li { color: var(--coral); font-weight: 600; }
   .aviso-conflito { background: var(--coral-soft); color: var(--coral); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 12px; font-weight: 700; line-height: 1.5; }
 
+
+  .cabecalho-titulo { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .cabecalho-titulo h1 { margin: 0; }
+  #dica-flutuante { position: fixed; z-index: 300; max-width: 300px; background: #10222E; color: #fff; font-size: 12.5px;
+    line-height: 1.45; padding: 8px 11px; border-radius: 8px; pointer-events: none; display: none;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+  .lista-geradas { list-style: none; margin: 0 0 14px; padding: 0; }
+  .lista-geradas li { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 8px;
+    display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .lista-geradas .quando { font-weight: 800; font-size: 14px; color: var(--navy); }
+  .lista-geradas .detalhe { font-size: 12.5px; color: var(--muted); margin-top: 2px; line-height: 1.45; }
+  .lista-geradas .selo-desfeita { display: inline-block; background: #EEF1F2; color: #55707C; border-radius: 12px;
+    padding: 3px 9px; font-size: 11.5px; font-weight: 700; }
+  .modal-caixa.larga { max-width: 640px; }
+
   @media (max-width: 760px) {
     .top, .nav { padding: 14px 16px; }
     .container { padding: 14px 12px 50px; }
@@ -114,19 +129,22 @@
 </div>
 
 <div class="container">
-  <h1>Matriz de Agendamento</h1>
+  <div class="cabecalho-titulo">
+    <h1>Matriz de Agendamento</h1>
+    <button type="button" class="btn-admin-acao" data-dica="Mostra as 5 últimas matrizes geradas (data e hora) e permite desfazer cada uma, voltando os horários ao que eram antes dela." onclick="abrirModalGeradas()">Matrizes geradas</button>
+  </div>
   <p class="subtitulo">Essa é a matriz-padrão (sem data) de todos os consultórios: marque aqui os horários da semana que costumam ficar reservados. Depois, use "Replicar" para aplicar esse padrão em cima de datas reais do calendário.</p>
 
   <div class="barra-controles">
     <div class="legenda">
-      <span><span class="dot livre"></span> Disponível (clique para reservar no padrão)</span>
-      <span><span class="dot reservado"></span> Reservado no padrão (clique para liberar)</span>
-      <span><span class="dot bege"></span> Indisponível</span>
+      <span data-dica="Horário verde: ainda não faz parte do padrão semanal. Clique para marcá-lo como reservado no padrão."><span class="dot livre"></span> Disponível (clique para reservar no padrão)</span>
+      <span data-dica="Horário rosa: faz parte do padrão semanal. Ao replicar, será bloqueado nas datas escolhidas. Clique para liberá-lo do padrão."><span class="dot reservado"></span> Reservado no padrão (clique para liberar)</span>
+      <span data-dica="Horário cinza: indisponível pela regra fixa (domingo, sábado à tarde/noite). Não pode ser marcado."><span class="dot bege"></span> Indisponível</span>
     </div>
     <div class="botoes-topo">
-      <button type="button" class="btn-admin-acao destaque" onclick="abrirModalPeriodo()">Replicar matriz por período</button>
-      <button type="button" class="btn-admin-acao destaque" onclick="abrirModalMes()">Replicar matriz por mês</button>
-      <a href="{{ url_for('admin.matriz_visualizar_agenda') }}" class="btn-admin-acao" style="text-decoration:none; display:inline-flex; align-items:center;">Visualizar agenda</a>
+      <button type="button" class="btn-admin-acao destaque" data-dica="Aplica o padrão semanal em todas as datas entre um dia inicial e um final que você escolher. Só depois disso os médicos conseguem reservar naquelas datas." onclick="abrirModalPeriodo()">Replicar matriz por período</button>
+      <button type="button" class="btn-admin-acao destaque" data-dica="Aplica o padrão semanal em todos os dias de um mês inteiro. Só depois disso os médicos conseguem reservar naquele mês." onclick="abrirModalMes()">Replicar matriz por mês</button>
+      <a href="{{ url_for('admin.matriz_visualizar_agenda') }}" data-dica="Abre a agenda completa com as datas já geradas: veja reservas dos médicos, bloqueie/desbloqueie horários, dê nome a um horário e oculte dias." class="btn-admin-acao" style="text-decoration:none; display:inline-flex; align-items:center;">Visualizar agenda</a>
     </div>
   </div>
 
@@ -144,8 +162,8 @@
     </div>
     <div id="periodo-aviso-conflito"></div>
     <div class="modal-botoes">
-      <button type="button" class="btn-fechar-modal" onclick="fecharModais()">Cancelar</button>
-      <button type="button" class="btn-confirmar" id="btn-aplicar-periodo" onclick="aplicarPeriodo()">Aplicar</button>
+      <button type="button" class="btn-fechar-modal" data-dica="Fecha esta janela sem aplicar nada." onclick="fecharModais()">Cancelar</button>
+      <button type="button" class="btn-confirmar" id="btn-aplicar-periodo" data-dica="Aplica o padrão semanal no período escolhido. Se houver reservas de médicos no caminho, você verá a lista antes de confirmar." onclick="aplicarPeriodo()">Aplicar</button>
     </div>
   </div>
 </div>
@@ -161,11 +179,25 @@
     <div class="grade-meses" id="grade-meses"></div>
     <div id="mes-aviso-conflito"></div>
     <div class="modal-botoes">
-      <button type="button" class="btn-fechar-modal" onclick="fecharModais()">Cancelar</button>
-      <button type="button" class="btn-confirmar" id="btn-aplicar-mes" onclick="aplicarMes()">Confirmar</button>
+      <button type="button" class="btn-fechar-modal" data-dica="Fecha esta janela sem aplicar nada." onclick="fecharModais()">Cancelar</button>
+      <button type="button" class="btn-confirmar" id="btn-aplicar-mes" data-dica="Aplica o padrão semanal no mês escolhido. Se houver reservas de médicos no caminho, você verá a lista antes de confirmar." onclick="aplicarMes()">Confirmar</button>
     </div>
   </div>
 </div>
+
+<!-- Modal: Matrizes geradas -->
+<div class="modal-overlay" id="modal-geradas">
+  <div class="modal-caixa larga">
+    <h2>Matrizes geradas</h2>
+    <p class="ajuda">As 5 últimas matrizes geradas. "Desfazer a matriz" devolve os horários bloqueados ao que eram antes daquela geração.
+      Reservas de médicos que foram canceladas por aquela matriz <strong>não voltam</strong>.</p>
+    <div id="lista-geradas-conteudo">Carregando...</div>
+    <div class="modal-botoes">
+      <button type="button" class="btn-fechar-modal" data-dica="Fecha esta janela." onclick="fecharModais()">Fechar</button>
+    </div>
+  </div>
+</div>
+<div id="dica-flutuante"></div>
 
 <script>
 const HORARIOS = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:30', '18:30', '19:30'];
@@ -179,6 +211,11 @@ const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 let templateAtual = { consultorios: [], template: [] };
+// Conjuntos "consultorio|dia|hora" -- montados uma vez por carga (antes cada
+// célula varria a lista inteira de bloqueios, ~1.100 itens, o que deixava a
+// tela muito lenta; 21/10/2026).
+let marcados = new Set();
+let bloqSet = new Set();
 
 function csrfHeader() {
   return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
@@ -198,23 +235,45 @@ function _minutosDeHora(hora) {
   return hh * 60 + mm;
 }
 
+const DICA_VAGO = 'Disponível. Clique para marcar este horário como reservado no padrão semanal.';
+const DICA_RESERVADO = 'Reservado no padrão semanal. Clique para liberar.';
+
 async function carregarTemplate() {
   const resp = await fetch('/admin/api/matriz/template');
   templateAtual = await resp.json();
+  marcados = new Set((templateAtual.template || []).map(t => `${t.consultorio_id}|${t.dia_semana}|${t.horario}`));
+  bloqSet = new Set((templateAtual.bloqueios || []).map(b => `${b.consultorio_id}|${b.dia_semana}|${b.hora_inicio}`));
   renderizarGrade();
+}
+
+// Troca o visual de UMA célula na hora (sem recarregar nem redesenhar a
+// grade inteira) -- a gravação no servidor acontece em seguida e, se
+// falhar, a célula volta ao que era.
+function _pintarCelula(el, reservado, hora) {
+  el.className = reservado ? 'slot-reservado' : 'slot-vago';
+  el.dataset.dica = reservado ? DICA_RESERVADO : DICA_VAGO;
+  el.textContent = reservado ? hora : '';
 }
 
 async function alternarCelula(consultorioId, diaSemana, hora, el) {
   if (el.dataset.travado === '1') return;
   el.dataset.travado = '1';
+  const chave = `${consultorioId}|${diaSemana}|${hora}`;
+  const eraReservado = marcados.has(chave);
+  if (eraReservado) marcados.delete(chave); else marcados.add(chave);
+  _pintarCelula(el, !eraReservado, hora);
   try {
     const r = await fetch('/admin/api/matriz/template/toggle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...csrfHeader() },
       body: JSON.stringify({ consultorio_id: consultorioId, dia_semana: diaSemana, horario: hora }),
     });
-    if (!r.ok) { alert('Não consegui atualizar esse horário. Tente de novo.'); return; }
-    await carregarTemplate();
+    if (!r.ok) throw new Error('falhou');
+  } catch (e) {
+    // desfaz o visual
+    if (eraReservado) marcados.add(chave); else marcados.delete(chave);
+    _pintarCelula(el, eraReservado, hora);
+    alert('Não consegui atualizar esse horário. Tente de novo.');
   } finally {
     el.dataset.travado = '0';
   }
@@ -226,12 +285,8 @@ async function alternarCelula(consultorioId, diaSemana, hora, el) {
 // calcula os intervalos CONTÍNUOS de horários bloqueados e desenha UM
 // retângulo cinza (.faixa-bege) cobrindo cada intervalo inteiro.
 function faixasBegeDoDiaSemana(consultorioId, diaSemana) {
-  const bloqueios = templateAtual.bloqueios || [];
-  const bloqueadoNoHorario = (hora) => bloqueios.some(b =>
-    b.consultorio_id === consultorioId && b.dia_semana === diaSemana && b.hora_inicio === hora
-  );
   const intervalosReservaveis = HORARIOS
-    .filter(hora => !bloqueadoNoHorario(hora))
+    .filter(hora => !bloqSet.has(`${consultorioId}|${diaSemana}|${hora}`))
     .map(hora => { const inicio = _minutosDeHora(hora); return [inicio, inicio + 60]; })
     .sort((a, b) => a[0] - b[0]);
 
@@ -261,8 +316,6 @@ function renderizarGrade() {
   });
   colunaHoras += `</div>`;
 
-  const marcados = new Set((templateAtual.template || []).map(t => `${t.consultorio_id}|${t.dia_semana}|${t.horario}`));
-
   const blocosHtml = (templateAtual.consultorios || []).map(consultorio => {
     const colunasDias = DIAS_SEMANA.map((_, diaSemana) => {
       let html = `<div class="coluna-dia" style="height:${alturaTotal}px;">`;
@@ -278,17 +331,17 @@ function renderizarGrade() {
         if (minutos < GRID_INICIO_MIN || minutos >= GRID_FIM_MIN) return;
         const top = (minutos - GRID_INICIO_MIN) * PX_POR_MIN;
         const altura = 60 * PX_POR_MIN;
-        const marcado = marcados.has(`${consultorio.id}|${diaSemana}|${hora}`);
-        const indisponivel = (templateAtual.bloqueios || []).some(b =>
-          b.consultorio_id === consultorio.id && b.dia_semana === diaSemana && b.hora_inicio === hora
-        );
-        if (marcado) {
-          html += `<div class="slot-reservado" style="top:${top}px; height:${altura}px;" title="Clique para liberar" onclick="alternarCelula('${consultorio.id}', ${diaSemana}, '${hora}', this)">${hora}</div>`;
-        } else if (indisponivel) {
+        const chave = `${consultorio.id}|${diaSemana}|${hora}`;
+        // Um único ouvinte de clique na lista inteira (ver mais abaixo) em
+        // vez de um onclick por célula -- menos peso na página.
+        const attrs = `data-c="${consultorio.id}" data-d="${diaSemana}" data-h="${hora}"`;
+        if (marcados.has(chave)) {
+          html += `<div class="slot-reservado" style="top:${top}px; height:${altura}px;" data-dica="${DICA_RESERVADO}" ${attrs}>${hora}</div>`;
+        } else if (bloqSet.has(chave)) {
           // A faixa-bege acima já cobre esse horário com um retângulo
           // cinza contínuo -- não desenha mais a caixinha individual.
         } else {
-          html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;" title="Clique para marcar como reservado" onclick="alternarCelula('${consultorio.id}', ${diaSemana}, '${hora}', this)"></div>`;
+          html += `<div class="slot-vago" style="top:${top}px; height:${altura}px;" data-dica="${DICA_VAGO}" ${attrs}></div>`;
         }
       });
 
@@ -305,6 +358,81 @@ function renderizarGrade() {
 
   document.getElementById('lista-consultorios').innerHTML = blocosHtml ||
     '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum consultório cadastrado ainda.</div>';
+}
+
+document.getElementById('lista-consultorios').addEventListener('click', (e) => {
+  const el = e.target.closest('[data-c]');
+  if (el) alternarCelula(el.dataset.c, Number(el.dataset.d), el.dataset.h, el);
+});
+
+// ---- Dicas ao passar o mouse (só informam, não precisa clicar) -----------
+(function () {
+  const caixa = document.getElementById('dica-flutuante');
+  function mostrar(e) {
+    const alvo = e.target.closest && e.target.closest('[data-dica]');
+    if (!alvo) { caixa.style.display = 'none'; return; }
+    caixa.textContent = alvo.dataset.dica;
+    caixa.style.display = 'block';
+    const margem = 14;
+    let x = e.clientX + margem, y = e.clientY + margem;
+    const larg = caixa.offsetWidth, alt = caixa.offsetHeight;
+    if (x + larg > window.innerWidth - 8) x = Math.max(8, e.clientX - larg - margem);
+    if (y + alt > window.innerHeight - 8) y = Math.max(8, e.clientY - alt - margem);
+    caixa.style.left = x + 'px'; caixa.style.top = y + 'px';
+  }
+  document.addEventListener('mouseover', mostrar);
+  document.addEventListener('mousemove', mostrar);
+  document.addEventListener('mouseleave', () => { caixa.style.display = 'none'; });
+  document.addEventListener('click', () => { caixa.style.display = 'none'; }, true);
+})();
+
+// ---- Matrizes geradas / desfazer --------------------------------------
+
+function _esc(t) { return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function abrirModalGeradas() {
+  document.getElementById('modal-geradas').classList.add('visivel');
+  await carregarGeradas();
+}
+
+async function carregarGeradas() {
+  const el = document.getElementById('lista-geradas-conteudo');
+  el.textContent = 'Carregando...';
+  try {
+    const r = await fetch('/admin/api/matriz/replicacoes');
+    const x = await r.json();
+    if (!r.ok) throw new Error();
+    if (!x.replicacoes.length) { el.innerHTML = '<p class="ajuda">Nenhuma matriz foi gerada ainda.</p>'; return; }
+    el.innerHTML = '<ul class="lista-geradas">' + x.replicacoes.map(g => {
+      const tipo = g.tipo === 'mes' ? 'por mês' : 'por período';
+      let detalhe = `Período ${_esc(g.periodo)} (${tipo}) — ${g.aplicados} horário(s) aplicado(s)`;
+      if (g.liberados) detalhe += `, ${g.liberados} liberado(s)`;
+      if (g.canceladas_medico) detalhe += `, <strong>${g.canceladas_medico} reserva(s) de médico cancelada(s)</strong>`;
+      const acao = g.desfeita
+        ? `<span class="selo-desfeita">Desfeita em ${_esc(g.desfeita_em)}</span>`
+        : (g.pode_desfazer
+            ? `<button type="button" class="btn-confirmar perigo" data-dica="Cancela as mudanças feitas por esta matriz e volta os horários ao que eram antes dela." onclick="desfazerMatriz('${g.id}', ${g.canceladas_medico})">Desfazer a matriz</button>`
+            : `<span class="selo-desfeita" data-dica="${_esc(g.motivo_sem_desfazer)}">Não dá para desfazer</span>`);
+      return `<li><div><div class="quando">Gerada em ${_esc(g.gerada_em)}</div><div class="detalhe">${detalhe}</div></div>${acao}</li>`;
+    }).join('') + '</ul>';
+  } catch (e) {
+    el.innerHTML = '<p class="ajuda">Não consegui carregar a lista. Tente de novo.</p>';
+  }
+}
+
+async function desfazerMatriz(id, canceladas) {
+  let aviso = 'Desfazer esta matriz? Os horários bloqueados por ela serão liberados e os que ela havia liberado voltam a ficar bloqueados.';
+  if (canceladas) aviso += `\n\nAtenção: ${canceladas} reserva(s) de médico foram canceladas por esta matriz e NÃO voltam.`;
+  if (!confirm(aviso)) return;
+  try {
+    const r = await fetch(`/admin/api/matriz/replicacoes/${id}/desfazer`, { method: 'POST', headers: csrfHeader() });
+    const x = await r.json();
+    if (!r.ok) { alert(x.erro || 'Não consegui desfazer a matriz.'); return; }
+    alert(`Matriz desfeita: ${x.removidos} horário(s) liberado(s) e ${x.recriados} horário(s) bloqueado(s) de volta.`);
+    await carregarGeradas();
+  } catch (e) {
+    alert('Erro ao desfazer: ' + e);
+  }
 }
 
 // Monta o resumo do resultado de uma replicação -- pedido do Paulo em

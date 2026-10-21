@@ -11,6 +11,7 @@ google-api-python-client==2.199.0
 flask-limiter==4.1.1
 flask-wtf==1.3.0
 tzdata==2025.2
+reportlab>=4.0  # usado por app/services/pdf_service.py (botão "Baixar contrato"); havia sido removido por engano
 
 # Removidas na revisão de produção de 10/09/2026 (confirmado, via grep em
 # todo o app/ e run.py, que nada neste recorte importa esses pacotes --

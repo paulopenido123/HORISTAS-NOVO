@@ -119,11 +119,19 @@ def data_tem_matriz_gerada(data_iso: str) -> bool:
     o admin nunca preparou de verdade. Agora, reservar_por_hora/
     reservar_turno chamam isso ANTES de deixar passar, pra médico não
     conseguir mais reservar num período "no escuro"."""
-    resp = (
+    q = (
         get_client().table("matriz_replicacoes")
-        .select("id").lte("data_inicio", data_iso).gte("data_fim", data_iso).limit(1).execute()
+        .select("id").lte("data_inicio", data_iso).gte("data_fim", data_iso)
     )
-    return bool(resp.data)
+    try:
+        # Replicações desfeitas ("Desfazer a matriz") não contam mais.
+        return bool(q.is_("desfeita_em", None).limit(1).execute().data)
+    except Exception:
+        # Coluna ainda não criada (migração pendente): comportamento antigo.
+        return bool(
+            get_client().table("matriz_replicacoes").select("id")
+            .lte("data_inicio", data_iso).gte("data_fim", data_iso).limit(1).execute().data
+        )
 
 
 def alternar_bloqueio(consultorio_id: str, dia_semana: int, hora_inicio: str) -> bool:
@@ -149,3 +157,33 @@ def alternar_bloqueio(consultorio_id: str, dia_semana: int, hora_inicio: str) ->
         "consultorio_id": consultorio_id, "dia_semana": dia_semana, "hora_inicio": hora_inicio,
     }).execute()
     return True
+
+
+# ---------- Dias ocultos (pedido do Paulo em 21/10/2026) ----------
+#
+# O admin pode "ocultar" um dia inteiro em Visualizar agenda: esse dia some
+# da grade dos médicos (todas as salas) como se não existisse, e também não
+# aceita reserva nova (site ou Dora). Reservas que o médico JÁ tinha nesse
+# dia continuam existindo e aparecendo em "Minha agenda". Tabela
+# `dias_ocultos` (ver sql/migration_matriz_desfazer_e_ocultar_dias.sql).
+
+def listar_dias_ocultos(data_inicio: str | None = None, data_fim: str | None = None) -> list[str]:
+    try:
+        q = get_client().table("dias_ocultos").select("data")
+        if data_inicio:
+            q = q.gte("data", data_inicio)
+        if data_fim:
+            q = q.lte("data", data_fim)
+        return sorted(str(r["data"])[:10] for r in q.execute().data)
+    except Exception as e:  # tabela ainda não criada (migração pendente)
+        print(f"[template_service] dias_ocultos indisponível: {e}")
+        return []
+
+
+def dia_esta_oculto(data_iso: str) -> bool:
+    try:
+        resp = get_client().table("dias_ocultos").select("data").eq("data", data_iso).limit(1).execute()
+        return bool(resp.data)
+    except Exception as e:
+        print(f"[template_service] dias_ocultos indisponível: {e}")
+        return False

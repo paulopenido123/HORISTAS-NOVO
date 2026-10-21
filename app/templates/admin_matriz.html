@@ -9,7 +9,7 @@
   :root {
     --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --teal-soft: #EAF4F3;
     --line: #DCE6E8; --muted: #55707C; --coral: #D65C3F; --coral-soft: #fbeae6;
-    --bege: #C8CDD1; --verde: #9BE79A; --rosa: #FFB8C0;
+    --bege: #1F3A5F; --verde: #EAF4FF; --rosa: #7FA3D1;
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: Inter, Arial, sans-serif; background: #F5F8F9; color: #10222E; }
@@ -57,9 +57,9 @@
     background-image: repeating-linear-gradient(to bottom, #f1f4f5 0, #f1f4f5 1px, transparent 1px, transparent 21.6px);
   }
   .faixa-bege { position: absolute; left: 0; right: 0; background: var(--bege); pointer-events: none; z-index: 0; }
-  .slot-vago { position: absolute; left: 2px; right: 2px; border-radius: 3px; border: 1px dashed #e3e8ea; box-sizing: border-box; background: var(--verde); cursor: pointer; }
+  .slot-vago { position: absolute; left: 2px; right: 2px; border-radius: 3px; border: 1px dashed #BCD6F2; box-sizing: border-box; background: var(--verde); cursor: pointer; }
   .slot-vago:hover { filter: brightness(0.95); }
-  .slot-vago.indisponivel { background: var(--bege); border: 1px solid #b9c0c4; cursor: not-allowed; }
+  .slot-vago.indisponivel { background: var(--bege); border: 1px solid #16304F; cursor: not-allowed; }
   .slot-reservado {
     position: absolute; left: 2px; right: 2px; border-radius: 4px; box-sizing: border-box; cursor: pointer;
     background: var(--rosa); color: #8e2632; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;
@@ -116,7 +116,7 @@
     .grade-meses { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
-</head>
+<link rel="stylesheet" href="/static/css/base-mobile.css"></head>
 <body>
 <div class="top"><strong>LIFEMAX ADMIN · MATRIZ DE AGENDAMENTO</strong></div>
 <div class="nav">

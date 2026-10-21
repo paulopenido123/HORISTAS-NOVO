@@ -11,7 +11,7 @@
   :root {
     --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --teal-soft: #EAF4F3;
     --line: #DCE6E8; --muted: #55707C; --coral: #D65C3F; --coral-soft: #fbeae6;
-    --bege: #C8CDD1; --verde: #9BE79A; --rosa: #FFB8C0;
+    --bege: #1F3A5F; --verde: #EAF4FF; --rosa: #7FA3D1;
     /* Cores da grade -- pedido do Paulo em 11/09/2026: voltar a usar
        exatamente a mesma paleta da Matriz do admin (admin_matriz.html),
        pra ficar visualmente igual nas duas telas: Livre/Disponível =
@@ -163,9 +163,9 @@
     position: absolute; left: 2px; right: 2px; border-radius: 3px; cursor: pointer;
     border: 1px dashed #e3e8ea; box-sizing: border-box;
   }
-  .slot-vago { background: var(--verde); border: 1px solid #8bd889; }
-  .slot-vago.indisponivel { background: var(--bege); border: 1px solid #b9c0c4; cursor: not-allowed; }
-  .slot-vago.indisponivel:hover { border-color: #b9c0c4; background: var(--bege); }
+  .slot-vago { background: var(--verde); border: 1px solid #BCD6F2; }
+  .slot-vago.indisponivel { background: var(--bege); border: 1px solid #16304F; cursor: not-allowed; }
+  .slot-vago.indisponivel:hover { border-color: #16304F; background: var(--bege); }
   .bloco-reserva {
     position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 0 5px; overflow: hidden;
     font-size: 11.5px; line-height: 1.15; box-shadow: 0 1px 3px rgba(0,0,0,.15); box-sizing: border-box;
@@ -175,7 +175,7 @@
      em 22/09/2026 (antes o texto ficava branco em cima do azul, difícil
      de ler). */
   .bloco-reserva.minha { background: var(--azul-confirmado); border: 1.5px solid #0E6B7D; cursor: pointer; }
-  .bloco-reserva.outro-medico { background: var(--rosa); border: 1.5px solid #C24A63; }
+  .bloco-reserva.outro-medico { background: var(--rosa); border: 1.5px solid #4E78AE; }
   .bloco-reserva .h { font-weight: 800; color: #10222E; }
   .bloco-reserva .nome { font-weight: 800; color: #10222E; overflow: hidden; text-overflow: ellipsis; }
   #aviso-12h { display:none; background: var(--coral-soft); color: var(--coral); padding:10px 12px; border-radius:8px; font-size:12.5px; margin-top:10px; font-weight:600; }
@@ -225,7 +225,7 @@
   }
 </style>
 <meta name="csrf-token" content="{{ csrf_token() }}">
-</head>
+<link rel="stylesheet" href="/static/css/base-mobile.css"></head>
 <body>
 <script>
 (function() {

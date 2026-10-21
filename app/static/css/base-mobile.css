@@ -1,0 +1,11 @@
+/* Regra única de celular, comum a todas as telas (21/10/2026).
+   - A página não desliza para os lados com o dedo e não tem o efeito de
+     "elástico" horizontal.
+   - Imagens, vídeos e iframes nunca passam da largura da tela.
+   - Tabelas/grades largas continuam rolando para o lado DENTRO do próprio
+     quadro (cada uma tem overflow-x próprio) -- por isso não se usa
+     touch-action nem overflow no body (quebraria rolagem interna e os
+     cabeçalhos "sticky"). */
+html { overflow-x: hidden; overscroll-behavior-x: none; max-width: 100%; }
+body { overflow-x: clip; overscroll-behavior-x: none; max-width: 100%; }
+img, video, iframe, canvas { max-width: 100%; }

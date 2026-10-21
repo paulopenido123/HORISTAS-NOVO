@@ -592,7 +592,7 @@ function renderizarGrade() {
         const chave = `${consultorio.id}|${dataIso}|${hora}`;
         const ocupado = ocupacao[chave];
         const diaSemana = new Date(dataIso + 'T00:00:00').getDay();
-        const indisponivel = bloqSet.has(`${consultorio.id}|${diaSemana}|${hora}`);
+        const indisponivel = conjuntoBloqueios().has(`${consultorio.id}|${diaSemana}|${hora}`);
 
         if (ocupado) {
           const minha = !ocupado.admin && ocupado.medicoId === MEDICO_ATUAL_ID;

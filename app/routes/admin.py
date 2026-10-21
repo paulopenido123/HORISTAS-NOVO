@@ -1098,7 +1098,10 @@ def api_matriz_intervalo_criado():
     hoje = date.today()
     limite_antigo = (hoje - timedelta(days=DIAS_PASSADOS_VISUALIZAR_AGENDA)).isoformat()
     cliente.table('matriz_reservas_admin').delete().lt('data', limite_antigo).execute()
-    cliente.table('matriz_replicacao_itens').delete().lt('data', limite_antigo).execute()
+    try:
+        cliente.table('matriz_replicacao_itens').delete().lt('data', limite_antigo).execute()
+    except Exception as e:  # migração ainda não rodada: tabela não existe
+        print(f'[matriz] matriz_replicacao_itens indisponível: {e}')
 
     ultima = cliente.table('matriz_reservas_admin').select('data').order('data', desc=True).limit(1).execute().data
     if not ultima:

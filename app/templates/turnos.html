@@ -527,7 +527,9 @@ function renderizarGrade() {
   // Dias que o administrador ocultou somem da grade (todas as salas), como
   // se não existissem -- 21/10/2026.
   const ocultos = new Set(gradeAtual.dias_ocultos || []);
+  const semMatriz = new Set(gradeAtual.dias_sem_matriz || []);
   const dias = diasDaSemana.filter(d => !ocultos.has(d));
+  const nSemMatriz = dias.filter(d => semMatriz.has(d)).length;
   const estiloGrade = `grid-template-columns:64px repeat(${Math.max(dias.length, 1)}, 1fr); min-width:${Math.max(64 + dias.length * 96, 280)}px;`;
 
   const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
@@ -634,8 +636,9 @@ function renderizarGrade() {
 
   const listaEl = document.getElementById('lista-consultorios');
   listaEl.className = modoAtual ? `modo-${modoAtual}` : '';
-  listaEl.innerHTML = (dias.length === 0 && (gradeAtual.consultorios || []).length ? '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum dia disponível para reserva nesta semana. Use as setas para ver outra semana.</div>' : blocosHtml) ||
+  listaEl.innerHTML = (dias.length === 0 && (gradeAtual.consultorios || []).length ? '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum dia disponível para reserva nesta semana.' + ' Use as setas para ver outra semana.</div>' : blocosHtml) ||
     '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum consultório cadastrado ainda.</div>';
+  if (nSemMatriz) listaEl.insertAdjacentHTML('afterbegin', '<div style="background:#FFF4E5; border:1px solid #F2C27A; color:#7A4B00; border-radius:10px; padding:10px 14px; margin-bottom:10px; font-size:13px;">Parte desta semana ainda não tem agenda liberada pelo administrador: não é possível reservar nesses dias. Em caso de dúvida, entre em contato por telefone ou e-mail.</div>');
 }
 
 function _formatarDataBR(dataIso) {

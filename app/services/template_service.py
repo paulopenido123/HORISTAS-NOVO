@@ -134,6 +134,34 @@ def data_tem_matriz_gerada(data_iso: str) -> bool:
         )
 
 
+def dias_sem_matriz(data_inicio: str, data_fim: str) -> list[str]:
+    """Datas do intervalo que NÃO estão cobertas por nenhuma matriz gerada
+    (e não desfeita). Mesma regra de data_tem_matriz_gerada, mas numa
+    consulta só: a grade do médico usa isso pra avisar que o período ainda
+    não tem agenda, em vez de mostrar tudo "livre" e falhar só ao reservar."""
+    cli = get_client()
+    try:
+        q = (cli.table("matriz_replicacoes").select("data_inicio,data_fim")
+             .lte("data_inicio", data_fim).gte("data_fim", data_inicio))
+        try:
+            linhas = q.is_("desfeita_em", None).execute().data
+        except Exception:
+            linhas = (cli.table("matriz_replicacoes").select("data_inicio,data_fim")
+                      .lte("data_inicio", data_fim).gte("data_fim", data_inicio).execute().data)
+    except Exception as e:
+        print(f"[template_service] dias_sem_matriz indisponível: {e}")
+        return []
+    cobertos = [(str(l["data_inicio"])[:10], str(l["data_fim"])[:10]) for l in linhas]
+    d = date.fromisoformat(data_inicio); fim = date.fromisoformat(data_fim)
+    out = []
+    while d <= fim:
+        iso = d.isoformat()
+        if not any(a <= iso <= b for a, b in cobertos):
+            out.append(iso)
+        d = date.fromordinal(d.toordinal() + 1)
+    return out
+
+
 def alternar_bloqueio(consultorio_id: str, dia_semana: int, hora_inicio: str) -> bool:
     """
     Alterna o estado (disponível <-> bloqueado) de uma célula da Semana

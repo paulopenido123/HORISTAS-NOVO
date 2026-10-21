@@ -83,6 +83,9 @@ def api_grade():
     # Dias que o admin ocultou: a tela do médico não desenha essas colunas
     # (como se o dia não existisse) -- 21/10/2026.
     grade["dias_ocultos"] = template_service.listar_dias_ocultos(inicio, fim)
+    # Dias sem matriz gerada: não dá pra reservar (reserva_service recusa);
+    # a tela avisa em vez de mostrar tudo "livre".
+    grade["dias_sem_matriz"] = template_service.dias_sem_matriz(inicio, fim)
     return jsonify(grade)
 
 

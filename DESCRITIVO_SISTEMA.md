@@ -474,3 +474,8 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Secretária: acessa Dashboard, Matriz (incl. Visualizar agenda, onde aparece o nome do profissional em cada horário reservado), Consultórios, Fotos e Clientes. NÃO acessa Horas, Relatórios (incl. emissão de NF), Usuários, nem altera saldo de cliente (rotas com `requer_admin_total` → 403; menus/atalhos escondidos via `admin_total`). Perfil conferido a cada requisição (bloquear derruba a sessão).
 - Página principal e /consultorios: botão "Acesso administrativo" → /admin/login. "Esqueci minha senha" (/admin/esqueci-senha) reenvia o link de acesso (permanente) ao e-mail cadastrado, resposta sempre igual.
 - Removido código morto de secretária antiga (auth_service: login_secretaria etc.; blueprint inexistente). Tabela `secretarias`/secretarias_service legados permanecem sem uso no fluxo admin.
+
+## v72 — Visualizar agenda: setas; menu "Visualizar agenda"; botões da página inicial
+- Visualizar agenda: setas fixas nas laterais movem TODAS as salas juntas, 3 dias por clique (salas desenhadas depois entram na mesma posição).
+- Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
+- Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).

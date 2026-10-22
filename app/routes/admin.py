@@ -771,7 +771,7 @@ def excluir_foto(consultorio_id):
 
 
 @admin_bp.route('/matriz')
-@_admin
+@_admin_total
 def matriz():
     # Pedido do Paulo em 21/09/2026: deixou de ser uma grade por semana
     # (setas "<" ">") e virou um padrão semanal único, sem data -- a tela
@@ -848,7 +848,7 @@ def _dia_semana(d: date) -> int:
 
 
 @admin_bp.route('/api/matriz/template', methods=['GET'])
-@_admin
+@_admin_total
 def api_matriz_template():
     """Pedido do Paulo em 21/09/2026: a Matriz deixou de ser editada
     semana a semana (setas "<" ">") e passou a ser um ÚNICO padrão
@@ -866,7 +866,7 @@ def api_matriz_template():
 
 
 @admin_bp.route('/api/matriz/template/toggle', methods=['POST'])
-@_admin
+@_admin_total
 def api_matriz_template_toggle():
     body = request.get_json(force=True)
     consultorio_id = body.get('consultorio_id')
@@ -1062,7 +1062,7 @@ def _aplicar_template_no_periodo(data_inicio: date, data_fim: date, tipo: str, c
 
 
 @admin_bp.route('/api/matriz/replicar-periodo', methods=['POST'])
-@_admin
+@_admin_total
 def api_matriz_replicar_periodo():
     """Botão "Replicar matriz por período" -- pedido do Paulo em
     21/09/2026: admin escolhe data de início e fim, o sistema aplica o
@@ -1081,7 +1081,7 @@ def api_matriz_replicar_periodo():
 
 
 @admin_bp.route('/api/matriz/replicar-mes', methods=['POST'])
-@_admin
+@_admin_total
 def api_matriz_replicar_mes():
     """Botão "Replicar matriz por mês" -- pedido do Paulo em 21/09/2026:
     admin escolhe um mês/ano, o sistema aplica o padrão semanal da
@@ -1102,7 +1102,7 @@ def api_matriz_replicar_mes():
 
 
 @admin_bp.route('/api/matriz/relatorio', methods=['GET'])
-@_admin
+@_admin_total
 def api_matriz_relatorio():
     """Botão "Relatório" -- histórico de todas as vezes que a matriz foi
     replicada, mais recente primeiro."""
@@ -1186,7 +1186,7 @@ def _data_br(v):
 
 
 @admin_bp.route('/api/matriz/replicacoes', methods=['GET'])
-@_admin
+@_admin_total
 def api_matriz_replicacoes():
     """Botão "Matrizes geradas": as 5 últimas replicações (mais recente
     primeiro), com data/hora de geração em horário de Brasília."""
@@ -1215,7 +1215,7 @@ def api_matriz_replicacoes():
 
 
 @admin_bp.route('/api/matriz/replicacoes/<replicacao_id>/desfazer', methods=['POST'])
-@_admin
+@_admin_total
 def api_matriz_desfazer_replicacao(replicacao_id):
     """"Desfazer a matriz": devolve matriz_reservas_admin ao estado de ANTES
     daquela replicação -- apaga o que ela criou e recria o que ela liberou.

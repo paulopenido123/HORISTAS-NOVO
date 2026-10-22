@@ -7,7 +7,7 @@
 </div></header>
 <nav class="menu-admin">
   <a href="{{ url_for('admin.dashboard') }}" class="{{ 'on' if ativo == 'dashboard' else '' }}">Dashboard</a>
-  <a href="{{ url_for('admin.matriz') }}" class="{{ 'on' if ativo == 'matriz' else '' }}">Gerar Matriz</a>
+  {% if admin_total %}<a href="{{ url_for('admin.matriz') }}" class="{{ 'on' if ativo == 'matriz' else '' }}">Gerar Matriz</a>{% endif %}
   <a href="{{ url_for('admin.consultorios') }}" class="{{ 'on' if ativo == 'consultorios' else '' }}">Consultórios</a>
   <a href="{{ url_for('admin.clientes') }}" class="{{ 'on' if ativo == 'clientes' else '' }}">Clientes</a>
   {% if admin_total %}
@@ -15,4 +15,5 @@
   <a href="{{ url_for('admin.relatorios') }}" class="{{ 'on' if ativo == 'relatorios' else '' }}">Relatórios</a>
   <a href="{{ url_for('admin.usuarios') }}" class="{{ 'on' if ativo == 'usuarios' else '' }}">Usuários</a>
   {% endif %}
+  <a href="{{ url_for('admin.matriz_visualizar_agenda') }}" class="{{ 'on' if ativo == 'agenda' else '' }}">Visualizar agenda</a>
 </nav>

@@ -54,8 +54,9 @@
      replicada) -- não dá pra usar "repeat(7, 1fr)" como nas outras
      grades porque o número de colunas é dinâmico e a rolagem é sempre
      horizontal (largura fixa por dia), nunca "encaixando" na tela --
-     pedido do Paulo em 24/09/2026 (item 2): sem setas de avançar/
-     voltar, só a barra de rolagem horizontal E vertical mesmo. */
+     pedido do Paulo em 24/09/2026 (item 2): só a barra de rolagem horizontal E
+     vertical; em 22/10/2026 ele pediu também setas laterais que movem todas as salas
+     juntas, 3 dias por clique (ver .seta-agenda / moverAgenda). */
   .grade-cabecalho { display: grid; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; background: #fff; }
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
   .grade-cabecalho .col-dia { text-align: center; padding: 5px 4px; font-size: 13.5px; font-weight: 800; color: #10222E; border-right: 1px solid var(--line); }
@@ -63,6 +64,10 @@
   .grade-cabecalho .col-dia .mes { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
   .grade-scroll-vertical { max-height: 620px; overflow-y: auto; overflow-x: auto; padding: 14px 0 7px; }
   .grade-corpo { display: grid; position: relative; }
+  .seta-agenda { position: fixed; top: 50%; transform: translateY(-50%); z-index: 60; width: 44px; height: 64px; border: 0; border-radius: 14px; background: #0EA5A0; color: #fff; font-size: 24px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 18px rgba(11,58,87,.30); opacity: .92; }
+  .seta-agenda:hover { background: #0C8B87; opacity: 1; }
+  .seta-agenda.esq { left: 6px; } .seta-agenda.dir { right: 6px; }
+  @media (max-width: 640px) { .seta-agenda { width: 36px; height: 56px; font-size: 20px; } }
   .coluna-horas { position: relative; border-right: 1px solid var(--line); position: sticky; left: 0; z-index: 1; background: #fff; }
   .coluna-horas .marca-hora { position: absolute; left: 0; right: 0; font-size: 12px; font-weight: 700; color: #10222E; text-align: right; padding-right: 6px; transform: translateY(-50%); }
   .coluna-dia {
@@ -143,12 +148,12 @@
 </style>
 <link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head>
 <body>
-{% with titulo='Visualizar agenda', ativo='matriz' %}{% include '_admin_topo.html' %}{% endwith %}
+{% with titulo='Visualizar agenda', ativo='agenda' %}{% include '_admin_topo.html' %}{% endwith %}
 
 <div class="container">
-  <a href="{{ url_for('admin.matriz') }}" data-dica="Volta para a tela da Matriz de Agendamento." class="btn-admin-acao" style="text-decoration:none; display:inline-flex; align-items:center; margin-bottom:12px;">← Voltar</a>
+  <a href="{{ url_for('admin.matriz') if admin_total else url_for('admin.dashboard') }}" data-dica="{{ 'Volta para a tela da Matriz de Agendamento.' if admin_total else 'Volta para o painel.' }}" class="btn-admin-acao" style="text-decoration:none; display:inline-flex; align-items:center; margin-bottom:12px;">← Voltar</a>
   <h1>Visualizar agenda</h1>
-  <p class="subtitulo">Agenda completa com todos os dias que já têm matriz replicada. Use a barra de rolagem horizontal para ver os outros dias. Clique com o <strong>botão direito</strong> num horário para dar o nome do médico que vai usá-lo.</p>
+  <p class="subtitulo">Agenda completa com todos os dias que já têm matriz replicada. Use as setas dos lados (3 dias de cada vez, em todas as salas ao mesmo tempo) ou a barra de rolagem horizontal para ver os outros dias. Clique com o <strong>botão direito</strong> num horário para dar o nome do médico que vai usá-lo.</p>
 
   <div class="barra-controles">
     <div class="legenda">
@@ -167,7 +172,9 @@
   </div>
   <div class="aviso-modo" id="aviso-modo">Modo bloquear/desbloquear ligado: clique num horário <strong>livre</strong> para bloquear ou num horário <strong>bloqueado</strong> para desbloquear. Clique no botão de novo para sair.</div>
 
-  <div id="lista-consultorios"><div class="aviso-vazio">Carregando...</div></div>
+  <button type="button" class="seta-agenda esq" id="seta-esq" aria-label="Voltar 3 dias" data-dica="Move todas as salas 3 dias para trás." onclick="moverAgenda(-1)">&#10094;</button>
+<button type="button" class="seta-agenda dir" id="seta-dir" aria-label="Avançar 3 dias" data-dica="Move todas as salas 3 dias para frente." onclick="moverAgenda(1)">&#10095;</button>
+<div id="lista-consultorios"><div class="aviso-vazio">Carregando...</div></div>
 </div>
 
 <div id="menu-nome">
@@ -365,11 +372,25 @@ function htmlCorpoBloco(consultorio) {
 // são dezenas de consultórios x dezenas de dias; desenhar tudo de uma vez
 // era o que travava a página. 21/10/2026.
 let observador = null;
+// Setas: movem TODAS as salas juntas, 3 dias por clique (pedido do Paulo em 22/10/2026).
+const PASSO_DIAS = 3;
+let posicaoAgenda = 0;   // rolagem horizontal comum a todas as salas
+function moverAgenda(direcao) {
+  const caixas = document.querySelectorAll('.grade-scroll-vertical');
+  const ref = caixas[0];
+  if (ref) posicaoAgenda = ref.scrollLeft;
+  const max = ref ? Math.max(0, ref.scrollWidth - ref.clientWidth) : 0;
+  posicaoAgenda = Math.max(0, Math.min(max, posicaoAgenda + direcao * PASSO_DIAS * LARGURA_COL_DIA));
+  caixas.forEach(c => { c.scrollLeft = posicaoAgenda; });
+}
+
 function preencherBloco(el) {
   if (el.dataset.pronto === '1') return;
   const consultorio = (gradeAtual.consultorios || []).find(c => c.id === el.dataset.bloco);
   if (!consultorio) return;
   el.querySelector('.corpo-bloco').innerHTML = htmlCorpoBloco(consultorio);
+  const caixa = el.querySelector('.grade-scroll-vertical');
+  if (caixa && posicaoAgenda) caixa.scrollLeft = posicaoAgenda;   // salas desenhadas depois entram na mesma posição
   el.dataset.pronto = '1';
 }
 
@@ -587,7 +608,7 @@ async function carregar() {
     const intervalo = await rIntervalo.json();
     if (!intervalo.data_inicio) {
       periodoEl.textContent = '';
-      listaEl.innerHTML = '<div class="aviso-vazio">Nenhuma matriz foi replicada ainda -- use "Replicar matriz por período" ou "por mês" primeiro.</div>';
+      listaEl.innerHTML = {{ ('\'<div class="aviso-vazio">Nenhuma matriz foi replicada ainda -- use "Replicar matriz por período" ou "por mês" primeiro.</div>\'' if admin_total else '\'<div class="aviso-vazio">Nenhuma matriz foi replicada ainda. Peça ao administrador para gerar a matriz.</div>\'')|safe }};
       return;
     }
     hojeAtual = intervalo.hoje;

@@ -94,7 +94,8 @@
   <div class="caixa">
     <div class="secao"><svg class="ic"><use href="#i-check"/></svg> Operação</div>
     <div class="atalhos">
-      <a class="atalho navy" href="{{ url_for('admin.matriz') }}"><span class="ico"><svg class="ic"><use href="#i-calplus"/></svg></span>Gerar Matriz</a>
+      {% if admin_total %}<a class="atalho navy" href="{{ url_for('admin.matriz') }}"><span class="ico"><svg class="ic"><use href="#i-calplus"/></svg></span>Gerar Matriz</a>{% endif %}
+      <a class="atalho navy" href="{{ url_for('admin.matriz_visualizar_agenda') }}"><span class="ico"><svg class="ic"><use href="#i-calplus"/></svg></span>Visualizar agenda</a>
       <a class="atalho navy" href="{{ url_for('admin.consultorios') }}"><span class="ico"><svg class="ic"><use href="#i-bld"/></svg></span>Consultórios</a>
       <a class="atalho navy" href="{{ url_for('admin.clientes') }}"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span>Clientes</a>
       {% if admin_total %}

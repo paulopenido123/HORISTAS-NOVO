@@ -1,0 +1,41 @@
+/* Padrão visual do médico (22/10/2026) -- páginas internas: Meus dados e Pacientes.
+   Mesma linguagem do painel: topo azul-petróleo com logo, cartões brancos arredondados,
+   botões verde-água e menu inferior fixo. */
+:root { --teal:#0EA5A0; --teal-dark:#0C8B87; --card-line:#E1EAEE; }
+body { padding-bottom: 96px; }
+.ic { width: 1.1em; height: 1.1em; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; vertical-align: -0.15em; }
+.hero { position: relative !important; z-index: 0 !important; display: block !important; padding: 0 0 58px !important; background: linear-gradient(160deg,#0A3650 0%,#0B4A5F 55%,#0C5867 100%); color:#fff; border-radius: 0 0 34px 34px; padding-bottom: 58px; }
+.hero-topo { display:grid; grid-template-columns: auto 1fr auto; align-items:start; gap:14px; max-width:1040px; margin:0 auto; padding:22px 18px 0; }
+.brand-logo { height:54px; width:auto; display:block; background:#fff; border-radius:16px; padding:10px 14px; box-shadow:0 4px 14px rgba(0,0,0,.18); }
+.hero-titulo .eyebrow { font-size:12.5px; font-weight:700; letter-spacing:.05em; color:#34D2CC; text-transform:uppercase; margin-bottom:2px; }
+.hero-titulo h1 { font-family:'Manrope',sans-serif; font-weight:800; font-size:clamp(24px,6.2vw,36px); line-height:1.1; color:#fff; }
+.hero-titulo p { margin-top:8px; font-size:clamp(13px,3.3vw,15px); line-height:1.45; color:rgba(234,242,245,.92); max-width:620px; }
+.hero .sair { display:flex; flex-direction:column; align-items:center; gap:5px; color:#fff; text-decoration:none; font-weight:800; font-size:13px; margin:0; background:none; padding:0; }
+.hero .sair .circ { width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:24px; }
+.container { position:relative; max-width:1004px; margin:-34px auto 0; padding:0 12px 40px; }
+.card { border:0 !important; border-radius:20px !important; box-shadow:0 4px 16px rgba(11,58,87,.08); }
+.card h2 { font-size:17px !important; }
+input[type=text], input[type=email], input[type=number], input[type=date], textarea, select { border-radius:12px !important; padding:12px 14px !important; border:1px solid #DCE6EA !important; background:#F7FAFB !important; font-size:15px !important; }
+input:disabled, textarea:disabled { background:#EEF3F5 !important; }
+.btn, .btn-gerar { background:var(--teal) !important; color:#fff !important; border-radius:14px !important; min-height:48px; padding:0 22px !important; font-size:15px !important; font-weight:800 !important; }
+.btn:hover, .btn-gerar:hover { background:var(--teal-dark) !important; }
+.btn:disabled { background:#CBD6DB !important; color:#8AA0A9 !important; }
+.btn-ghost { background:var(--teal) !important; color:#fff !important; border:0 !important; border-radius:14px !important; min-height:48px; padding:0 22px !important; font-size:15px !important; font-weight:800 !important; display:inline-flex !important; align-items:center; justify-content:center; }
+.btn-editar { border-radius:12px !important; background:#D8F1EF !important; color:#0B6E6A !important; border:0 !important; min-height:38px; font-weight:800 !important; }
+.modal { border-radius:22px !important; border:0 !important; }
+.barra-acoes { margin-top:0; }
+.aviso-obrig { background:#fff; border-radius:20px; box-shadow:0 4px 16px rgba(11,58,87,.08); padding:14px 16px; margin-bottom:14px; font-size:14px; line-height:1.5; color:#3C5667; }
+.acao-topo { display:flex; justify-content:flex-end; margin-bottom:14px; }
+.nav-inf { position:fixed; left:0; right:0; bottom:0; z-index:90; background:#fff; border-top:1px solid var(--card-line); display:grid; grid-template-columns:repeat(4,1fr); padding:8px 6px calc(8px + env(safe-area-inset-bottom)); box-shadow:0 -4px 18px rgba(10,50,80,.08); }
+.nav-inf a { display:flex; flex-direction:column; align-items:center; gap:3px; text-decoration:none; color:#51697A; font-size:13px; font-weight:600; position:relative; padding-bottom:8px; margin:0; background:none; }
+.nav-inf a .ic { font-size:28px; }
+.nav-inf a.ativo { color:var(--teal); }
+.nav-inf a.ativo::after { content:''; position:absolute; bottom:0; width:60px; height:3px; border-radius:3px; background:var(--teal); }
+@media (min-width:900px) { .nav-inf { left:50%; right:auto; bottom:16px; transform:translateX(-50%); width:560px; border:1px solid var(--card-line); border-radius:22px; } }
+@media (max-width:640px) { .container { padding:0 12px 40px; } .hero-topo { padding:18px 14px 0; gap:10px; } .brand-logo { height:46px; padding:8px 10px; } }
+
+.container .card { overflow-x: auto; }
+.container table td, .container table th { white-space: normal !important; }
+.container table td:last-child { white-space: nowrap !important; }
+@media (max-width:640px) { .container table th, .container table td { padding: 8px 6px !important; } .btn-editar { padding: 0 10px !important; font-size: 12px !important; } }
+.card label { margin-top: 16px; } .card label:first-child { margin-top: 0; }

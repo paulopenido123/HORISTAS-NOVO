@@ -65,7 +65,7 @@
   @media (max-width: 640px) { .container { padding: 22px 16px 60px; } .card { padding:16px; } }
 </style>
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link rel="stylesheet" href="/static/css/base-mobile.css"></head>
+<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="/static/css/padrao-medico.css"></head>
 <body>
 <script>
 (function() {
@@ -83,22 +83,10 @@
 })();
 </script>
 
-<header>
-  <div class="brand">🗂️ Pacientes cadastrados</div>
-  <div>
-    <a class="voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar ao painel</a>
-    <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
-  </div>
-</header>
+{% with eyebrow='Área do cliente', titulo='Seus pacientes', subtitulo='Pacientes cadastrados por você.' %}{% include '_topo_medico.html' %}{% endwith %}
 
 <div class="container">
-  <div class="hero-txt">
-    <div>
-      <div class="eyebrow">ÁREA DO CLIENTE</div>
-      <h1>Seus pacientes</h1>
-    </div>
-    <button type="button" class="btn-ghost" onclick="abrirCadastro()">+ Cadastre o seu paciente</button>
-  </div>
+  <div class="acao-topo"><button type="button" class="btn-ghost" onclick="abrirCadastro()">+ Cadastre o seu paciente</button></div>
 
   <div class="card">
     {% if pacientes %}
@@ -123,6 +111,7 @@
   </div>
 </div>
 
+{% with ativo='pacientes' %}{% include '_nav_medico.html' %}{% endwith %}
 <div class="modal-overlay" id="modal-overlay-paciente">
   <div class="modal">
     <h3 id="titulo-modal-paciente" style="margin-bottom:4px;">Cadastre o seu paciente</h3>

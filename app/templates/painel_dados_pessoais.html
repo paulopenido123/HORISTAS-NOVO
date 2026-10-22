@@ -70,7 +70,7 @@
   .modal-parabens p { font-size:14px; color: var(--ink-muted); line-height:1.5; margin-bottom:24px; }
   .modal-parabens .btn { padding:12px 28px; font-size:14px; }
 </style>
-<link rel="stylesheet" href="/static/css/base-mobile.css"></head>
+<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="/static/css/padrao-medico.css"></head>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <body>
 <script>
@@ -89,24 +89,12 @@
 })();
 </script>
 
-<header>
-  <div class="brand">✎ Meus Dados</div>
-  <div>
-    <a class="voltar" href="{{ url_for('medico_painel.painel') }}" id="link-voltar">← Voltar ao painel</a>
-    <a class="sair" href="{{ url_for('auth.logout') }}" id="link-sair">Sair</a>
-  </div>
-</header>
+{% with eyebrow='Cadastro', titulo='Meus dados', subtitulo='Dados usados em recibos, notas fiscais e no seu atendimento. Os campos já vêm preenchidos e ficam liberados para editar.' %}{% include '_topo_medico.html' %}{% endwith %}
 
 <div class="container">
-  <div class="hero-txt">
-    <div class="eyebrow">CADASTRO</div>
-    <h1>Seus dados pessoais e profissionais</h1>
-    <p>Esses são os dados que o sistema usa pra recibos, notas fiscais e informações do seu atendimento. Já vêm preenchidos com o que já estava no seu cadastro — os campos já
-       ficam liberados pra editar direto, sem precisar clicar em nada antes.</p>
-    <p><strong>Telefone, e-mail, especialidade, CPF, data de nascimento e endereço completo
-       (CEP, rua, número, bairro, cidade e estado) são obrigatórios para poder reservar
-       consultórios.</strong></p>
-  </div>
+  <div class="aviso-obrig"><strong>Telefone, e-mail, especialidade, CPF, data de nascimento e endereço completo
+     (CEP, rua, número, bairro, cidade e estado) são obrigatórios para poder reservar
+     consultórios.</strong></div>
 
   <div class="barra-acoes">
     <button type="button" class="btn" id="btn-salvar">💾 Salvar</button>
@@ -245,11 +233,10 @@
   </div>
 </div>
 
+{% with ativo='perfil' %}{% include '_nav_medico.html' %}{% endwith %}
 <script>
 const btnSalvar = document.getElementById('btn-salvar');
 const statusEl = document.getElementById('status-msg');
-const linkVoltar = document.getElementById('link-voltar');
-const linkSair = document.getElementById('link-sair');
 
 // Item 4 (pedido do Paulo em 24/09/2026): guarda se o cadastro JÁ estava
 // completo antes desta visita -- a tela de "Parabéns" só pode aparecer
@@ -373,8 +360,8 @@ function _autoSalvarAntesDeSair(link) {
     window.location.href = destino;
   });
 }
-_autoSalvarAntesDeSair(linkVoltar);
-_autoSalvarAntesDeSair(linkSair);
+// qualquer saída da página (Sair e menu inferior) salva antes
+document.querySelectorAll('#link-sair, .nav-inf a').forEach(_autoSalvarAntesDeSair);
 </script>
 
 </body>

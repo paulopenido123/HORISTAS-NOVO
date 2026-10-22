@@ -412,3 +412,8 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Cada consultório ganhou os botões **Ver foto | Reservar | Cancelar**, todos do mesmo tamanho. O modo escolhido num consultório vale só para ele; os botões gerais do topo valem para todos (`modoConsultorio` em JS; `clicarSlotLivre`/`clicarBlocoReservado` validam o consultório).
 - Cores: livre = menta claro, reservado por mim = verde, reservado (outros/admin) = azul, indisponível = azul-marinho.
 - Removido "Ver detalhes" (duplicava Ver foto, que já mostra descrição).
+
+## Atualização 22/10/2026 (v48)
+- **Grade de turnos:** removidos os botões Reservar/Cancelar do alto da página (ficam só em cada consultório); avisos de reserva agora numa faixa flutuante no topo da tela; setas de semana maiores (54 px), verde-água com seta branca; **reserva otimista** — o horário aparece reservado no instante do clique e é confirmado/desfeito conforme a resposta do servidor (`clicarSlotLivre`).
+- **Painel:** removida a busca da agenda (`#ag-busca`); cartão LifeDoctor agora usa o logo oficial (`static/images/lifedoctor-logo.png`, fundo transparente).
+- **Meus dados e Pacientes:** novo padrão visual compartilhado — `static/css/padrao-medico.css`, `templates/_topo_medico.html` (topo com logo e Sair) e `templates/_nav_medico.html` (menu inferior). Em Meus dados, sair/menu continuam salvando antes de navegar.

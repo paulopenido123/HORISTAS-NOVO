@@ -1,0 +1,19 @@
+{# Topo padrão das páginas internas do médico (22/10/2026). Variáveis: eyebrow, titulo, subtitulo, ativo #}
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M16 8l4 4-4 4M20 12H9"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.5 0 4.5 1.5 4.5 4.5"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></symbol>
+</defs></svg>
+<header class="hero">
+  <div class="hero-topo">
+    <div><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
+    <div class="hero-titulo">
+      <div class="eyebrow">{{ eyebrow }}</div>
+      <h1>{{ titulo }}</h1>
+      {% if subtitulo %}<p>{{ subtitulo }}</p>{% endif %}
+    </div>
+    <a class="sair" href="{{ url_for('auth.logout') }}" id="link-sair"><span class="circ"><svg class="ic"><use href="#i-logout"/></svg></span>Sair</a>
+  </div>
+</header>

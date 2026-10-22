@@ -1,0 +1,7 @@
+{# Menu inferior padrão (22/10/2026). Variável: ativo = 'inicio' | 'pacientes' | 'perfil' #}
+<nav class="nav-inf" aria-label="Navegação">
+  <a href="{{ url_for('medico_painel.painel') }}"><svg class="ic"><use href="#i-home"/></svg>Início</a>
+  <a href="{{ url_for('medico_painel.painel') }}#minha-agenda"><svg class="ic"><use href="#i-cal"/></svg>Agenda</a>
+  <a href="{{ url_for('medico_painel.pagina_pacientes_cadastrados') }}"{% if ativo == 'pacientes' %} class="ativo"{% endif %}><svg class="ic"><use href="#i-users"/></svg>Pacientes</a>
+  <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}"{% if ativo == 'perfil' %} class="ativo"{% endif %}><svg class="ic"><use href="#i-user"/></svg>Meu perfil</a>
+</nav>

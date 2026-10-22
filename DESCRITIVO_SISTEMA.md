@@ -479,3 +479,11 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Visualizar agenda: setas fixas nas laterais movem TODAS as salas juntas, 3 dias por clique (salas desenhadas depois entram na mesma posição).
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
+
+## v75 — Descrição do consultório em "Ver foto"
+- Grade de Turnos (médico): o modal "Ver foto" mostra, abaixo das fotos, um bloco com o rótulo "Descrição" e o texto cadastrado em Admin > Consultórios (admin ou secretária). Quebras de linha preservadas.
+- Se a descrição estiver vazia (ou só espaços), o bloco não aparece.
+- Arquivo: app/templates/turnos.html. Sem mudança de banco ou de API.
+
+## v73 — Horas restaurada, com contagem zerada
+- Admin > Horas voltou ao formato completo (filtro por mês, horas vendidas/utilizadas/na praça do mês e totais) — só perfil Administrador. Os contadores de vendidas/utilizadas passaram a contar apenas movimentos a partir de 22/10/2026 — primeiro dia com agendamentos liberados; compras e reservas feitas em outubro para novembro contam (`creditos_service.DATA_INICIO_CONTAGEM_HORAS`; pode ser mudada pela variável HORAS_INICIO_CONTAGEM no Render). "Horas na praça (total)" continua sendo o saldo real de todos os profissionais hoje. Nenhum dado foi apagado do banco.

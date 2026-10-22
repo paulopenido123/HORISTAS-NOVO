@@ -207,7 +207,9 @@
   .foto-consultorio-seta.direita { right: 8px; }
   .foto-consultorio-seta:hover { background: rgba(14,42,59,0.8); }
   .foto-consultorio-nome { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 16px; color: var(--navy); margin-top: 12px; }
-  .foto-consultorio-descricao { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .foto-consultorio-descricao { display:none; margin-top:12px; padding:10px 12px; background:var(--bege); border-radius:8px; font-size:13px; color:var(--navy); line-height:1.5; white-space:pre-line; max-height:140px; overflow-y:auto; }
+  .foto-consultorio-descricao.visivel { display:block; }
+  .foto-consultorio-descricao .rotulo { display:block; font-family:'Manrope',sans-serif; font-weight:800; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#0C8B87; margin-bottom:3px; }
   .foto-consultorio-vazio {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     text-align: center; padding: 0 10px; font-size: 13px; color: var(--muted); font-style: italic;
@@ -342,7 +344,7 @@
       <button type="button" class="foto-consultorio-seta esquerda" id="foto-consultorio-anterior" style="display:none;">‹</button>
       <button type="button" class="foto-consultorio-seta direita" id="foto-consultorio-proxima" style="display:none;">›</button>
     </div>
-    <div class="foto-consultorio-descricao" id="foto-consultorio-descricao"></div>
+    <div class="foto-consultorio-descricao" id="foto-consultorio-descricao"><span class="rotulo">Descrição</span><span id="foto-consultorio-descricao-texto"></span></div>
   </div>
 </div>
 
@@ -451,7 +453,10 @@ function abrirFotoConsultorio(consultorioId) {
   fotosModalAtual = consultorio.fotos || [];
   indiceFotoModal = 0;
   document.getElementById('foto-consultorio-nome').textContent = consultorio.nome;
-  document.getElementById('foto-consultorio-descricao').textContent = consultorio.descricao || '';
+  // Descrição (cadastrada em Admin > Consultórios): só aparece se houver texto
+  const descricaoTxt = (consultorio.descricao || '').trim();
+  document.getElementById('foto-consultorio-descricao-texto').textContent = descricaoTxt;
+  document.getElementById('foto-consultorio-descricao').classList.toggle('visivel', descricaoTxt !== '');
   atualizarImagemModalFoto();
   document.getElementById('modal-overlay-foto').classList.add('aberto');
 }

@@ -2,6 +2,10 @@
 body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
 .wrap{max-width:1180px;margin:auto;padding:28px 24px}
 .card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px}
+.filtro{display:flex;align-items:flex-end;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.filtro label{display:block;font-size:12.5px;font-weight:700;color:#62788A;margin-bottom:6px}
+.filtro input{padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px}
+.filtro button{padding:10px 16px;border:0;border-radius:8px;background:#0EA5A0;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:26px}
 .kpi{border-radius:14px;padding:22px;color:#fff}
 .kpi.green{background:linear-gradient(135deg,#1FA35A,#1C8A4C)}
@@ -10,6 +14,8 @@ body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
 .kpi .rotulo{font-size:14px;font-weight:700;margin-bottom:2px}
 .kpi .sub{font-size:11.5px;opacity:0.85;margin-bottom:10px}
 .kpi .num{font-size:34px;font-weight:800}
+.nota{color:#62788A;font-size:12.5px;margin-top:-14px;margin-bottom:24px}
+.titulo-acumulado{font-size:13.5px;font-weight:800;color:#0B3A52;text-transform:uppercase;letter-spacing:.03em;margin-bottom:14px;padding-top:10px;border-top:1px solid #e3ebef}
 @media(max-width:760px){.kpis{grid-template-columns:1fr}}
 .card-endereco{margin-top:24px}
 .card-endereco h2{margin-top:0;font-size:16px}
@@ -26,11 +32,52 @@ body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
 {% with titulo='Horas', ativo='horas' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
   <div class="card">
+    <form class="filtro" method="get">
+      <div>
+        <label>Filtre por mês</label>
+        <input type="month" name="mes" value="{{ mes_valor }}">
+      </div>
+      <button type="submit">Aplicar</button>
+    </form>
+
     <div class="kpis">
       <div class="kpi green">
-        <div class="rotulo">Horas na praça</div>
-        <div class="sub">Soma das horas de todos os profissionais que hoje estão na empresa</div>
-        <div class="num">{{ horas_na_praca }}</div>
+        <div class="rotulo">Horas vendidas</div>
+        <div class="sub">Pacotes comprados em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }}</div>
+        <div class="num">{{ stats.horas_vendidas }}</div>
+      </div>
+      <div class="kpi navy">
+        <div class="rotulo">Horas utilizadas</div>
+        <div class="sub">Reservas feitas em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }}</div>
+        <div class="num">{{ stats.horas_utilizadas }}</div>
+      </div>
+      <div class="kpi green">
+        <div class="rotulo">Horas na praça (mês)</div>
+        <div class="sub">Saldo líquido gerado em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }} (vendidas − utilizadas no mês)</div>
+        <div class="num">{{ stats.horas_na_praca_mes }}</div>
+      </div>
+    </div>
+
+    <p class="nota">"Horas vendidas" e "horas utilizadas" contam só pacotes comprados de verdade (via PIX/cartão) e reservas efetivamente feitas -- ajustes manuais e transferências entre carteiras não entram nessa conta. "Horas na praça (mês)" é vendidas menos utilizadas dentro do mês filtrado.</p>
+
+    <p class="nota">Contagem iniciada em <strong>{{ inicio_contagem }}</strong>: horas vendidas e utilizadas só consideram movimentos a partir dessa data. A <strong>soma das horas dos profissionais</strong> (horas na praça, total) é sempre o saldo real de hoje.</p>
+
+    <div class="titulo-acumulado">Total acumulado desde {{ inicio_contagem }} (sem filtro de mês)</div>
+    <div class="kpis">
+      <div class="kpi cinza">
+        <div class="rotulo">Horas vendidas (total)</div>
+        <div class="sub">Todos os pacotes comprados desde {{ inicio_contagem }}</div>
+        <div class="num">{{ stats.horas_vendidas_total }}</div>
+      </div>
+      <div class="kpi cinza">
+        <div class="rotulo">Horas utilizadas (total)</div>
+        <div class="sub">Todas as reservas feitas desde {{ inicio_contagem }}</div>
+        <div class="num">{{ stats.horas_utilizadas_total }}</div>
+      </div>
+      <div class="kpi cinza">
+        <div class="rotulo">Horas na praça (total)</div>
+        <div class="sub">Somatória do saldo de todos os clientes, agora</div>
+        <div class="num">{{ stats.horas_na_praca_total }}</div>
       </div>
     </div>
   </div>

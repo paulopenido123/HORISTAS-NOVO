@@ -451,7 +451,7 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - /admin/login: e-mail ou telefone + senha. Só usuário cadastrado e ATIVO entra; a situação é conferida a cada acesso (bloquear derruba a sessão na hora).
 - Transição: a senha antiga (ADMIN_PASSWORD, campo e-mail em branco) vale só até o primeiro usuário ativo criar senha.
 - Botão "Usuários" (ao lado de Relatórios): pede senha master (ADMIN_MASTER_PASSWORD no Render; padrão definido no código), liberada por 15 min na sessão. Lista usuários, "Novo Usuário" (cadastra e envia link), "Enviar link de acesso", "Bloquear/Ativar" (não permite bloquear a si mesmo).
-- Link de acesso: /admin/definir-senha?token=..., vale 7 dias, uso único; se o SMTP não estiver configurado o link aparece na tela para copiar.
+- Link de acesso: /admin/definir-senha?token=..., NÃO expira e pode ser reutilizado (nova senha quando preciso); se o SMTP não estiver configurado o link aparece na tela para copiar.
 
 ## v64 — Página Horas simplificada
 - /admin/horas mostra só "Horas na praça" (soma do saldo em horas de todos os profissionais, agora) + endereço padrão. Removidos filtro por mês, horas vendidas/utilizadas (mês e total) e "na praça (mês)". `creditos_service.estatisticas_horas` foi substituída por `horas_na_praca_total()`.

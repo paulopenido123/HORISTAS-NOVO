@@ -3,12 +3,13 @@ Só quem está aqui, ativo, entra nas páginas /admin."""
 import hashlib
 import re
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from app.services.supabase_client import get_client
 from app.services import auth_service, email_service
 
-_VALIDADE_DIAS = 7
+# Link de acesso NÃO expira e pode ser usado quantas vezes for preciso (pedido do Paulo em 22/10/2026).
+_EXPIRA = datetime(2099, 12, 31, tzinfo=timezone.utc)
 
 
 def _hash_token(token: str) -> str:
@@ -99,7 +100,7 @@ def enviar_link(usuario_id: str) -> dict:
     get_client().table("tokens_admin_usuarios").insert({
         "usuario_id": usuario_id,
         "token_hash": _hash_token(token),
-        "expira_em": (datetime.now(timezone.utc) + timedelta(days=_VALIDADE_DIAS)).isoformat(),
+        "expira_em": _EXPIRA.isoformat(),
     }).execute()
     from flask import url_for
     link = url_for("admin.definir_senha", token=token, _external=True)
@@ -111,7 +112,7 @@ def validar_token(token: str) -> dict | None:
     if not token:
         return None
     r = get_client().table("tokens_admin_usuarios").select("*").eq("token_hash", _hash_token(token)).execute().data
-    if not r or r[0].get("usado"):
+    if not r:
         return None
     exp = r[0]["expira_em"]
     if isinstance(exp, str):
@@ -127,5 +128,4 @@ def definir_senha(token: str, nova_senha: str) -> bool:
         return False
     get_client().table("usuarios_admin").update(
         {"senha_hash": auth_service.gerar_hash_senha(nova_senha)}).eq("id", reg["usuario_id"]).execute()
-    get_client().table("tokens_admin_usuarios").update({"usado": True}).eq("id", reg["id"]).execute()
     return True

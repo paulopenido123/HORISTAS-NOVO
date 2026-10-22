@@ -1450,7 +1450,7 @@ def definir_senha():
     erro, sucesso = None, False
     reg = usuarios_admin.validar_token(token)
     if reg is None:
-        erro = 'Esse link expirou ou já foi usado. Peça um novo ao administrador.'
+        erro = 'Esse link é inválido. Peça um novo ao administrador.'
     elif request.method == 'POST':
         senha, conf = request.form.get('senha', ''), request.form.get('confirmar_senha', '')
         if len(senha) < 6:
@@ -1460,5 +1460,5 @@ def definir_senha():
         elif usuarios_admin.definir_senha(token, senha):
             sucesso = True
         else:
-            erro = 'Esse link expirou ou já foi usado.'
+            erro = 'Esse link é inválido.'
     return render_template('admin_definir_senha.html', token=token, erro=erro, sucesso=sucesso, link_valido=reg is not None)

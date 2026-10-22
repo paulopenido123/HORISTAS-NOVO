@@ -392,3 +392,9 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Dias ocultos: tabela `dias_ocultos`; somem da grade do médico e bloqueiam novas reservas (site e Dora).
 - Migração: `sql/migration_matriz_desfazer_e_ocultar_dias.sql` (também em INSTALL_ALL.sql).
 - Endpoints: GET /admin/api/matriz/replicacoes; POST .../replicacoes/<id>/desfazer, .../celula/bloquear, .../celula/nome, .../dia/ocultar.
+
+## Atualização 22/10/2026 — Painel do médico
+- "Minha agenda": removidos a coluna Paciente, "Incluir/alterar paciente" e "E-mail de agendamento" (e as rotas/serviços ligados a eles). Novo botão "Enviar e-mail de confirmação" em cada agendamento: mensagem padrão (Rua Gonçalves Dias, 82 + sala + data/horário), botão "Paciente" (lista de pacientes cadastrados, e-mail puxado do cadastro) e "Enviar email". Rotas: GET /api/reservas/<id>/confirmacao-previa, POST /api/reservas/<id>/enviar-confirmacao.
+- Cadastro rápido de paciente: só nome, telefone e e-mail (nova coluna `pacientes.telefone` — `sql/migration_paciente_telefone.sql`).
+- Venda de horas avulsas: botão "Comprar" por pacote (abre a compra com valor preenchido; PIX ou cartão parcelado via Asaas).
+- Verde padrão dos botões: #0EA5A0 (hover #0C8B87). Regra única de celular em /static/css/base-mobile.css.

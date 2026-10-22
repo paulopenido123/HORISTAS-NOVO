@@ -95,7 +95,7 @@ def horas():
 @_admin
 def atualizar_endereco_padrao():
     """Salva o endereço padrão da Lifemax (usado no e-mail de agendamento
-    pro paciente -- ver reserva_service.enviar_email_agendamento_paciente)
+    pro paciente -- ver reserva_service.enviar_confirmacao_consulta)
     -- pedido do Paulo em 11/09/2026."""
     creditos_db.atualizar_endereco_padrao(
         rua=(request.form.get('rua') or '').strip(),

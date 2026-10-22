@@ -454,31 +454,15 @@ def notificar_cancelamento_medico(nome_medico: str, consultorio_nome: str, data:
     return enviar_email([destinatario], assunto, corpo_html)
 
 
-def notificar_agendamento_paciente(nome_paciente: str, nome_medico: str, data: str, hora_confirmada: str,
-                                    endereco: str, consultorio_nome: str, destinatario: str) -> bool:
-    """Item 5 (lado do paciente): mandado só quando o médico clica em
-    "Enviar e-mail" na tela "Minha agenda", com a hora já confirmada por
-    ele. `endereco` vem pronto formatado (ver
-    creditos_service.endereco_padrao_formatado)."""
-    assunto = f"Sua consulta com {nome_medico} — {data}"
-    corpo_html = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 480px;">
-        <h2 style="color: #1a3c5e;">Confirmação de consulta</h2>
-        <p>Olá, {_esc(nome_paciente)}! Sua consulta com <strong>{_esc(nome_medico)}</strong> está
-        confirmada:</p>
-        <table style="width: 100%; border-collapse: collapse;">
-            <tr><td style="padding:6px 0; color:#555;">Data:</td>
-                <td style="padding:6px 0; font-weight:bold;">{data}</td></tr>
-            <tr><td style="padding:6px 0; color:#555;">Horário:</td>
-                <td style="padding:6px 0; font-weight:bold;">{_esc(hora_confirmada)}</td></tr>
-            <tr><td style="padding:6px 0; color:#555;">Consultório:</td>
-                <td style="padding:6px 0; font-weight:bold;">{_esc(consultorio_nome)}</td></tr>
-            <tr><td style="padding:6px 0; color:#555;">Endereço:</td>
-                <td style="padding:6px 0; font-weight:bold;">{_esc(endereco)}</td></tr>
-        </table>
-        <p style="color: #888; font-size: 12px; margin-top: 20px;">
-            Notificação automática — Lifemax
-        </p>
-    </div>
-    """
+def notificar_confirmacao_consulta(destinatario: str, assunto: str, mensagem: str) -> bool:
+    """E-mail de confirmação de consulta pro paciente (botão "Enviar e-mail
+    de confirmação" em Minha agenda). `mensagem` é o texto padrão montado
+    por reserva_service.montar_confirmacao_consulta."""
+    corpo_html = (
+        '<div style="font-family: Arial, sans-serif; max-width: 480px;">'
+        '<h2 style="color: #1a3c5e;">Confirmação de consulta</h2>'
+        f'<p style="line-height:1.6;">{_esc(mensagem).replace(chr(10), "<br>")}</p>'
+        '<p style="color: #888; font-size: 12px; margin-top: 20px;">Lifemax Consultórios</p>'
+        '</div>'
+    )
     return enviar_email([destinatario], assunto, corpo_html)

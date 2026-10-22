@@ -49,6 +49,7 @@ EXTRA_DEPS = [
     # migration_matriz_desfazer_e_ocultar_dias.sql altera matriz_replicacoes
     # (criada em migration_matriz_template.sql).
     ("migration_matriz_template.sql", "migration_matriz_desfazer_e_ocultar_dias.sql"),
+    ("migration_pacientes.sql", "migration_paciente_telefone.sql"),
     # migration_ia_percentual_200.sql faz "update precos set
     # ia_percentual_aumento = 200" -- essa coluna só existe depois que
     # migration_ia_precos.sql roda (ela que cria a coluna com "alter

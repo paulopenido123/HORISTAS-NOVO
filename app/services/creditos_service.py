@@ -41,7 +41,7 @@ def obter_endereco_padrao() -> dict:
     """Endereço padrão da Lifemax (colunas `endereco_padrao_*` de
     `precos`, ver migration_endereco_padrao_lifemax.sql) -- usado desde
     11/09/2026 no e-mail de confirmação de consulta pro paciente
-    (reserva_service.enviar_email_agendamento_paciente). Editável em
+    (reserva_service.enviar_confirmacao_consulta). Editável em
     Admin > Horas."""
     precos = obter_precos()
     return {

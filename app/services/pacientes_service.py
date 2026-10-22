@@ -6,7 +6,7 @@ e a tela "Pacientes cadastrados" que lista todos os pacientes de um médico
 (cada médico só enxerga os próprios).
 
 Também é usado pelo botão "Incluir/alterar paciente" da agenda do médico
-(ver reserva_service.associar_paciente), que só precisa da lista de nomes
+(botão "Enviar e-mail de confirmação" da Minha agenda), que só precisa da lista de nomes
 pra montar a lista de escolha.
 """
 from app.services.supabase_client import get_client
@@ -19,7 +19,7 @@ from app.services.supabase_client import get_client
 CAMPOS_PACIENTE = [
     # Informações pessoais
     "nome_completo", "nome_pai", "nome_mae", "data_nascimento", "cpf", "rg",
-    "email", "sexo", "estado_civil", "cor", "convenio", "profissao", "indicacao",
+    "email", "telefone", "sexo", "estado_civil", "cor", "convenio", "profissao", "indicacao",
     # Endereço
     "endereco", "bairro", "cep", "cidade", "estado",
     # Informações do responsável
@@ -67,7 +67,15 @@ def criar_paciente(medico_id: str, dados: dict) -> dict:
     if not payload.get("nome_completo"):
         raise ValueError("Informe o nome completo do paciente.")
     payload["medico_id"] = medico_id
-    resp = get_client().table("pacientes").insert(payload).execute()
+    try:
+        resp = get_client().table("pacientes").insert(payload).execute()
+    except Exception:
+        # Coluna `telefone` ainda não criada (sql/migration_paciente_telefone.sql
+        # não rodada): grava o resto em vez de perder o cadastro.
+        if "telefone" not in payload:
+            raise
+        payload.pop("telefone")
+        resp = get_client().table("pacientes").insert(payload).execute()
     return resp.data[0]
 
 
@@ -88,5 +96,11 @@ def atualizar_paciente(paciente_id: str, medico_id: str, dados: dict) -> dict:
         raise ValueError("Nenhum dado pra salvar.")
     payload["atualizado_em"] = datetime.now(timezone.utc).isoformat()
 
-    resp = get_client().table("pacientes").update(payload).eq("id", paciente_id).execute()
+    try:
+        resp = get_client().table("pacientes").update(payload).eq("id", paciente_id).execute()
+    except Exception:
+        if "telefone" not in payload:
+            raise
+        payload.pop("telefone")  # migração do telefone ainda não rodada
+        resp = get_client().table("pacientes").update(payload).eq("id", paciente_id).execute()
     return resp.data[0]

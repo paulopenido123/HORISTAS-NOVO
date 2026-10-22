@@ -15,7 +15,7 @@
     --ink:#10222E; --ink-muted:#55707C; --ink-faint:#8AA0A9;
     --cyan:#0EA5A0; --cyan-soft: rgba(14,165,160,0.12); --cyan-glow:#3EE2E6;
     --coral:#D65C3F; --coral-soft: rgba(214,92,63,0.12);
-    --verde:#1F8F5C;
+    --verde:#0EA5A0;
     --navy:#0E2A3B; --navy-soft:#15425C;
     --onnavy-ink:#EAF2F5; --onnavy-muted:#9FB8C4;
     --display:'Manrope', sans-serif; --serif:'Inter', -apple-system, sans-serif;
@@ -49,7 +49,7 @@
     font-size: 14px; font-weight: 700; color: #fff; text-decoration: none;
     padding: 8px 16px; border-radius: 7px; background: var(--verde); transition: background 0.15s;
   }
-  .sair:hover { background: #187A4D; }
+  .sair:hover { background: #0C8B87; }
 
   /* ---------- HERO (Área do cliente) ---------- */
   .hero { padding: 0 0 22px; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%); }
@@ -79,7 +79,7 @@
     font-family: var(--display); font-weight: 800; font-size: 15.5px; cursor: pointer; text-decoration: none;
     display: inline-block; text-align: center; transition: background 0.15s;
   }
-  .btn-hero-verde:hover { background: #187A4D; }
+  .btn-hero-verde:hover { background: #0C8B87; }
   .btn-lifedoctor { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
   .btn-lifedoctor img { height: 22px; width: auto; background: #fff; border-radius: 4px; padding: 2px 4px; display: block; }
 
@@ -115,7 +115,7 @@
   .board-top .puck { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
   .board-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
   @media (max-width: 860px) { .board-grid { grid-template-columns: 1fr; } }
-  .cell { background: var(--panel); padding: 24px; }
+  .cell { background: var(--panel); padding: 24px; display: flex; flex-direction: column; }
   .cell-label { font-weight: 700; font-size: 13px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 16px; }
 
   /* Gauge (saldo em horas) */
@@ -203,43 +203,10 @@
   .btn-navy { background: var(--navy); color: #fff; border: 1px solid var(--navy); padding: 10px 16px; border-radius: 7px; font-family: var(--display); font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; transition: background 0.15s; }
   .btn-navy:hover { background: var(--navy-soft); color: #fff; }
   .btn-navy.grande { padding: 15px 28px; font-size: 15.5px; font-weight: 800; }
-  details.ajuste-paciente { margin-top:6px; }
-  /* Pedido do Paulo em 23/09/2026: "Incluir/alterar paciente" também
-     vira um botão verde claro preenchido, igual ao padrão adotado pros
-     outros botões (era só um link de texto colorido antes). */
-  details.ajuste-paciente summary {
-    cursor:pointer; color: #fff; background: var(--cyan); font-weight:700; font-size: 13px; list-style:none;
-    padding: 7px 13px; border-radius: 7px; display: inline-block;
-  }
-  details.ajuste-paciente summary:hover { background: #0C8B87; }
-  details.ajuste-paciente summary::-webkit-details-marker { display:none; }
-  .form-paciente { margin-top:8px; padding:12px; background: var(--panel-2); border-radius:8px; display:flex; flex-direction:column; gap:6px; min-width:210px; }
-  .opcao-paciente { display:flex; align-items:center; gap:9px; font-size: 13.5px; color: var(--ink); cursor:pointer; padding:3px 0; }
-  input[type=radio].marcar-x { appearance:none; -webkit-appearance:none; width:17px; height:17px; min-width:17px; border:1.5px solid var(--line-strong); border-radius:4px; position:relative; cursor:pointer; background:#fff; }
-  input[type=radio].marcar-x:checked { border-color: var(--coral); }
-  input[type=radio].marcar-x:checked::after { content:'✕'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size: 13px; font-weight:800; color: var(--coral); }
-  .btn-inserir-paciente { margin-top:4px; background: var(--cyan); color:#fff; border:none; border-radius:7px; padding:8px 14px; font-family: var(--display); font-weight:700; font-size: 13.5px; cursor:pointer; align-self:flex-start; }
-  .celula-paciente { font-weight:600; }
-  .celula-paciente.vazia { color: var(--ink-faint); font-weight:400; }
-
-  /* E-mail de agendamento pro paciente -- pedido do Paulo em 11/09/2026 */
-  details.ajuste-email-agendamento { margin-top:8px; }
-  details.ajuste-email-agendamento summary { cursor:pointer; color: var(--navy); font-weight:700; font-size: 13px; list-style:none; }
-  details.ajuste-email-agendamento summary::-webkit-details-marker { display:none; }
-  .form-email-agendamento { margin-top:8px; padding:12px; background: var(--panel-2); border-radius:8px; display:flex; flex-direction:column; gap:8px; min-width:230px; }
-  .form-email-agendamento label { font-size: 12.5px; font-weight:700; color: var(--ink-muted); }
-  .linha-hora-confirmada { display:flex; gap:6px; align-items:center; }
-  .linha-hora-confirmada input { width:90px !important; padding:7px 9px !important; font-size: 13.5px !important; }
-  .btn-salvar-hora, .btn-adicionar-paciente-agendado { background: var(--navy); color:#fff; border:none; border-radius:6px; padding:7px 11px; font-family: var(--display); font-weight:700; font-size: 12.5px; cursor:pointer; white-space:nowrap; }
-  .lista-pacientes-agendados { display:flex; flex-direction:column; gap:6px; margin-top:2px; }
-  .linha-paciente-agendado { display:flex; align-items:center; gap:8px; justify-content:space-between; font-size: 13.5px; background:#fff; border-radius:6px; padding:6px 9px; }
-  .linha-paciente-agendado .nome-paciente-ag { font-weight:600; flex:1; }
-  .btn-enviar-email { background: var(--cyan); color:#fff; border:none; border-radius:6px; padding:5px 9px; font-family: var(--display); font-weight:700; font-size: 12px; cursor:pointer; }
-  .btn-remover-paciente-agendado { background:none; border:none; color: var(--coral); font-size: 12px; font-weight:700; cursor:pointer; }
-  .tag-email-enviado { color:#1C8A4C; font-weight:700; font-size: 12px; }
-  .adicionar-paciente-agendado { display:flex; gap:6px; margin-top:2px; }
-  .adicionar-paciente-agendado select { flex:1; }
-  .erro-email-agendamento { color: var(--coral); font-size: 12.5px; font-weight:600; }
+  /* Botão "Enviar e-mail de confirmação" no fim de cada agendamento (22/10/2026) */
+  .btn-email-confirmacao { display:block; margin-top:8px; background: var(--cyan); color:#fff; border:none; border-radius:7px;
+    padding: 7px 12px; font-family: var(--display); font-weight:700; font-size: 13px; cursor:pointer; }
+  .btn-email-confirmacao:hover { background:#0C8B87; }
 
   .precos-info { font-size: 14.5px; color: var(--ink-muted); }
   .precos-info strong { color: var(--ink); }
@@ -335,8 +302,8 @@ if ("serviceWorker" in navigator) {
     </div>
     <div class="hero-botoes-linha">
       <button type="button" class="btn-hero-verde" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
-      <a class="btn-hero-verde" href="{{ url_for('turnos.pagina_turnos') }}">Reservar consultórios</a>
       <a class="btn-hero-verde" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}">Meus dados</a>
+      <a class="btn-hero-verde" href="{{ url_for('turnos.pagina_turnos') }}">Reservar consultórios</a>
       {# Pedido do Paulo em 19/10/2026: botão "LifeDoctor" com a logo do
          site, abre o cadastro gratuito em outra aba. A logo vem direto do
          lifedoctor.com.br; se não carregar, some e fica só o texto. #}
@@ -386,7 +353,7 @@ if ("serviceWorker" in navigator) {
     <div id="bloco-agenda">
     {% if reservas %}
     <table>
-      <thead><tr><th>Data</th><th>Horário</th><th>Consultório</th><th>Paciente</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Data</th><th>Horário</th><th>Consultório</th><th>Ações</th></tr></thead>
       <tbody id="corpo-tabela-agenda">
         {% for r in reservas %}
         {% set hora_inicio_real = (r.hora_inicio[:5] if r.tipo_reserva == 'hora' else {'manha': '08:00', 'tarde': '13:00', 'noite': '17:30'}.get(r.periodo, '08:00')) %}
@@ -404,67 +371,15 @@ if ("serviceWorker" in navigator) {
           </td>
           <td>{{ r.consultorios.nome if r.consultorios else '—' }}</td>
           <td>
-            <span class="celula-paciente {{ '' if r.pacientes else 'vazia' }}">{{ r.pacientes.nome_completo if r.pacientes else 'Nenhum paciente incluído' }}</span>
-            <details class="ajuste-paciente">
-              <summary>Incluir/alterar paciente</summary>
-              <div class="form-paciente">
-                {% if pacientes %}
-                  {% for p in pacientes %}
-                  <label class="opcao-paciente">
-                    <input type="radio" class="marcar-x" name="paciente-{{ r.id }}" value="{{ p.id }}" {% if r.paciente_id == p.id %}checked{% endif %}>
-                    <span>{{ p.nome_completo }}</span>
-                  </label>
-                  {% endfor %}
-                  <button type="button" class="btn-inserir-paciente" onclick="inserirPaciente('{{ r.id }}', this)">Inserir</button>
-                {% else %}
-                  <p class="muted-cell">Você ainda não tem pacientes cadastrados. Use o botão "Cadastre o seu paciente" no topo.</p>
-                {% endif %}
-              </div>
-            </details>
-          </td>
-          <td>
             {% if r.status == 'cancelada' %}
               <span class="status-tag cancelada">Cancelada</span>
               {% if r.cancelado_por_admin %}<span class="aviso-admin cancelamento">Cancelado pelo administrador Lifemax</span>{% endif %}
             {% else %}
               <button class="btn-cancelar" onclick="cancelarReserva(this)">Cancelar</button>
             {% endif %}
-            <details class="ajuste-email-agendamento">
-              <summary>📧 E-mail de agendamento</summary>
-              <div class="form-email-agendamento" data-reserva-id="{{ r.id }}">
-                <label>Confirmação da hora (obrigatório pra enviar o e-mail)</label>
-                <div class="linha-hora-confirmada">
-                  <input type="text" class="input-hora-confirmada" placeholder="HH:MM" value="{{ r.hora_confirmada or '' }}">
-                  <button type="button" class="btn-salvar-hora" onclick="salvarHoraConfirmada('{{ r.id }}', this)">Salvar</button>
-                </div>
-                <div class="lista-pacientes-agendados">
-                  {% for pa in r.pacientes_agendados %}
-                  <div class="linha-paciente-agendado" data-paciente-id="{{ pa.paciente_id }}">
-                    <span class="nome-paciente-ag">{{ pa.pacientes.nome_completo if pa.pacientes else '—' }}</span>
-                    {% if pa.email_enviado_em %}
-                      <span class="tag-email-enviado">Enviado ✓</span>
-                    {% else %}
-                      <button type="button" class="btn-enviar-email" onclick="enviarEmailPacienteAgendado('{{ r.id }}', '{{ pa.paciente_id }}', this)">Enviar e-mail</button>
-                    {% endif %}
-                    <button type="button" class="btn-remover-paciente-agendado" onclick="removerPacienteAgendado('{{ r.id }}', '{{ pa.paciente_id }}', this)">Remover</button>
-                  </div>
-                  {% else %}
-                  <p class="muted-cell" data-vazio-pacientes-agendados>Nenhum paciente incluído ainda pra receber e-mail.</p>
-                  {% endfor %}
-                </div>
-                {% if pacientes %}
-                <div class="adicionar-paciente-agendado">
-                  <select class="select-adicionar-paciente-agendado">
-                    {% for p in pacientes %}<option value="{{ p.id }}">{{ p.nome_completo }}</option>{% endfor %}
-                  </select>
-                  <button type="button" class="btn-adicionar-paciente-agendado" onclick="adicionarPacienteAgendado('{{ r.id }}', this)">+ Adicionar paciente</button>
-                </div>
-                {% else %}
-                <p class="muted-cell">Cadastre um paciente primeiro (botão no topo) pra poder incluir aqui.</p>
-                {% endif %}
-                <div class="erro-email-agendamento" style="display:none;"></div>
-              </div>
-            </details>
+            {% if r.status != 'cancelada' %}
+            <button type="button" class="btn-email-confirmacao" onclick="abrirModalEmail('{{ r.id }}')">✉ Enviar e-mail de confirmação</button>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
@@ -492,8 +407,7 @@ if ("serviceWorker" in navigator) {
       <div class="cell">
         <div class="cell-label">Saldo para reserva de salas</div>
         <div class="total">{{ saldo_horas }}h</div>
-        <p class="muted-cell">Horas disponíveis pra reservar consultório. Reservar por hora ou por turno desconta direto daqui.</p>
-        <button class="btn-cyan" style="margin-top:16px;" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
+        <button class="btn-cyan" style="margin-top:auto;" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
         {% if saldo_horas < horas_minimas %}
           <div class="aviso-saldo">⚠️ Saldo insuficiente para a reserva mínima de {{ horas_minimas }}h — compre mais horas para reservar.</div>
         {% endif %}
@@ -503,7 +417,7 @@ if ("serviceWorker" in navigator) {
         <div class="cell-label">Meu perfil</div>
         <p class="muted-cell" style="margin-bottom:14px;">Seus dados de contato, endereço e informações de
           atendimento (CRM, CPF/CNPJ, valor da consulta, convênios) ficam em uma tela só.</p>
-        <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" class="btn-ghost" style="width:100%;">✎ Meus dados</a>
+        <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" class="btn-ghost" style="width:100%; margin-top:auto;">✎ Meus dados</a>
       </div>
     </div>
   </div>
@@ -649,60 +563,94 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-overlay-email">
+  <div class="modal" style="max-width:520px; text-align:left;">
+    <h3 style="margin-bottom:10px;">Enviar e-mail de confirmação</h3>
+    <div id="erro-email" class="flash erro" style="display:none;"></div>
+    <div id="email-mensagem" style="white-space:pre-wrap; background:var(--panel-2); border-radius:8px; padding:14px; font-size:14px; line-height:1.6; margin-bottom:14px;">Carregando...</div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+      <button type="button" class="btn-toggle-verde" onclick="alternarListaPacientesEmail()">Paciente</button>
+      <span id="email-paciente-escolhido" class="muted-cell">Nenhum paciente escolhido</span>
+    </div>
+    <div id="email-lista-pacientes" style="display:none; max-height:180px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; margin-bottom:12px;"></div>
+    <div style="display:flex; gap:10px;">
+      <button type="button" class="btn-toggle-verde" id="btn-enviar-email-conf" style="padding:11px 24px;" onclick="enviarEmailConfirmacao()">Enviar email</button>
+      <button type="button" class="btn-fechar" onclick="fecharModalEmail()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PACIENTES_EMAIL = {{ pacientes_json | tojson }};
+let estadoEmail = { reservaId: null, pacienteId: null };
+
+async function _carregarMensagemEmail() {
+  const el = document.getElementById('email-mensagem');
+  const q = estadoEmail.pacienteId ? '?paciente_id=' + encodeURIComponent(estadoEmail.pacienteId) : '';
+  try {
+    const resp = await fetch(`/api/reservas/${estadoEmail.reservaId}/confirmacao-previa${q}`);
+    const dados = await resp.json();
+    el.textContent = resp.ok ? dados.mensagem : (dados.erro || 'Não foi possível montar a mensagem.');
+  } catch (e) { el.textContent = 'Erro de conexão.'; }
+}
+
+function abrirModalEmail(reservaId) {
+  estadoEmail = { reservaId: reservaId, pacienteId: null };
+  document.getElementById('erro-email').style.display = 'none';
+  document.getElementById('email-paciente-escolhido').textContent = 'Nenhum paciente escolhido';
+  document.getElementById('email-lista-pacientes').style.display = 'none';
+  const lista = document.getElementById('email-lista-pacientes');
+  lista.innerHTML = PACIENTES_EMAIL.length
+    ? PACIENTES_EMAIL.map(p => `<div class="opcao-paciente-email" data-id="${p.id}" style="padding:9px 12px; cursor:pointer; border-bottom:1px solid var(--line); font-size:14px;"><strong></strong><br><span class="muted-cell"></span></div>`).join('')
+    : '<p class="muted-cell" style="padding:12px;">Você ainda não tem pacientes cadastrados. Use o botão "Cadastre o seu paciente".</p>';
+  lista.querySelectorAll('.opcao-paciente-email').forEach((el, i) => {
+    el.querySelector('strong').textContent = PACIENTES_EMAIL[i].nome;
+    el.querySelector('span').textContent = PACIENTES_EMAIL[i].email || 'sem e-mail cadastrado';
+    el.onclick = () => escolherPacienteEmail(PACIENTES_EMAIL[i]);
+  });
+  document.getElementById('modal-overlay-email').classList.add('aberto');
+  _carregarMensagemEmail();
+}
+function fecharModalEmail() { document.getElementById('modal-overlay-email').classList.remove('aberto'); }
+function alternarListaPacientesEmail() {
+  const l = document.getElementById('email-lista-pacientes');
+  l.style.display = l.style.display === 'none' ? 'block' : 'none';
+}
+function escolherPacienteEmail(p) {
+  estadoEmail.pacienteId = p.id;
+  document.getElementById('email-paciente-escolhido').textContent = p.nome + ' — ' + (p.email || 'sem e-mail cadastrado');
+  document.getElementById('email-lista-pacientes').style.display = 'none';
+  _carregarMensagemEmail();
+}
+async function enviarEmailConfirmacao() {
+  const erroEl = document.getElementById('erro-email');
+  erroEl.style.display = 'none';
+  if (!estadoEmail.pacienteId) { erroEl.textContent = 'Escolha o paciente no botão "Paciente".'; erroEl.style.display = 'block'; return; }
+  const btn = document.getElementById('btn-enviar-email-conf');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    const resp = await fetch(`/api/reservas/${estadoEmail.reservaId}/enviar-confirmacao`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paciente_id: estadoEmail.pacienteId }),
+    });
+    const dados = await resp.json();
+    if (!resp.ok) { erroEl.textContent = dados.erro || 'Não foi possível enviar.'; erroEl.style.display = 'block'; return; }
+    fecharModalEmail();
+    alert(dados.resultado || 'E-mail enviado.');
+  } catch (e) { erroEl.textContent = 'Erro de conexão ao enviar.'; erroEl.style.display = 'block'; }
+  finally { btn.disabled = false; btn.textContent = 'Enviar email'; }
+}
+</script>
+
 <div class="modal-overlay" id="modal-overlay-paciente">
-  <div class="modal" style="max-width:640px; max-height:88vh; overflow-y:auto; text-align:left;">
+  <div class="modal" style="max-width:460px; max-height:88vh; overflow-y:auto; text-align:left;">
     <h3 style="margin-bottom:4px;">Cadastre o seu paciente</h3>
-    <p style="color:var(--ink-muted); font-size:13px; margin-bottom:18px;">Preencha os dados abaixo -- só o nome completo é obrigatório, o resto você pode completar depois em "Pacientes cadastrados".</p>
+    <p style="color:var(--ink-muted); font-size:13px; margin-bottom:18px;">Informe o nome, o telefone e o e-mail do paciente -- só o nome é obrigatório. Os demais dados podem ser completados depois em "Pacientes cadastrados".</p>
     <div id="erro-paciente" class="flash erro" style="display:none;"></div>
     <form id="form-paciente" style="display:flex; flex-direction:column; gap:14px;">
-      <div>
-        <div class="cell-label" style="margin-bottom:10px;">Informações pessoais</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <label style="grid-column:1/-1;"><span class="muted-cell">Nome completo *</span><input type="text" name="nome_completo" required></label>
-          <label><span class="muted-cell">Nome do pai</span><input type="text" name="nome_pai"></label>
-          <label><span class="muted-cell">Nome da mãe</span><input type="text" name="nome_mae"></label>
-          <label><span class="muted-cell">Data de nascimento</span><input type="date" name="data_nascimento"></label>
-          <label><span class="muted-cell">CPF</span><input type="text" name="cpf"></label>
-          <label><span class="muted-cell">RG</span><input type="text" name="rg"></label>
-          <label><span class="muted-cell">E-mail</span><input type="email" name="email"></label>
-          <label><span class="muted-cell">Sexo</span>
-            <select name="sexo"><option value=""></option><option>Masculino</option><option>Feminino</option></select>
-          </label>
-          <label><span class="muted-cell">Estado civil</span>
-            <select name="estado_civil"><option value=""></option><option>Solteiro</option><option>Casado</option><option>Divorciado</option><option>Viúvo</option><option>União estável</option></select>
-          </label>
-          <label><span class="muted-cell">Cor</span>
-            <select name="cor"><option value=""></option><option>Leucoderma</option><option>Faioderma</option><option>Melanoderma</option></select>
-          </label>
-          <label><span class="muted-cell">Convênio</span><input type="text" name="convenio"></label>
-          <label><span class="muted-cell">Profissão</span><input type="text" name="profissao"></label>
-          <label style="grid-column:1/-1;"><span class="muted-cell">Indicação</span><input type="text" name="indicacao"></label>
-        </div>
-      </div>
-      <div>
-        <div class="cell-label" style="margin-bottom:10px;">Endereço</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <label style="grid-column:1/-1;"><span class="muted-cell">Endereço</span><input type="text" name="endereco"></label>
-          <label><span class="muted-cell">Bairro</span><input type="text" name="bairro"></label>
-          <label><span class="muted-cell">CEP</span><input type="text" name="cep"></label>
-          <label><span class="muted-cell">Cidade</span><input type="text" name="cidade"></label>
-          <label><span class="muted-cell">Estado</span><input type="text" name="estado"></label>
-        </div>
-      </div>
-      <div>
-        <div class="cell-label" style="margin-bottom:10px;">Informações do responsável</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <label style="grid-column:1/-1;"><span class="muted-cell">Nome completo</span><input type="text" name="responsavel_nome"></label>
-          <label><span class="muted-cell">Tipo</span>
-            <select name="responsavel_tipo">
-              <option value=""></option><option>Mãe</option><option>Pai</option><option>Cônjuge</option>
-              <option>Filho</option><option>Filha</option><option>Avô</option><option>Avó</option>
-              <option>Tio</option><option>Tia</option><option>Parceiro</option><option>Outro</option>
-            </select>
-          </label>
-          <label><span class="muted-cell">Telefone</span><input type="text" name="responsavel_telefone"></label>
-        </div>
-      </div>
+      <label><span class="muted-cell">Nome do paciente *</span><input type="text" name="nome_completo" required></label>
+      <label><span class="muted-cell">Telefone</span><input type="text" name="telefone" inputmode="tel"></label>
+      <label><span class="muted-cell">E-mail</span><input type="email" name="email"></label>
       <div style="display:flex; gap:10px; margin-top:6px;">
         <button type="button" class="btn-gerar" style="width:auto; padding:11px 24px;" onclick="salvarPaciente()">Salvar</button>
         <button type="button" class="btn-fechar" onclick="fecharModalPaciente()">Cancelar</button>
@@ -757,171 +705,7 @@ async function salvarPaciente() {
   }
 }
 
-async function inserirPaciente(reservaId, botao) {
-  const details = botao.closest('details.ajuste-paciente');
-  const marcado = details.querySelector(`input[name="paciente-${reservaId}"]:checked`);
-  if (!marcado) { alert('Escolha um paciente na lista antes de clicar em Inserir.'); return; }
-
-  botao.disabled = true;
-  botao.textContent = 'Inserindo...';
-  try {
-    const resp = await fetch(`/api/reservas/${reservaId}/paciente`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paciente_id: marcado.value }),
-    });
-    const resultado = await resp.json();
-    if (!resp.ok) {
-      alert(resultado.erro || 'Não foi possível incluir o paciente.');
-      botao.disabled = false;
-      botao.textContent = 'Inserir';
-      return;
-    }
-    const linha = document.querySelector(`tr[data-reserva-id="${reservaId}"]`);
-    const celula = linha.querySelector('.celula-paciente');
-    celula.textContent = resultado.paciente_nome || 'Nenhum paciente incluído';
-    celula.classList.toggle('vazia', !resultado.paciente_nome);
-    details.open = false;
-    botao.disabled = false;
-    botao.textContent = 'Inserir';
-  } catch (e) {
-    alert('Erro de conexão ao incluir o paciente.');
-    botao.disabled = false;
-    botao.textContent = 'Inserir';
-  }
-}
-
 // ---------- E-mail de agendamento pro paciente (pedido do Paulo em 11/09/2026) ----------
-
-function renderizarPacientesAgendados(reservaId, pacientesAgendados) {
-  const container = document.querySelector(`.form-email-agendamento[data-reserva-id="${reservaId}"] .lista-pacientes-agendados`);
-  if (!container) return;
-  if (!pacientesAgendados || pacientesAgendados.length === 0) {
-    container.innerHTML = '<p class="muted-cell" data-vazio-pacientes-agendados>Nenhum paciente incluído ainda pra receber e-mail.</p>';
-    return;
-  }
-  container.innerHTML = pacientesAgendados.map(pa => {
-    const nome = (pa.pacientes && pa.pacientes.nome_completo) || '—';
-    const acaoEnvio = pa.email_enviado_em
-      ? '<span class="tag-email-enviado">Enviado ✓</span>'
-      : `<button type="button" class="btn-enviar-email" onclick="enviarEmailPacienteAgendado('${reservaId}', '${pa.paciente_id}', this)">Enviar e-mail</button>`;
-    return `<div class="linha-paciente-agendado" data-paciente-id="${pa.paciente_id}">
-              <span class="nome-paciente-ag">${nome}</span>
-              ${acaoEnvio}
-              <button type="button" class="btn-remover-paciente-agendado" onclick="removerPacienteAgendado('${reservaId}', '${pa.paciente_id}', this)">Remover</button>
-            </div>`;
-  }).join('');
-}
-
-async function salvarHoraConfirmada(reservaId, botao) {
-  const bloco = botao.closest('.form-email-agendamento');
-  const input = bloco.querySelector('.input-hora-confirmada');
-  const erroEl = bloco.querySelector('.erro-email-agendamento');
-  erroEl.style.display = 'none';
-  botao.disabled = true;
-  const textoOriginal = botao.textContent;
-  botao.textContent = 'Salvando...';
-  try {
-    const resp = await fetch(`/api/reservas/${reservaId}/hora-confirmada`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hora_confirmada: input.value.trim() }),
-    });
-    const resultado = await resp.json();
-    if (!resp.ok) {
-      erroEl.textContent = resultado.erro || 'Não foi possível salvar a hora confirmada.';
-      erroEl.style.display = 'block';
-    }
-  } catch (e) {
-    erroEl.textContent = 'Erro de conexão ao salvar a hora confirmada.';
-    erroEl.style.display = 'block';
-  } finally {
-    botao.disabled = false;
-    botao.textContent = textoOriginal;
-  }
-}
-
-async function adicionarPacienteAgendado(reservaId, botao) {
-  const bloco = botao.closest('.form-email-agendamento');
-  const select = bloco.querySelector('.select-adicionar-paciente-agendado');
-  const erroEl = bloco.querySelector('.erro-email-agendamento');
-  erroEl.style.display = 'none';
-  if (!select.value) return;
-  botao.disabled = true;
-  try {
-    const resp = await fetch(`/api/reservas/${reservaId}/pacientes-agendados`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paciente_id: select.value }),
-    });
-    const resultado = await resp.json();
-    if (!resp.ok) {
-      erroEl.textContent = resultado.erro || 'Não foi possível adicionar esse paciente.';
-      erroEl.style.display = 'block';
-      return;
-    }
-    renderizarPacientesAgendados(reservaId, resultado.pacientes_agendados);
-  } catch (e) {
-    erroEl.textContent = 'Erro de conexão ao adicionar o paciente.';
-    erroEl.style.display = 'block';
-  } finally {
-    botao.disabled = false;
-  }
-}
-
-async function removerPacienteAgendado(reservaId, pacienteId, botao) {
-  if (!confirm('Remover esse paciente do e-mail de agendamento dessa reserva?')) return;
-  const bloco = botao.closest('.form-email-agendamento');
-  const erroEl = bloco.querySelector('.erro-email-agendamento');
-  erroEl.style.display = 'none';
-  botao.disabled = true;
-  try {
-    const resp = await fetch(`/api/reservas/${reservaId}/pacientes-agendados/${pacienteId}/remover`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const resultado = await resp.json();
-    if (!resp.ok) {
-      erroEl.textContent = resultado.erro || 'Não foi possível remover esse paciente.';
-      erroEl.style.display = 'block';
-      botao.disabled = false;
-      return;
-    }
-    renderizarPacientesAgendados(reservaId, resultado.pacientes_agendados);
-  } catch (e) {
-    erroEl.textContent = 'Erro de conexão ao remover o paciente.';
-    erroEl.style.display = 'block';
-    botao.disabled = false;
-  }
-}
-
-async function enviarEmailPacienteAgendado(reservaId, pacienteId, botao) {
-  const bloco = botao.closest('.form-email-agendamento');
-  const erroEl = bloco.querySelector('.erro-email-agendamento');
-  erroEl.style.display = 'none';
-  botao.disabled = true;
-  botao.textContent = 'Enviando...';
-  try {
-    const resp = await fetch(`/api/reservas/${reservaId}/pacientes-agendados/${pacienteId}/enviar-email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const resultado = await resp.json();
-    if (!resp.ok) {
-      erroEl.textContent = resultado.erro || 'Não foi possível enviar o e-mail.';
-      erroEl.style.display = 'block';
-      botao.disabled = false;
-      botao.textContent = 'Enviar e-mail';
-      return;
-    }
-    renderizarPacientesAgendados(reservaId, resultado.pacientes_agendados);
-  } catch (e) {
-    erroEl.textContent = 'Erro de conexão ao enviar o e-mail.';
-    erroEl.style.display = 'block';
-    botao.disabled = false;
-    botao.textContent = 'Enviar e-mail';
-  }
-}
 
 async function cancelarReserva(botao) {
   const linha = botao.closest('tr');

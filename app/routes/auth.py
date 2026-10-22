@@ -206,7 +206,6 @@ def redefinir_senha():
     # o e-mail cadastrados, sem perder nenhum dado -- por isso a tela
     # mostra os dois campos já preenchidos, mas editáveis.
     medico = None
-    telefone_valor = ""
     email_valor = ""
     if registro and primeiro_acesso and registro.get("tipo") == "medico":
         medico = db.get_medico_by_id(registro["usuario_id"])
@@ -214,7 +213,6 @@ def redefinir_senha():
             erro = "Esse cadastro não foi encontrado. Fale com a Lifemax."
             registro = None
         else:
-            telefone_valor = medico.get("telefone", "")
             email_valor = medico.get("email") or ""
 
     if registro is None and erro is None:
@@ -222,33 +220,28 @@ def redefinir_senha():
     elif request.method == "POST" and registro is not None:
         senha = request.form.get("senha", "")
         confirmar = request.form.get("confirmar_senha", "")
-        telefone_form = request.form.get("telefone", telefone_valor)
         email_form = request.form.get("email", email_valor)
 
         if primeiro_acesso:
-            telefone_valor = telefone_utils.normalizar_telefone(telefone_form) or ""
-            email_valor = (email_form or "").strip()
+            email_valor = (email_form or "").strip().lower()
 
         if len(senha) < 6:
             erro = "A senha precisa ter pelo menos 6 caracteres."
         elif senha != confirmar:
             erro = "As senhas não coincidem."
-        elif primeiro_acesso and not telefone_valor.isdigit():
-            erro = "Telefone deve conter só números, com DDI e DDD (ex: 5531999999999)."
-        elif primeiro_acesso and email_valor and "@" not in email_valor:
-            erro = "Digite um e-mail válido (ou deixe em branco)."
-        elif primeiro_acesso and telefone_valor != medico.get("telefone") and \
-                db.get_medico_by_telefone(telefone_valor) is not None:
-            erro = "Esse telefone já está cadastrado para outro médico. Confira o número."
+        elif primeiro_acesso and (not email_valor or "@" not in email_valor or "." not in email_valor.split("@")[-1]):
+            erro = "Digite um e-mail válido. Ele será usado para entrar no sistema."
+        elif primeiro_acesso and any(m["id"] != medico["id"] for m in db.listar_medicos_por_email(email_valor)):
+            erro = "Esse e-mail já está cadastrado para outro profissional. Confira o endereço."
         elif not rec_senha.redefinir_senha(token, senha):
             erro = "Esse link expirou ou já foi usado. Peça pra gerarem um novo."
         else:
             sucesso = True
             if primeiro_acesso:
                 db.atualizar_medico(
-                    medico["id"], medico["nome"], telefone_valor,
+                    medico["id"], medico["nome"], medico.get("telefone") or "",
                     medico.get("especialidade") or "", cpf_cnpj=medico.get("cpf_cnpj") or "",
-                    email=email_valor or None,
+                    email=email_valor,
                 )
             # Pedido do Paulo em 11/09/2026: quem entra por um link de
             # "primeiro acesso" (mandado pelo admin pra um médico já
@@ -266,5 +259,5 @@ def redefinir_senha():
     return render_template(
         "redefinir_senha.html", erro=erro, sucesso=sucesso, token=token,
         rota_login=url_for("auth.login"), primeiro_acesso=primeiro_acesso,
-        telefone_valor=telefone_valor, email_valor=email_valor,
+        email_valor=email_valor,
     )

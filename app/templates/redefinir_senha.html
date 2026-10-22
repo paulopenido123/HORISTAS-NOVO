@@ -64,11 +64,9 @@
         <input type="hidden" name="token" value="{{ token }}">
 
         {% if primeiro_acesso %}
-          <label for="telefone">Telefone (usado para entrar no sistema)</label>
-          <input type="text" id="telefone" name="telefone" value="{{ telefone_valor }}" required inputmode="numeric" placeholder="Ex: 5531999999999">
+          <label for="email">E-mail (usado para entrar no sistema)</label>
+          <input type="email" id="email" name="email" value="{{ email_valor }}" required autocomplete="email" placeholder="seuemail@exemplo.com">
 
-          <label for="email">E-mail</label>
-          <input type="email" id="email" name="email" value="{{ email_valor }}" placeholder="seuemail@exemplo.com">
         {% endif %}
 
         <label for="senha">{{ "Crie sua senha" if primeiro_acesso else "Nova senha" }}</label>

@@ -460,3 +460,6 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Painel > Minha agenda: status "Confirmada" vira só o ícone; no celular a linha de ações desce para baixo do horário (sem sobreposição); sala exibida como "SL 402"; menu ⋮ com "Reserva confirmada" (verde; mostra SL + endereço — o padrão de Admin > Horas, ou "Rua Gonçalves Dias, 82" se vazio) e "Cancelar reserva" (vermelho).
 - E-mail do link de acesso (notificar_primeiro_acesso): novo texto de migração + manual em PDF anexo (static/docs/Manual_do_Cliente_Lifemax.pdf).
 - Botão "Manual" sob o logo (topo do painel, turnos, dados, pacientes) → /manual (templates/manual_cliente.html; tabela de pacotes vem do banco). **Regra: ao alterar o sistema, atualizar manual_cliente.html (e o PDF, se mudar o que é enviado).**
+
+## v67 — Primeiro acesso pede e-mail
+- Tela do link de primeiro acesso (redefinir_senha.html / auth.redefinir_senha): o campo obrigatório é o E-mail (usado para entrar); o telefone não é mais pedido nem alterado (continua o cadastrado). E-mail já usado por outro profissional é recusado.

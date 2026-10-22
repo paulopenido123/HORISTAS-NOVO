@@ -1416,7 +1416,7 @@ def usuarios():
             erro = 'Senha master incorreta.'
         return render_template('admin_usuarios_master.html', erro=erro)
     return render_template('admin_usuarios.html', usuarios=usuarios_admin.listar(),
-                           meu_id=session.get('admin_usuario_id'))
+                           meu_id=session.get('admin_usuario_id'), tabela_ok=usuarios_admin.tabela_ok())
 
 
 @admin_bp.route('/usuarios/novo', methods=['POST'])

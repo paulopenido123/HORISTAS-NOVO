@@ -19,19 +19,39 @@ def _normalizar_tel(tel: str) -> str:
     return re.sub(r"\D", "", tel or "")
 
 
+_AVISO_TABELA = "Tabela de usuários do admin não encontrada no banco. Rode sql/migration_usuarios_admin.sql no Neon."
+
+
+def tabela_ok() -> bool:
+    try:
+        get_client().table("usuarios_admin").select("id").limit(1).execute()
+        return True
+    except Exception:
+        return False
+
+
 def listar() -> list[dict]:
-    return get_client().table("usuarios_admin").select("*").order("nome").execute().data or []
+    try:
+        return get_client().table("usuarios_admin").select("*").order("nome").execute().data or []
+    except Exception:
+        return []  # tabela ainda não criada: login cai no modo de transição (senha antiga)
 
 
 def buscar_por_id(usuario_id: str) -> dict | None:
-    r = get_client().table("usuarios_admin").select("*").eq("id", usuario_id).execute().data
+    try:
+        r = get_client().table("usuarios_admin").select("*").eq("id", usuario_id).execute().data
+    except Exception:
+        return None
     return r[0] if r else None
 
 
 def contar_ativos() -> int:
     """Usuários ativos que JÁ criaram senha (só esses conseguem entrar). Enquanto for 0, a senha
     antiga do admin continua valendo -- assim ninguém fica trancado antes do 1º usuário ter senha."""
-    r = get_client().table("usuarios_admin").select("id,senha_hash").eq("ativo", True).execute().data
+    try:
+        r = get_client().table("usuarios_admin").select("id,senha_hash").eq("ativo", True).execute().data
+    except Exception:
+        return 0  # tabela inexistente = nenhum usuário cadastrado
     return len([u for u in (r or []) if u.get("senha_hash")])
 
 
@@ -42,6 +62,8 @@ def criar(nome: str, email: str, telefone: str) -> dict:
         raise ValueError("Informe o nome.")
     if "@" not in email:
         raise ValueError("Digite um e-mail válido.")
+    if not tabela_ok():
+        raise ValueError(_AVISO_TABELA)
     if any((u.get("email") or "").lower() == email for u in listar()):
         raise ValueError("Já existe um usuário com esse e-mail.")
     r = get_client().table("usuarios_admin").insert({

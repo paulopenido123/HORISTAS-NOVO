@@ -2,6 +2,7 @@
 {% with titulo='Usuários', subtitulo='Quem pode entrar no painel admin', ativo='usuarios' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
   {% with mensagens = get_flashed_messages(with_categories=true) %}{% for categoria, texto in mensagens %}<div class="flash {{ categoria }}">{{ texto }}</div>{% endfor %}{% endwith %}
+  {% if not tabela_ok %}<div class="flash erro">Tabela de usuários não encontrada no banco. Rode <b>sql/migration_usuarios_admin.sql</b> no Neon.</div>{% endif %}
   <div class="card">
     <div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Usuários do admin</h2><button type="button" onclick="document.getElementById('novo').classList.toggle('aberto')">+ Novo Usuário</button></div>
     <form id="novo" class="novo" method="post" action="{{ url_for('admin.usuarios_novo') }}" style="margin-top:14px">

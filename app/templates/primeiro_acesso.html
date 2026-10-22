@@ -61,7 +61,7 @@ if ("serviceWorker" in navigator) {
 <body>
   <div class="card">
     <h1>Primeiro acesso</h1>
-    <p class="sub">{{ "Crie sua senha para acessar seu painel" if etapa == "senha" else "Digite o seu e-mail para começar" }}</p>
+    <p class="sub">{{ "Crie sua senha para acessar seu painel" if etapa == "senha" else ("Primeiro acesso de cliente novo — crie seu cadastro" if etapa == "cadastro" else "Digite o seu e-mail para começar") }}</p>
 
     {% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
 
@@ -72,6 +72,23 @@ if ("serviceWorker" in navigator) {
         <label for="email">E-mail</label>
         <input type="email" id="email" name="email" value="{{ email_digitado }}" placeholder="seuemail@exemplo.com" required autofocus autocomplete="email">
         <button type="submit">Continuar</button>
+      </form>
+    {% elif etapa == "cadastro" %}
+      <div class="medico-confirmado">Não encontramos esse e-mail, então vamos criar seu cadastro. Informe seu nome e crie uma senha.</div>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="etapa" value="cadastro">
+        <input type="hidden" name="email" value="{{ email_digitado }}">
+        <label for="email_ro">E-mail</label>
+        <input type="email" id="email_ro" value="{{ email_digitado }}" disabled>
+        <label for="nome">Nome completo</label>
+        <input type="text" id="nome" name="nome" value="{{ nome_digitado }}" placeholder="Dra. Ana Souza" required autofocus>
+        <label for="senha">Crie uma senha (mínimo 6 caracteres)</label>
+        <input type="password" id="senha" name="senha" required>
+        <label for="confirmar_senha">Confirme a senha</label>
+        <input type="password" id="confirmar_senha" name="confirmar_senha" required>
+        <div class="medico-confirmado">Atenção: você só poderá reservar consultórios depois de preencher os demais dados exigidos em <strong>Meus dados</strong> (telefone, CPF, especialidade e endereço).</div>
+        <button type="submit">Criar cadastro e entrar</button>
       </form>
     {% else %}
       {% if medico %}

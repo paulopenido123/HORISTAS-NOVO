@@ -55,7 +55,7 @@ def _medico_para_json(medico: dict) -> dict:
     return {
         "id": medico["id"],
         "nome": medico["nome"],
-        "telefone": medico["telefone"],
+        "telefone": medico.get("telefone"),
         "tipo_vinculo": medico.get("tipo_vinculo") or "avulso",
         "autorizado": medico.get("autorizado", True),
         "pode_reservar_avulso": pode_reservar_avulso,

@@ -25,7 +25,7 @@ def enviar_boas_vindas(medico: dict) -> bool:
     enviou, False se não conseguiu (WhatsApp não configurado, erro, etc).
     Nunca levanta exceção — é sempre "melhor esforço".
     """
-    if not (Config.WHATSAPP_TOKEN and Config.WHATSAPP_PHONE_NUMBER_ID):
+    if not (Config.WHATSAPP_TOKEN and Config.WHATSAPP_PHONE_NUMBER_ID) or not medico.get("telefone"):
         return False
     try:
         from app.services import whatsapp_client as wa

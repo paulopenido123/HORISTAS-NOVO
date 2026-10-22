@@ -18,11 +18,13 @@ auth_bp = Blueprint("auth", __name__)
 def primeiro_acesso():
     """Primeiro acesso por E-MAIL (22/10/2026, pedido do Paulo -- antes era por telefone):
     o profissional digita o e-mail que a Lifemax tem cadastrado e cria a senha.
-    O auto-cadastro por telefone foi desativado: quem não é encontrado é orientado a falar com a Lifemax."""
+    E-mail não encontrado = cliente novo: cadastro só com nome, e-mail e senha; o restante dos dados
+    (telefone etc.) é exigido em "Meus dados" antes de poder reservar."""
     erro = None
     etapa = "email"
     medico = None
     email_digitado = (request.form.get("email", "") or "").strip().lower()
+    nome_digitado = ""
 
     def _sem_senha(lista):
         return [m for m in lista if not creditos_db.medico_tem_senha(m)]
@@ -32,9 +34,45 @@ def primeiro_acesso():
         encontrados = db.listar_medicos_por_email(email_digitado) if "@" in email_digitado else []
         pendentes = _sem_senha(encontrados)
 
-        if not encontrados:
-            erro = ("Não encontramos esse e-mail. Confira se é o mesmo e-mail informado à Lifemax ou fale com a "
-                    "equipe pelos telefones (31) 99754-6473 ou (31) 97207-8423.")
+        if etapa_enviada == "cadastro":
+            etapa = "cadastro"
+            nome = request.form.get("nome", "").strip()
+            senha = request.form.get("senha", "")
+            confirmar = request.form.get("confirmar_senha", "")
+            nome_digitado = nome
+            if encontrados:
+                erro = "Esse e-mail já está cadastrado. Informe-o na primeira tela para criar a senha ou use o login."
+                etapa = "email"
+            elif "@" not in email_digitado or "." not in email_digitado.split("@")[-1]:
+                erro = "Digite um e-mail válido."
+            elif not nome:
+                erro = "Digite seu nome completo."
+            elif len(senha) < 6:
+                erro = "A senha precisa ter pelo menos 6 caracteres."
+            elif senha != confirmar:
+                erro = "As senhas não coincidem."
+            else:
+                try:
+                    # Cadastro inicial só com e-mail e senha (telefone e demais dados vão em "Meus dados"
+                    # -- enquanto faltarem, o sistema não deixa reservar; ver reserva_service).
+                    novo = db.criar_medico(nome, None, "", email=email_digitado)
+                except Exception as e:
+                    print(f"[primeiro_acesso] Falha ao criar cadastro: {e}")
+                    erro = ("Não conseguimos concluir seu cadastro agora. Fale com a equipe Lifemax pelos telefones "
+                            "(31) 99754-6473 ou (31) 97207-8423.")
+                else:
+                    creditos_db.definir_senha_medico(novo["id"], auth_service.gerar_hash_senha(senha))
+                    auth_service.login_medico(novo["id"])
+                    try:
+                        from app.services import notificacoes_operacionais_service as notif_op
+                        notif_op.avisar_admins(f"👋 Novo cliente se cadastrou pelo site: {nome} ({email_digitado}). "
+                                               f"Ele ainda precisa completar os dados em Meus dados para reservar.")
+                    except Exception as e:
+                        print(f"[primeiro_acesso] Aviso aos admins falhou: {e}")
+                    return redirect(url_for("medico_painel.painel"))
+        elif not encontrados:
+            # e-mail novo -> cadastro novo (só e-mail, nome e senha)
+            etapa = "cadastro"
         elif not pendentes:
             erro = "Esse e-mail já tem senha cadastrada. Use a tela de login."
         elif etapa_enviada == "email":
@@ -55,7 +93,7 @@ def primeiro_acesso():
                 return redirect(url_for("medico_painel.painel"))
 
     return render_template("primeiro_acesso.html", erro=erro, etapa=etapa,
-                            medico=medico, email_digitado=email_digitado)
+                            medico=medico, email_digitado=email_digitado, nome_digitado=nome_digitado)
 
 
 @auth_bp.route("/confirmar-email/<token>")
@@ -177,7 +215,7 @@ def redefinir_senha():
             sucesso = True
             if primeiro_acesso:
                 db.atualizar_medico(
-                    medico["id"], medico["nome"], medico.get("telefone") or "",
+                    medico["id"], medico["nome"], medico.get("telefone") or None,
                     medico.get("especialidade") or "", cpf_cnpj=medico.get("cpf_cnpj") or "",
                     email=email_valor,
                 )

@@ -390,9 +390,9 @@ if ("serviceWorker" in navigator) {
   {% elif campos_faltando %}
   <div class="aviso-cadastro-pendente" id="aviso-cadastro-pendente">
     <span class="icone">🛈</span>
-    <span>Seu cadastro ainda está pendente. Para completar o cadastro acesse
+    <span>Seu cadastro ainda está pendente. Você só poderá reservar consultórios depois de preencher os dados exigidos em
       <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}">"Meus dados"</a>
-      e preencha os campos que faltam.</span>
+      (faltam: {{ campos_faltando|join(', ') }}).</span>
   </div>
   {% endif %}
 

@@ -34,7 +34,8 @@ def verificar_e_notificar_saldo_baixo(medico: dict, saldo_atual: float):
     if Config.WHATSAPP_TOKEN and Config.WHATSAPP_PHONE_NUMBER_ID:
         try:
             from app.services import whatsapp_client as wa
-            wa.send_text(medico["telefone"], mensagem)
+            if medico.get("telefone"):
+                wa.send_text(medico["telefone"], mensagem)
             enviado = True
         except Exception as e:
             print(f"[alerta_saldo] Falha ao enviar por WhatsApp: {e}")

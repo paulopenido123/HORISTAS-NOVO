@@ -96,7 +96,7 @@ def _liberar_assistente_pelo_primeiro_pagamento(medico_id: str):
 
     notificacao_boas_vindas.enviar_boas_vindas(medico)
     notif_op.avisar_admins(
-        f"💰 Primeiro pagamento confirmado! {medico['nome']} ({medico['telefone']}) já tem o "
+        f"💰 Primeiro pagamento confirmado! {medico['nome']} ({medico.get('telefone') or 'sem telefone'}) já tem o "
         f"assistente de WhatsApp liberado automaticamente (Módulo 1 — Venda de Horas Avulsas)."
     )
 

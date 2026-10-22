@@ -98,7 +98,7 @@ def comprar_creditos():
 
     try:
         customer_id = asaas_client.criar_ou_obter_cliente(
-            medico["nome"], medico["telefone"], medico["id"], medico.get("cpf_cnpj")
+            medico["nome"], medico.get("telefone") or "", medico["id"], medico.get("cpf_cnpj")
         )
         cobranca = asaas_client.criar_cobranca_pix(
             customer_id, valor, f"Créditos Lifemax — {medico['nome']}"
@@ -152,7 +152,7 @@ def comprar_creditos_cartao():
 
     try:
         customer_id = asaas_client.criar_ou_obter_cliente(
-            medico["nome"], medico["telefone"], medico["id"], medico.get("cpf_cnpj")
+            medico["nome"], medico.get("telefone") or "", medico["id"], medico.get("cpf_cnpj")
         )
         cobranca = asaas_client.criar_cobranca_cartao(
             customer_id, valor, f"Créditos Lifemax — {medico['nome']}", parcelas=parcelas

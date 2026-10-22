@@ -536,7 +536,7 @@ def definir_email_confirmado(medico_id: str, confirmado: bool) -> dict | None:
     return resp.data[0] if resp.data else None
 
 
-def criar_medico(nome: str, telefone: str, especialidade: str = "", tipo_vinculo: str = "avulso",
+def criar_medico(nome: str, telefone: str | None, especialidade: str = "", tipo_vinculo: str = "avulso",
                   empresa_id: str | None = None, email: str = "", crm: str = "", cpf_cnpj: str = "",
                   endereco_cep: str = "", endereco_rua: str = "", endereco_numero: str = "",
                   endereco_complemento: str = "", endereco_bairro: str = "", endereco_cidade: str = "",

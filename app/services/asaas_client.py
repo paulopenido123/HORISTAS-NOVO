@@ -69,7 +69,7 @@ def criar_ou_obter_cliente(nome: str, telefone: str, medico_id: str, cpf_cnpj: s
         headers=_headers(),
         json={
             "name": nome,
-            "mobilePhone": telefone,
+            **({"mobilePhone": telefone} if telefone else {}),  # cadastro novo pode ainda não ter telefone
             "cpfCnpj": cpf_cnpj_limpo,
             "externalReference": medico_id,
         },

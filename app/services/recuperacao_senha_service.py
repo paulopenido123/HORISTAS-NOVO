@@ -115,7 +115,7 @@ def enviar_link_primeiro_acesso(medico_id: str, email: str) -> dict:
 
     if email != (medico.get("email") or ""):
         db.atualizar_medico(
-            medico_id, medico["nome"], medico["telefone"], medico.get("especialidade") or "",
+            medico_id, medico["nome"], medico.get("telefone") or None, medico.get("especialidade") or "",
             cpf_cnpj=medico.get("cpf_cnpj") or "", email=email,
         )
 

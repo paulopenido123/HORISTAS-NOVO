@@ -91,6 +91,9 @@ class Config:
 
     # --- Painel administrativo ---
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+    # Senha master da área "Usuários" do admin (pedido do Paulo em 22/10/2026).
+    # Pode ser trocada no Render pela variável ADMIN_MASTER_PASSWORD.
+    ADMIN_MASTER_PASSWORD = os.getenv("ADMIN_MASTER_PASSWORD", "Belvedere5252@")
     ADMIN_PHONE = os.getenv("ADMIN_PHONE")  # formato E.164 sem '+', ex: 5531999999999 — recebe alertas de segurança
     # ⚠️ SEM valor padrão de propósito (corrigido na revisão de produção de
     # 10/09/2026): antes tinha um default fixo ("troque-esta-chave-em-

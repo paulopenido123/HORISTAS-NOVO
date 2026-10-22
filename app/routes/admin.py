@@ -10,7 +10,9 @@ from app.services import recuperacao_senha_service as rec_senha
 from app.services import nfe_service
 from app.services import template_service
 from app.services import reserva_service
-from app.extensions import csrf
+from app.extensions import csrf, limiter
+from app.services import usuarios_admin_service as usuarios_admin
+import secrets
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -20,20 +22,24 @@ def _admin(view):
 
 
 @admin_bp.route('/login', methods=['GET','POST'])
+@limiter.limit("10 per minute", methods=["POST"])
 def admin_login():
     erro = None
     if request.method == 'POST':
-        senha = request.form.get('senha','')
-        if senha and auth_service.verificar_senha(senha, session.get('_admin_hash','')):
-            auth_service.login_admin()
+        ident = request.form.get('identificador', '').strip()
+        senha = request.form.get('senha', '')
+        usuario = usuarios_admin.autenticar(ident, senha) if ident else None
+        if usuario:
+            auth_service.login_admin(usuario['id'])
             return redirect(request.args.get('next') or url_for('admin.dashboard'))
-        # Production uses a single ADMIN_PASSWORD from env; avoid storing it in session.
+        # Transição: senha única antiga (ADMIN_PASSWORD) só vale enquanto não há usuário ativo cadastrado.
         from app.config import Config
-        if senha and Config.ADMIN_PASSWORD and senha == Config.ADMIN_PASSWORD:
+        if (not ident and senha and Config.ADMIN_PASSWORD and secrets.compare_digest(senha, Config.ADMIN_PASSWORD)
+                and usuarios_admin.contar_ativos() == 0):
             auth_service.login_admin()
             return redirect(request.args.get('next') or url_for('admin.dashboard'))
-        erro = 'Senha administrativa incorreta.'
-    return render_template('admin_login.html', erro=erro)
+        erro = 'E-mail/telefone ou senha incorretos, ou usuário bloqueado.'
+    return render_template('admin_login.html', erro=erro, transicao=usuarios_admin.contar_ativos() == 0)
 
 
 @admin_bp.route('/logout')
@@ -1384,3 +1390,95 @@ def api_matriz_dia_ocultar():
         return {'oculto': False, 'data': data_iso}
     client.table('dias_ocultos').insert({'data': data_iso}).execute()
     return {'oculto': True, 'data': data_iso}
+
+
+# ---------------- Usuários do admin (22/10/2026) ----------------
+_MASTER_MINUTOS = 15
+
+
+def _master_liberado() -> bool:
+    return session.get('admin_master_ate', 0) > datetime.now(timezone.utc).timestamp()
+
+
+@admin_bp.route('/usuarios', methods=['GET', 'POST'])
+@_admin
+@limiter.limit("6 per minute", methods=["POST"])
+def usuarios():
+    """Lista de usuários -- só abre depois da senha master."""
+    if not _master_liberado():
+        erro = None
+        if request.method == 'POST':
+            from app.config import Config
+            senha = request.form.get('master', '')
+            if senha and secrets.compare_digest(senha, Config.ADMIN_MASTER_PASSWORD or ''):
+                session['admin_master_ate'] = datetime.now(timezone.utc).timestamp() + _MASTER_MINUTOS * 60
+                return redirect(url_for('admin.usuarios'))
+            erro = 'Senha master incorreta.'
+        return render_template('admin_usuarios_master.html', erro=erro)
+    return render_template('admin_usuarios.html', usuarios=usuarios_admin.listar(),
+                           meu_id=session.get('admin_usuario_id'))
+
+
+@admin_bp.route('/usuarios/novo', methods=['POST'])
+@_admin
+def usuarios_novo():
+    if not _master_liberado():
+        return redirect(url_for('admin.usuarios'))
+    try:
+        u = usuarios_admin.criar(request.form.get('nome'), request.form.get('email'), request.form.get('telefone'))
+        r = usuarios_admin.enviar_link(u['id'])
+        flash(f"Usuário cadastrado. " + (f"Link de acesso enviado para {r['email']}." if r['enviado']
+              else f"Não foi possível enviar o e-mail (SMTP não configurado). Link para copiar: {r['link']}"), 'ok')
+    except ValueError as e:
+        flash(str(e), 'erro')
+    return redirect(url_for('admin.usuarios'))
+
+
+@admin_bp.route('/usuarios/<usuario_id>/link', methods=['POST'])
+@_admin
+def usuarios_link(usuario_id):
+    if not _master_liberado():
+        return redirect(url_for('admin.usuarios'))
+    try:
+        r = usuarios_admin.enviar_link(usuario_id)
+        flash((f"Link de acesso enviado para {r['email']}." if r['enviado']
+               else f"Não foi possível enviar o e-mail (SMTP não configurado). Link para copiar: {r['link']}"), 'ok')
+    except ValueError as e:
+        flash(str(e), 'erro')
+    return redirect(url_for('admin.usuarios'))
+
+
+@admin_bp.route('/usuarios/<usuario_id>/ativo', methods=['POST'])
+@_admin
+def usuarios_ativo(usuario_id):
+    if not _master_liberado():
+        return redirect(url_for('admin.usuarios'))
+    if usuario_id == session.get('admin_usuario_id'):
+        flash('Você não pode bloquear o próprio usuário.', 'erro')
+    else:
+        u = usuarios_admin.buscar_por_id(usuario_id)
+        if u:
+            usuarios_admin.definir_ativo(usuario_id, not u.get('ativo'))
+            flash(f"Usuário {'ativado' if not u.get('ativo') else 'bloqueado'}.", 'ok')
+    return redirect(url_for('admin.usuarios'))
+
+
+@admin_bp.route('/definir-senha', methods=['GET', 'POST'])
+@limiter.limit("8 per minute", methods=["POST"])
+def definir_senha():
+    token = request.args.get('token', '') or request.form.get('token', '')
+    erro, sucesso = None, False
+    reg = usuarios_admin.validar_token(token)
+    if reg is None:
+        erro = 'Esse link expirou ou já foi usado. Peça um novo ao administrador.'
+    elif request.method == 'POST':
+        senha, conf = request.form.get('senha', ''), request.form.get('confirmar_senha', '')
+        if len(senha) < 6:
+            erro = 'A senha precisa ter pelo menos 6 caracteres.'
+        elif senha != conf:
+            erro = 'As senhas não coincidem.'
+        elif usuarios_admin.definir_senha(token, senha):
+            sucesso = True
+        else:
+            erro = 'Esse link expirou ou já foi usado.'
+    return render_template('admin_definir_senha.html', token=token, erro=erro, sucesso=sucesso, link_valido=reg is not None)

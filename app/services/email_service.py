@@ -146,6 +146,21 @@ def notificar_recuperacao_senha(nome: str, link_redefinir: str, destinatario: st
     return enviar_email([destinatario], assunto, corpo_html)
 
 
+def notificar_acesso_admin(nome: str, link_criar_senha: str, destinatario: str) -> bool:
+    assunto = "Seu acesso ao painel administrativo Lifemax"
+    corpo_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px;">
+        <h2 style="color: #1a3c5e;">Acesso ao painel Lifemax</h2>
+        <p>Olá, {_esc(nome)}! Você foi cadastrado(a) como usuário do painel administrativo da Lifemax.
+        Use o botão abaixo para criar sua senha. O link vale por 7 dias e só pode ser usado uma vez.</p>
+        <p><a href="{link_criar_senha}" style="background:#1a3c5e; color:white; padding:10px 18px;
+           border-radius:6px; text-decoration:none; display:inline-block;">Criar minha senha</a></p>
+        <p style="color: #888; font-size: 12px;">Depois, entre em /admin com este e-mail (ou o telefone cadastrado) e a senha criada.</p>
+    </div>
+    """
+    return enviar_email([destinatario], assunto, corpo_html)
+
+
 def notificar_primeiro_acesso(nome: str, link_criar_senha: str, destinatario: str) -> bool:
     assunto = "Seu acesso ao sistema Lifemax está pronto"
     corpo_html = f"""

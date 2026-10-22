@@ -1,0 +1,36 @@
+<!doctype html><html lang="pt-BR"><head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Usuários — Lifemax Admin</title><style>body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}.wrap{max-width:1000px;margin:auto;padding:20px 16px}.card{background:#fff;border:1px solid #e3ebef;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 4px 16px rgba(11,58,87,.08)}input{width:100%;box-sizing:border-box;padding:11px;border:1px solid #d8e3e7;border-radius:10px;margin:6px 0 12px;font-size:15px}button,.btn{padding:10px 14px;border:0;border-radius:10px;background:#0EA5A0;color:#fff;font-weight:700;font-size:13px;cursor:pointer}.neutro{background:#0B3A57}.danger{background:#c95050}.muted{color:#62788A;font-size:13px}.flash{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:14px;font-weight:600;word-break:break-all}.flash.ok{background:#E3F7EE;color:#0B7B45}.flash.erro{background:#FBEAE6;color:#B33}.tag{display:inline-block;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:6px}.on{background:#E3F7EE;color:#0B7B45}.off{background:#FBEAE6;color:#B33}.row{display:flex;gap:8px;flex-wrap:wrap}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #e3ebef;font-size:14px}th{font-size:12px;color:#6B8493;text-transform:uppercase}.novo{display:none}.novo.aberto{display:block}form{margin:0}</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head><body>
+{% with titulo='Usuários', subtitulo='Quem pode entrar no painel admin', ativo='usuarios' %}{% include '_admin_topo.html' %}{% endwith %}
+<div class="wrap">
+  {% with mensagens = get_flashed_messages(with_categories=true) %}{% for categoria, texto in mensagens %}<div class="flash {{ categoria }}">{{ texto }}</div>{% endfor %}{% endwith %}
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Usuários do admin</h2><button type="button" onclick="document.getElementById('novo').classList.toggle('aberto')">+ Novo Usuário</button></div>
+    <form id="novo" class="novo" method="post" action="{{ url_for('admin.usuarios_novo') }}" style="margin-top:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="muted">Nome</label><input name="nome" required>
+      <label class="muted">E-mail</label><input type="email" name="email" required>
+      <label class="muted">Telefone</label><input name="telefone" inputmode="tel">
+      <button>Cadastrar e enviar link de acesso</button>
+    </form>
+  </div>
+  <div class="card">
+    <table class="cartoes">
+      <thead><tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Situação</th><th>Ações</th></tr></thead>
+      <tbody>
+      {% for u in usuarios %}
+        <tr>
+          <td data-label="Nome"><strong>{{ u.nome }}</strong>{% if u.id == meu_id %} <span class="muted">(você)</span>{% endif %}</td>
+          <td data-label="E-mail">{{ u.email }}</td>
+          <td data-label="Telefone">{{ u.telefone or '—' }}</td>
+          <td data-label="Situação"><span class="tag {{ 'on' if u.ativo else 'off' }}">{{ 'Ativo' if u.ativo else 'Bloqueado' }}</span>{% if not u.senha_hash %} <span class="muted">· aguardando criar senha</span>{% endif %}</td>
+          <td data-label="Ações"><div class="row">
+            <form method="post" action="{{ url_for('admin.usuarios_link', usuario_id=u.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="neutro">Enviar link de acesso</button></form>
+            {% if u.id != meu_id %}<form method="post" action="{{ url_for('admin.usuarios_ativo', usuario_id=u.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="{{ 'danger' if u.ativo else '' }}">{{ 'Bloquear' if u.ativo else 'Ativar' }}</button></form>{% endif %}
+          </div></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="muted">Nenhum usuário cadastrado ainda. Cadastre o primeiro — a senha antiga do admin continua valendo até o primeiro usuário criar a senha dele.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div></body></html>

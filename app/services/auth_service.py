@@ -33,25 +33,33 @@ def medico_logado_id() -> str | None:
     return session.get("medico_id")
 
 
-def login_admin():
+def login_admin(usuario_id: str | None = None):
     session["admin"] = True
+    if usuario_id:
+        session["admin_usuario_id"] = usuario_id
+    else:
+        session.pop("admin_usuario_id", None)
 
 
 def logout_admin():
     session.pop("admin", None)
+    session.pop("admin_usuario_id", None)
+    session.pop("admin_master_ate", None)
 
 
 def admin_logado() -> bool:
-    return session.get("admin", False)
-
-
-def requer_login_medico(view_func):
-    @wraps(view_func)
-    def wrapper(*args, **kwargs):
-        if not medico_logado_id():
-            return redirect(url_for("auth.login", next=request.path))
-        return view_func(*args, **kwargs)
-    return wrapper
+    """Só usuário admin cadastrado e ATIVO entra (conferido a cada acesso, então
+    bloquear um usuário derruba a sessão dele na hora). Exceção de transição: a
+    senha única antiga (ADMIN_PASSWORD) só vale enquanto não existir nenhum
+    usuário ativo com senha criada -- evita ficar trancado do lado de fora."""
+    if not session.get("admin", False):
+        return False
+    from app.services import usuarios_admin_service as ua
+    uid = session.get("admin_usuario_id")
+    if uid:
+        u = ua.buscar_por_id(uid)
+        return bool(u and u.get("ativo"))
+    return ua.contar_ativos() == 0
 
 
 def requer_admin(view_func):

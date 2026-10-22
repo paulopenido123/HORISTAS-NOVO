@@ -445,3 +445,10 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 ## v60
 - Relatórios > Receitas: coluna "Profissional" em cada pagamento; novo botão "Profissionais" (ranking por total: nome, compras feitas, total) com os mesmos filtros de período e mês; CSV para as duas visões.
 - Padrão visual do celular aplicado a todas as páginas do admin: parcial `_admin_topo.html` (cabeçalho + menu) e `static/css/admin-padrao.css` (tabelas viram cartões com `class="cartoes"` + `data-label`; grades empilham no celular). Páginas: login, clientes, cliente (ver/editar/novo), consultórios, fotos, horas, matriz e agenda da matriz.
+
+## v61 — Usuários do admin
+- Tabelas `usuarios_admin` e `tokens_admin_usuarios` (sql/migration_usuarios_admin.sql, também no INSTALL_ALL.sql).
+- /admin/login: e-mail ou telefone + senha. Só usuário cadastrado e ATIVO entra; a situação é conferida a cada acesso (bloquear derruba a sessão na hora).
+- Transição: a senha antiga (ADMIN_PASSWORD, campo e-mail em branco) vale só até o primeiro usuário ativo criar senha.
+- Botão "Usuários" (ao lado de Relatórios): pede senha master (ADMIN_MASTER_PASSWORD no Render; padrão definido no código), liberada por 15 min na sessão. Lista usuários, "Novo Usuário" (cadastra e envia link), "Enviar link de acesso", "Bloquear/Ativar" (não permite bloquear a si mesmo).
+- Link de acesso: /admin/definir-senha?token=..., vale 7 dias, uso único; se o SMTP não estiver configurado o link aparece na tela para copiar.

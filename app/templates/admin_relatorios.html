@@ -87,6 +87,7 @@
     <a href="{{ url_for('admin.clientes') }}">Clientes</a>
     <a href="{{ url_for('admin.horas') }}">Horas</a>
     <a href="{{ url_for('admin.relatorios') }}" class="active">Relatórios</a>
+    <a href="{{ url_for('admin.usuarios') }}">Usuários</a>
   </nav>
 
   {% with mensagens = get_flashed_messages(with_categories=true) %}

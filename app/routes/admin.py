@@ -21,6 +21,18 @@ def _admin(view):
     return auth_service.requer_admin(view)
 
 
+def _admin_total(view):
+    """Só perfil Administrador (a secretária não acessa Horas, Relatórios, Usuários nem altera saldo)."""
+    return auth_service.requer_admin_total(view)
+
+
+@admin_bp.context_processor
+def _perfil_admin_nos_templates():
+    """Menus/atalhos escondem o que a secretária não pode usar."""
+    perfil = auth_service.admin_perfil()
+    return {'admin_perfil': perfil, 'admin_total': perfil == 'admin'}
+
+
 @admin_bp.route('/login', methods=['GET','POST'])
 @limiter.limit("10 per minute", methods=["POST"])
 def admin_login():
@@ -40,6 +52,18 @@ def admin_login():
             return redirect(request.args.get('next') or url_for('admin.dashboard'))
         erro = 'E-mail/telefone ou senha incorretos, ou usuário bloqueado.'
     return render_template('admin_login.html', erro=erro, transicao=usuarios_admin.contar_ativos() == 0)
+
+
+@admin_bp.route('/esqueci-senha', methods=['GET', 'POST'])
+@limiter.limit("5 per minute", methods=["POST"])
+def admin_esqueci_senha():
+    """Recuperação de senha do acesso administrativo: reenvia o link de acesso ao e-mail cadastrado.
+    A resposta é sempre a mesma, exista o e-mail ou não."""
+    enviado = False
+    if request.method == 'POST':
+        usuarios_admin.solicitar_recuperacao(request.form.get('email', ''))
+        enviado = True
+    return render_template('admin_esqueci_senha.html', enviado=enviado)
 
 
 @admin_bp.route('/logout')
@@ -66,7 +90,7 @@ def dashboard():
 
 
 @admin_bp.route('/horas')
-@_admin
+@_admin_total
 def horas():
     """Painel "Horas" do admin -- mostra só as "horas na praça": soma das horas
     (saldo) de todos os profissionais hoje (pedido do Paulo em 22/10/2026,
@@ -78,7 +102,7 @@ def horas():
 
 
 @admin_bp.route('/horas/endereco-padrao', methods=['POST'])
-@_admin
+@_admin_total
 def atualizar_endereco_padrao():
     """Salva o endereço padrão da Lifemax (usado no e-mail de agendamento
     pro paciente -- ver reserva_service.enviar_confirmacao_consulta)
@@ -212,7 +236,7 @@ def enviar_link_cliente(medico_id):
 
 
 @admin_bp.route('/clientes/<medico_id>/ajustar-saldo', methods=['POST'])
-@_admin
+@_admin_total
 def ajustar_saldo_cliente(medico_id):
     """Credita (valor positivo) ou debita (valor negativo) saldo de um
     médico direto pelo painel admin -- vira uma
@@ -508,7 +532,7 @@ def editar_cliente(medico_id):
 
 
 @admin_bp.route('/relatorios')
-@_admin
+@_admin_total
 def relatorios():
     """Aba "Relatórios" -- pedido do Paulo em 10/09/2026, print de tela do
     sistema maior original: 2 relatórios (Agendamentos e Transações),
@@ -601,7 +625,7 @@ def relatorios():
 
 
 @admin_bp.route('/pagamentos/<pagamento_id>/emitir-nf', methods=['POST'])
-@_admin
+@_admin_total
 def emitir_nf_pagamento(pagamento_id):
     """Botão "Emitir NF" em Relatórios > Transações ainda não faturadas --
     pedido do Paulo em 11/09/2026. Enquanto o certificado A1/CNPJ da
@@ -1381,7 +1405,7 @@ def _master_liberado() -> bool:
 
 
 @admin_bp.route('/usuarios', methods=['GET', 'POST'])
-@_admin
+@_admin_total
 @limiter.limit("6 per minute", methods=["POST"])
 def usuarios():
     """Lista de usuários -- só abre depois da senha master."""
@@ -1400,12 +1424,13 @@ def usuarios():
 
 
 @admin_bp.route('/usuarios/novo', methods=['POST'])
-@_admin
+@_admin_total
 def usuarios_novo():
     if not _master_liberado():
         return redirect(url_for('admin.usuarios'))
     try:
-        u = usuarios_admin.criar(request.form.get('nome'), request.form.get('email'), request.form.get('telefone'))
+        u = usuarios_admin.criar(request.form.get('nome'), request.form.get('email'), request.form.get('telefone'),
+                                 request.form.get('perfil') or 'admin')
         r = usuarios_admin.enviar_link(u['id'])
         flash(f"Usuário cadastrado. " + (f"Link de acesso enviado para {r['email']}." if r['enviado']
               else f"Não foi possível enviar o e-mail (SMTP não configurado). Link para copiar: {r['link']}"), 'ok')
@@ -1415,7 +1440,7 @@ def usuarios_novo():
 
 
 @admin_bp.route('/usuarios/<usuario_id>/link', methods=['POST'])
-@_admin
+@_admin_total
 def usuarios_link(usuario_id):
     if not _master_liberado():
         return redirect(url_for('admin.usuarios'))
@@ -1429,7 +1454,7 @@ def usuarios_link(usuario_id):
 
 
 @admin_bp.route('/usuarios/<usuario_id>/ativo', methods=['POST'])
-@_admin
+@_admin_total
 def usuarios_ativo(usuario_id):
     if not _master_liberado():
         return redirect(url_for('admin.usuarios'))

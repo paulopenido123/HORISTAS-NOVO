@@ -468,3 +468,9 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 ## v69 — E-mail de confirmação com horário opcional; /primeiro-acesso por e-mail
 - Agenda > "Enviar e-mail": a mensagem NÃO inclui mais o horário automático; novo campo "Horário (opcional)" (texto livre, até 40 caracteres) — se preenchido, entra a linha "Horário: ..." depois da data (prévia atualiza ao digitar). Manual atualizado.
 - /primeiro-acesso (página pública): pede o E-MAIL (não mais o telefone). E-mail já cadastrado sem senha → cria a senha; e-mail novo → auto-cadastro só com nome, e-mail e senha (telefone fica NULL; migration_telefone_opcional.sql tira o NOT NULL). O cliente novo só consegue reservar depois de preencher os dados exigidos em "Meus dados" (reserva_service._CAMPOS_OBRIGATORIOS_PARA_RESERVAR); o aviso no painel lista o que falta. Código que usava medico['telefone'] passou a tolerar vazio (Asaas, WhatsApp, Dora, webhook).
+
+## v71 — Perfil "Secretária" + Acesso administrativo
+- `usuarios_admin.perfil` ('admin' | 'secretaria'; sql/migration_usuarios_admin_perfil.sql). Em Usuários (senha master) escolhe-se o tipo ao cadastrar.
+- Secretária: acessa Dashboard, Matriz (incl. Visualizar agenda, onde aparece o nome do profissional em cada horário reservado), Consultórios, Fotos e Clientes. NÃO acessa Horas, Relatórios (incl. emissão de NF), Usuários, nem altera saldo de cliente (rotas com `requer_admin_total` → 403; menus/atalhos escondidos via `admin_total`). Perfil conferido a cada requisição (bloquear derruba a sessão).
+- Página principal e /consultorios: botão "Acesso administrativo" → /admin/login. "Esqueci minha senha" (/admin/esqueci-senha) reenvia o link de acesso (permanente) ao e-mail cadastrado, resposta sempre igual.
+- Removido código morto de secretária antiga (auth_service: login_secretaria etc.; blueprint inexistente). Tabela `secretarias`/secretarias_service legados permanecem sem uso no fluxo admin.

@@ -115,7 +115,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
                rota/form (admin.ajustar_saldo_cliente), só que direto na
                lista, logo embaixo do saldo, pra não precisar entrar em
                "Visualizar" toda vez. #}
-            <details class="ajuste">
+            {% if admin_total %}<details class="ajuste">
               <summary>💰 Alterar saldo</summary>
               <form class="form-ajuste" method="post" action="{{ url_for('admin.ajustar_saldo_cliente', medico_id=m.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -126,7 +126,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
                 <input type="text" name="descricao" placeholder="ex: crédito de teste">
                 <button type="submit">Confirmar ajuste</button>
               </form>
-            </details>
+            </details>{% endif %}
           </td>
           <td data-label="Ação">
             <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.visualizar_cliente', medico_id=m.id) }}">🔍 Visualizar</a>

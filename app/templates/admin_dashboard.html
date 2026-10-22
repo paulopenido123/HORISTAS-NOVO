@@ -97,9 +97,11 @@
       <a class="atalho navy" href="{{ url_for('admin.matriz') }}"><span class="ico"><svg class="ic"><use href="#i-calplus"/></svg></span>Gerar Matriz</a>
       <a class="atalho navy" href="{{ url_for('admin.consultorios') }}"><span class="ico"><svg class="ic"><use href="#i-bld"/></svg></span>Consultórios</a>
       <a class="atalho navy" href="{{ url_for('admin.clientes') }}"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span>Clientes</a>
+      {% if admin_total %}
       <a class="atalho" href="{{ url_for('admin.horas') }}"><span class="ico"><svg class="ic"><use href="#i-clock"/></svg></span>Horas</a>
       <a class="atalho" href="{{ url_for('admin.relatorios') }}"><span class="ico"><svg class="ic"><use href="#i-chart"/></svg></span>Relatórios</a>
       <a class="atalho" href="{{ url_for('admin.usuarios') }}"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span>Usuários</a>
+      {% endif %}
     </div>
   </div>
 

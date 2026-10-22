@@ -10,7 +10,9 @@
   <a href="{{ url_for('admin.matriz') }}" class="{{ 'on' if ativo == 'matriz' else '' }}">Gerar Matriz</a>
   <a href="{{ url_for('admin.consultorios') }}" class="{{ 'on' if ativo == 'consultorios' else '' }}">Consultórios</a>
   <a href="{{ url_for('admin.clientes') }}" class="{{ 'on' if ativo == 'clientes' else '' }}">Clientes</a>
+  {% if admin_total %}
   <a href="{{ url_for('admin.horas') }}" class="{{ 'on' if ativo == 'horas' else '' }}">Horas</a>
   <a href="{{ url_for('admin.relatorios') }}" class="{{ 'on' if ativo == 'relatorios' else '' }}">Relatórios</a>
   <a href="{{ url_for('admin.usuarios') }}" class="{{ 'on' if ativo == 'usuarios' else '' }}">Usuários</a>
+  {% endif %}
 </nav>

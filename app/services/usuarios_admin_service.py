@@ -56,9 +56,14 @@ def contar_ativos() -> int:
     return len([u for u in (r or []) if u.get("senha_hash")])
 
 
-def criar(nome: str, email: str, telefone: str) -> dict:
+PERFIS = {"admin": "Administrador", "secretaria": "Secretária"}
+
+
+def criar(nome: str, email: str, telefone: str, perfil: str = "admin") -> dict:
     nome = (nome or "").strip()
     email = (email or "").strip().lower()
+    if perfil not in PERFIS:
+        raise ValueError("Tipo de usuário inválido.")
     if not nome:
         raise ValueError("Informe o nome.")
     if "@" not in email:
@@ -69,6 +74,7 @@ def criar(nome: str, email: str, telefone: str) -> dict:
         raise ValueError("Já existe um usuário com esse e-mail.")
     r = get_client().table("usuarios_admin").insert({
         "nome": nome, "email": email, "telefone": _normalizar_tel(telefone), "ativo": True,
+        **({"perfil": perfil} if perfil != "admin" else {}),  # coluna `perfil`: migration_usuarios_admin_perfil.sql
     }).execute()
     return r.data[0]
 
@@ -92,6 +98,20 @@ def autenticar(identificador: str, senha: str) -> dict | None:
     return None
 
 
+def solicitar_recuperacao(email: str) -> None:
+    """"Esqueci minha senha" do acesso administrativo: reenvia o link de acesso (que não expira)
+    para o e-mail cadastrado. Nunca levanta erro nem diz se o e-mail existe."""
+    email = (email or "").strip().lower()
+    if "@" not in email:
+        return
+    for u in listar():
+        if u.get("ativo") and (u.get("email") or "").lower() == email:
+            try:
+                enviar_link(u["id"])
+            except Exception as e:
+                print(f"[usuarios_admin] recuperação falhou: {e}")
+
+
 def enviar_link(usuario_id: str) -> dict:
     u = buscar_por_id(usuario_id)
     if not u:
@@ -104,7 +124,7 @@ def enviar_link(usuario_id: str) -> dict:
     }).execute()
     from flask import url_for
     link = url_for("admin.definir_senha", token=token, _external=True)
-    enviado = email_service.notificar_acesso_admin(u["nome"], link, u["email"])
+    enviado = email_service.notificar_acesso_admin(u["nome"], link, u["email"], PERFIS.get(u.get("perfil") or "admin", ""))
     return {"enviado": enviado, "link": link, "email": u["email"]}
 
 

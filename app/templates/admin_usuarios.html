@@ -9,19 +9,22 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="muted">Nome</label><input name="nome" required>
       <label class="muted">E-mail</label><input type="email" name="email" required>
+      <label class="muted">Tipo de usuário</label>
+      <select name="perfil" style="width:100%;box-sizing:border-box;padding:11px;border:1px solid #d8e3e7;border-radius:10px;margin:6px 0 12px;font-size:15px;background:#fff"><option value="admin">Administrador (acesso total)</option><option value="secretaria">Secretária (tudo, exceto Horas, Relatórios e Usuários)</option></select>
       <label class="muted">Telefone</label><input name="telefone" inputmode="tel">
       <button>Cadastrar e enviar link de acesso</button>
     </form>
   </div>
   <div class="card">
     <table class="cartoes">
-      <thead><tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Situação</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Tipo</th><th>Situação</th><th>Ações</th></tr></thead>
       <tbody>
       {% for u in usuarios %}
         <tr>
           <td data-label="Nome"><strong>{{ u.nome }}</strong>{% if u.id == meu_id %} <span class="muted">(você)</span>{% endif %}</td>
           <td data-label="E-mail">{{ u.email }}</td>
           <td data-label="Telefone">{{ u.telefone or '—' }}</td>
+          <td data-label="Tipo">{{ 'Secretária' if u.perfil == 'secretaria' else 'Administrador' }}</td>
           <td data-label="Situação"><span class="tag {{ 'on' if u.ativo else 'off' }}">{{ 'Ativo' if u.ativo else 'Bloqueado' }}</span>{% if not u.senha_hash %} <span class="muted">· aguardando criar senha</span>{% endif %}</td>
           <td data-label="Ações"><div class="row">
             <form method="post" action="{{ url_for('admin.usuarios_link', usuario_id=u.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="neutro">Enviar link de acesso</button></form>
@@ -29,7 +32,7 @@
           </div></td>
         </tr>
       {% else %}
-        <tr><td colspan="5" class="muted">Nenhum usuário cadastrado ainda. Cadastre o primeiro — a senha antiga do admin continua valendo até o primeiro usuário criar a senha dele.</td></tr>
+        <tr><td colspan="6" class="muted">Nenhum usuário cadastrado ainda. Cadastre o primeiro — a senha antiga do admin continua valendo até o primeiro usuário criar a senha dele.</td></tr>
       {% endfor %}
       </tbody>
     </table>

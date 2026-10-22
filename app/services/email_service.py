@@ -146,12 +146,12 @@ def notificar_recuperacao_senha(nome: str, link_redefinir: str, destinatario: st
     return enviar_email([destinatario], assunto, corpo_html)
 
 
-def notificar_acesso_admin(nome: str, link_criar_senha: str, destinatario: str) -> bool:
+def notificar_acesso_admin(nome: str, link_criar_senha: str, destinatario: str, perfil: str = "") -> bool:
     assunto = "Seu acesso ao painel administrativo Lifemax"
     corpo_html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px;">
         <h2 style="color: #1a3c5e;">Acesso ao painel Lifemax</h2>
-        <p>Olá, {_esc(nome)}! Você foi cadastrado(a) como usuário do painel administrativo da Lifemax.
+        <p>Olá, {_esc(nome)}! Você foi cadastrado(a) como usuário{(" (" + _esc(perfil) + ")") if perfil else ""} do painel administrativo da Lifemax.
         Use o botão abaixo para criar sua senha. O link não expira e pode ser usado de novo se você precisar cadastrar uma nova senha.</p>
         <p><a href="{link_criar_senha}" style="background:#1a3c5e; color:white; padding:10px 18px;
            border-radius:6px; text-decoration:none; display:inline-block;">Criar minha senha</a></p>

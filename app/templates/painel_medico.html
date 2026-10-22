@@ -280,6 +280,8 @@
     .painel { overflow-x: auto; }
     .valores-rapidos { justify-content: flex-start; }
   }
+  .btn-comprar-pacote { background: var(--verde); color: #fff; border: 0; border-radius: 7px; padding: 7px 16px; font-family: var(--display); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .btn-comprar-pacote:hover { filter: brightness(0.93); }
 </style>
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#0E2A3B">
@@ -521,7 +523,7 @@ if ("serviceWorker" in navigator) {
     <h2>Venda de horas avulsas</h2>
     <table>
       <thead>
-        <tr><th>Quantidade horas</th><th>Valor hora avulsa</th><th>Total</th><th>Parcelamento</th></tr>
+        <tr><th>Quantidade horas</th><th>Valor hora avulsa</th><th>Total</th><th>Parcelamento</th><th></th></tr>
       </thead>
       <tbody>
         {% for p in pacotes_horas %}
@@ -530,6 +532,7 @@ if ("serviceWorker" in navigator) {
           <td>R$ {{ "%.2f"|format(p.valor_hora) }}</td>
           <td>R$ {{ "%.2f"|format(p.valor_total) }}</td>
           <td>{% if p.max_parcelas > 1 %}até {{ p.max_parcelas }}x no cartão{% else %}sem parcelamento{% endif %}</td>
+          <td><button type="button" class="btn-comprar-pacote" onclick="comprarPacote({{ p.horas }})">Comprar</button></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -632,7 +635,11 @@ if ("serviceWorker" in navigator) {
 
     <div class="passo-modal" id="passo-confirmacao" hidden>
       <h3>Confirme o destino</h3>
-      <p id="resumo-confirmacao" style="font-size:14px; color: var(--ink); line-height:1.6; margin-bottom:18px; text-align:left;"></p>
+      <p id="resumo-confirmacao" style="font-size:14px; color: var(--ink); line-height:1.6; margin-bottom:12px; text-align:left;"></p>
+      <div id="area-parcelas-conf" style="display:none; margin-bottom:14px; text-align:left;">
+        <label style="font-size:12px; color: var(--ink-muted); display:block; margin-bottom:4px;">Parcelas no cartão (o PIX é sempre à vista)</label>
+        <select id="select-parcelas-conf" onchange="mudarParcelasConf()" style="width:100%; padding:9px 12px; border-radius:7px; border:1px solid var(--line-strong); font-family:var(--display); font-size:13.5px;"></select>
+      </div>
       <button class="btn-gerar" onclick="gerarPix()">Confirmar e pagar com PIX</button>
       <button class="btn-gerar" style="background:transparent; color: var(--ink); border:1px solid var(--line-strong); margin-top:8px;" onclick="gerarCobrancaCartao()">Confirmar e pagar com cartão</button>
       <button class="opcao-link" type="button" onclick="voltarDaConfirmacao()">← Voltar e revisar</button>
@@ -1077,7 +1084,39 @@ function irParaConfirmacao(destino) {
   resumoEl.innerHTML = `Você está comprando <strong>${estadoCompra.pacoteHoras}h</strong> por
     <strong>R$ ${estadoCompra.valorSalas.toFixed(2)}</strong> (${parcelaTexto}).<br><br>
     Confirma que é esse o saldo que você quer adicionar?`;
+  // parcelas também podem ser escolhidas aqui (botão "Comprar" da tabela
+  // leva direto a esta tela)
+  const areaConf = document.getElementById('area-parcelas-conf');
+  const selConf = document.getElementById('select-parcelas-conf');
+  const maxP = parseInt(el.dataset.maxParcelas, 10) || 1;
+  if (areaConf && selConf && maxP > 1) {
+    selConf.innerHTML = Array.from({ length: maxP }, (_, i) => i + 1)
+      .map(n => `<option value="${n}"${n === estadoCompra.parcelas ? ' selected' : ''}>${n}x${n > 1 ? ' de R$ ' + (estadoCompra.valorSalas / n).toFixed(2) : ' (à vista)'}</option>`).join('');
+    areaConf.style.display = 'block';
+  } else if (areaConf) { areaConf.style.display = 'none'; }
   mostrarPasso('passo-confirmacao');
+}
+
+function mudarParcelasConf() {
+  const v = parseInt(document.getElementById('select-parcelas-conf').value, 10) || 1;
+  estadoCompra.parcelas = v;
+  const sel = document.getElementById('select-parcelas');
+  if (sel) sel.value = String(v);
+  document.getElementById('resumo-confirmacao').innerHTML = `Você está comprando <strong>${estadoCompra.pacoteHoras}h</strong> por
+    <strong>R$ ${estadoCompra.valorSalas.toFixed(2)}</strong> (${v > 1 ? 'em ' + v + 'x no cartão (o PIX é sempre à vista)' : 'à vista'}).<br><br>
+    Confirma que é esse o saldo que você quer adicionar?`;
+}
+
+// Botão "Comprar" da tabela "Venda de horas avulsas": abre o modal já com o
+// pacote escolhido e valor preenchido, direto na tela de forma de pagamento
+// (PIX ou cartão, com parcelas quando o pacote permite).
+function comprarPacote(horas) {
+  abrirModalCompra('horas');
+  const radio = document.querySelector('input[name="pacote-horas"][value="' + horas + '"]');
+  if (!radio) return;
+  radio.checked = true;
+  selecionarPacote();
+  irParaConfirmacao('horas');
 }
 
 function voltarDaConfirmacao() {

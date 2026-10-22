@@ -211,7 +211,7 @@ def enviar_link_cliente(medico_id):
         return redirect(url_for('admin.clientes', busca=request.form.get('busca') or ''))
 
     if resultado['enviado']:
-        flash(f'Link de acesso enviado para {email} ({medico["nome"]}) -- válido por 48h.', 'ok')
+        flash(f'Link de acesso enviado para {email} ({medico["nome"]}) -- o link não expira.', 'ok')
     else:
         # O token já foi criado e o link é válido -- só o envio automático
         # por e-mail falhou (SMTP ainda não configurado). Mostra o link pra
@@ -219,7 +219,7 @@ def enviar_link_cliente(medico_id):
         flash(
             'O envio automático de e-mail ainda não está configurado neste sistema '
             '(SMTP_HOST/SMTP_USER/SMTP_PASSWORD/EMAIL_FROM em .env -- veja .env.example, seção "Email"). '
-            f'O link já foi gerado mesmo assim (válido 48h), copie e mande na mão: {resultado["link"]}',
+            f'O link já foi gerado mesmo assim (não expira), copie e mande na mão: {resultado["link"]}',
             'erro',
         )
     return redirect(url_for('admin.clientes', busca=request.form.get('busca') or ''))

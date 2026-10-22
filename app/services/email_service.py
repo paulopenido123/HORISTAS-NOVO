@@ -159,7 +159,7 @@ def notificar_primeiro_acesso(nome: str, link_criar_senha: str, destinatario: st
                Criar minha senha de acesso
             </a>
         </p>
-        <p style="color: #888; font-size: 12px;">Esse link é válido por 48 horas e só pode ser usado uma vez.
+        <p style="color: #888; font-size: 12px;">Guarde este e-mail: o link não expira e pode ser usado de novo se você precisar cadastrar uma nova senha.
         Depois de criar a senha, você já entra direto no seu painel — use esse mesmo e-mail ou o telefone
         cadastrado na próxima vez.</p>
         <p style="color: #888; font-size: 12px; margin-top: 20px;">

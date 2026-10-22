@@ -78,7 +78,9 @@ def solicitar_recuperacao(tipo: str, identificador: str) -> None:
         email_service.notificar_recuperacao_senha(usuario.get("nome", ""), link, usuario["email"])
 
 
-_VALIDADE_HORAS_PRIMEIRO_ACESSO = 48
+# Link de primeiro acesso enviado pelo admin NÃO expira e pode ser usado quantas vezes
+# for preciso (pedido do Paulo em 22/10/2026). Data-limite simbólica bem distante.
+_EXPIRA_PRIMEIRO_ACESSO = datetime(2099, 12, 31, tzinfo=timezone.utc)
 
 
 def enviar_link_primeiro_acesso(medico_id: str, email: str) -> dict:
@@ -118,7 +120,7 @@ def enviar_link_primeiro_acesso(medico_id: str, email: str) -> dict:
         )
 
     token = secrets.token_urlsafe(32)
-    expira_em = datetime.now(timezone.utc) + timedelta(hours=_VALIDADE_HORAS_PRIMEIRO_ACESSO)
+    expira_em = _EXPIRA_PRIMEIRO_ACESSO
 
     get_client().table("tokens_recuperacao_senha").insert({
         "tipo": "medico",
@@ -198,7 +200,8 @@ def validar_token(token: str) -> dict | None:
         return None
 
     registro = resp.data[0]
-    if registro.get("usado"):
+    # link de primeiro acesso é permanente e reutilizável: nunca vira "usado"
+    if registro.get("usado") and registro.get("contexto") != "primeiro_acesso":
         return None
 
     expira_em = registro["expira_em"]
@@ -226,5 +229,6 @@ def redefinir_senha(token: str, nova_senha: str) -> bool:
         from app.services import secretarias_service as sec_db
         sec_db.definir_senha_secretaria(registro["usuario_id"], senha_hash)
 
-    get_client().table("tokens_recuperacao_senha").update({"usado": True}).eq("id", registro["id"]).execute()
+    if registro.get("contexto") != "primeiro_acesso":
+        get_client().table("tokens_recuperacao_senha").update({"usado": True}).eq("id", registro["id"]).execute()
     return True

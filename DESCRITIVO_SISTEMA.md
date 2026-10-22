@@ -434,3 +434,7 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Filtros: **Por período (de/até)** e **Mês** (escolher o mês já mostra o relatório). Sem filtro, mostra automaticamente os **últimos 120 dias**. Botão "Baixar planilha (CSV)" exporta o que está na tela.
 - Código: `relatorios_service.periodo_receitas / listar_receitas`, `routes/admin.py` (`tipo == 'receitas'`), `admin_relatorios.html`.
 - Limite: só aparecem pagamentos que o sistema registrou como pagos (webhook/consulta do Asaas); não há importação direta do extrato do Asaas.
+
+## Atualização 22/10/2026 (v57) — Link de primeiro acesso permanente
+- O link enviado pelo admin (Clientes > Enviar link de acesso) **não expira e pode ser usado quantas vezes for preciso** (`recuperacao_senha_service`: expiração em 2099, nunca marcado como usado; contexto `primeiro_acesso`). Cada envio cria um novo link e os anteriores continuam valendo. Links de "Recuperar senha" continuam de 30 min e uso único. Quem abre o link define a senha e entra direto no painel do médico — tratar o link como credencial.
+- (v58) Tela do link de primeiro acesso (`redefinir_senha.html`): aviso de contato mostra só os telefones (31) 99754-6473 e (31) 97207-8423, sem nomes.

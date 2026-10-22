@@ -114,6 +114,18 @@ def get_medico_by_telefone(telefone: str) -> dict | None:
     return data[0] if data else None
 
 
+def listar_medicos_por_email(email: str) -> list[dict]:
+    """Médicos cadastrados com esse e-mail (sem diferenciar maiúsculas/minúsculas).
+    Devolve lista porque o e-mail não é garantidamente único no cadastro; o login
+    confere a senha em cada um. O ilike pode tratar '_' e '%' como curinga, então
+    a comparação exata é refeita em Python."""
+    email = (email or "").strip().lower()
+    if not email:
+        return []
+    resp = get_client().table("medicos").select("*").ilike("email", email).execute()
+    return [m for m in (resp.data or []) if (m.get("email") or "").strip().lower() == email]
+
+
 def listar_consultorios_disponiveis(data: str, periodo: str) -> list[dict]:
     """
     Retorna consultórios livres em uma data/período.

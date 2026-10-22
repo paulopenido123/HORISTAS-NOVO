@@ -420,3 +420,7 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - (v50) Grade de turnos, **só no celular**: dentro de cada consultório, ao lado do número da sala, aparece o mês em exibição com seta ← à esquerda e → à direita; as setas acionam os mesmos botões do alto da página (trocam a semana de todos os consultórios).
 - (v51) Meus dados: botão "← Voltar" (ao lado de Salvar) leva ao painel e salva os dados antes de sair.
 - (v52) /admin (admin_dashboard.html) no novo padrão visual: topo com logo, cartão de números, atalhos (Gerar Matriz, Consultórios, Clientes, Horas, Relatórios), reservas recentes em cartões, aviso de clientes pendentes. Demais telas do admin ainda no visual antigo.
+
+## Atualização 22/10/2026 (v53) — Login
+- Tela `/login` no novo padrão. Campo único **"E-mail ou telefone"** + senha (`identificador`; se tiver "@" busca por e-mail sem diferenciar maiúsculas — `supabase_client.listar_medicos_por_email`; senão por telefone). E-mail repetido em mais de um cadastro: entra o cadastro cuja senha confere.
+- **Entrar com Google** (`/login/google` e `/login/google/retorno`, em `routes/auth.py`): só libera quem já tem cadastro com aquele e-mail (verificado pelo Google) e único; não cria conta. O botão só aparece se as variáveis `GOOGLE_LOGIN_CLIENT_ID` e `GOOGLE_LOGIN_CLIENT_SECRET` (ou `GOOGLE_CLIENT_ID/SECRET`) estiverem definidas no Render. Opcional: `GOOGLE_LOGIN_REDIRECT_URI`. URI autorizada no Google: `https://horistas-novo.onrender.com/login/google/retorno`.

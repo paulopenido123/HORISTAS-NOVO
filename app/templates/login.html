@@ -8,41 +8,31 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --line: #DCE6E8; --muted: #55707C; }
+  :root { --teal:#0EA5A0; --teal-dark:#0C8B87; --navy:#0B3A57; --line:#DCE6EA; --muted:#55707C; }
   * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(160deg, var(--navy), var(--navy-soft));
-    padding: 20px;
-  }
-  .card { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 380px; }
-  h1 { margin: 0 0 4px; font-size: 20px; color: var(--navy); }
-  .login-logo { height: 28px; width: auto; display: block; margin: 0 0 4px; }
-  p.sub { margin: 0 0 24px; font-size: 13px; color: var(--muted); }
-  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
-  input {
-    width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--line);
-    font-family: inherit; font-size: 14px; margin-bottom: 16px;
-  }
-  input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
-  button {
-    width: 100%; background: var(--navy); color: white; border: none; padding: 12px;
-    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
-  }
-  button:hover { opacity: 0.92; }
-  .erro { background: #fbeae6; color: #D65C3F; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
-  .rodape { text-align: center; margin-top: 18px; font-size: 13px; }
-  .rodape a { color: var(--teal); text-decoration: none; font-weight: 600; }
-
-  h1, h2, h3, .brand, header h1 { font-family: 'Manrope', sans-serif; }
-
-  @media (max-width: 480px) {
-    body { padding: 16px; }
-    .card { max-width: 100%; padding: 24px 20px; border-radius: 14px; }
-    h1 { font-size: 18px; }
-  }
-  label.lembrar { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--navy); margin: 4px 0 14px; cursor: pointer; }
-  label.lembrar input { width: auto; margin: 0; }
+  body { margin:0; min-height:100vh; font-family:'Inter',-apple-system,sans-serif; background:#F5F8F9; color:#10222E; }
+  h1, h2 { font-family:'Manrope',sans-serif; margin:0; }
+  .hero { background:linear-gradient(160deg,#0A3650 0%,#0B4A5F 55%,#0C5867 100%); color:#fff; border-radius:0 0 34px 34px; padding:30px 18px 96px; text-align:center; }
+  .login-logo { height:60px; width:auto; display:inline-block; background:#fff; border-radius:18px; padding:11px 16px; box-shadow:0 4px 14px rgba(0,0,0,.18); }
+  .hero .eyebrow { margin-top:18px; font-size:12.5px; font-weight:700; letter-spacing:.05em; color:#34D2CC; text-transform:uppercase; }
+  .hero h1 { font-weight:800; font-size:clamp(28px,7vw,38px); line-height:1.1; margin-top:2px; }
+  .hero p { margin:8px auto 0; font-size:14.5px; color:rgba(234,242,245,.9); max-width:360px; line-height:1.45; }
+  .card { position:relative; background:#fff; border-radius:22px; box-shadow:0 8px 26px rgba(11,58,87,.14); padding:24px 20px; width:calc(100% - 24px); max-width:440px; margin:-64px auto 0; }
+  label { display:block; font-family:'Manrope',sans-serif; font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:.02em; margin:0 0 6px; color:#6B8493; }
+  input[type=text], input[type=password] { width:100%; height:52px; padding:0 14px; border-radius:14px; border:1px solid var(--line); background:#F7FAFB; font-family:inherit; font-size:16px; margin-bottom:16px; }
+  input:focus { outline:2px solid var(--teal); outline-offset:1px; background:#fff; }
+  button { width:100%; height:54px; background:var(--teal); color:#fff; border:none; border-radius:14px; font-family:'Manrope',sans-serif; font-size:17px; font-weight:800; cursor:pointer; }
+  button:hover { background:var(--teal-dark); }
+  .erro { background:#FDECEA; color:#C62A1B; padding:12px 14px; border-radius:14px; font-size:14px; font-weight:600; margin-bottom:16px; line-height:1.4; }
+  .rodape { text-align:center; margin-top:16px; font-size:14px; color:var(--muted); }
+  .rodape a { color:var(--teal); text-decoration:none; font-weight:800; }
+  label.lembrar { display:flex; align-items:center; gap:10px; font-family:'Inter',sans-serif; text-transform:none; letter-spacing:0; font-size:14.5px; font-weight:600; color:var(--navy); margin:2px 0 16px; cursor:pointer; }
+  label.lembrar input { width:20px; height:20px; margin:0; accent-color:var(--teal); }
+  .ou { display:flex; align-items:center; gap:12px; margin:18px 0 14px; color:#8AA0A9; font-size:13px; }
+  .ou::before, .ou::after { content:''; flex:1; height:1px; background:var(--line); }
+  .btn-google { display:flex; align-items:center; justify-content:center; gap:12px; height:54px; border-radius:14px; border:1.5px solid #DCE6EA; background:#fff; color:#10222E; font-family:'Manrope',sans-serif; font-weight:800; font-size:16px; text-decoration:none; }
+  .btn-google:hover { background:#F7FAFB; }
+  .links { max-width:440px; margin:0 auto; padding:6px 12px 30px; }
 </style>
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#0E2A3B">
@@ -59,10 +49,14 @@ if ("serviceWorker" in navigator) {
 </script>
 <link rel="stylesheet" href="/static/css/base-mobile.css"></head>
 <body>
-  <div class="card">
-    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Lifemax" class="login-logo">
-    <p class="sub">Entre com seu telefone e senha</p>
+  <header class="hero">
+    <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="login-logo">
+    <div class="eyebrow">Área do cliente</div>
+    <h1>Entrar</h1>
+    <p>Use seu e-mail ou telefone cadastrado e a sua senha.</p>
+  </header>
 
+  <div class="card">
     {% with mensagens = get_flashed_messages(with_categories=true) %}
       {% for categoria, texto in mensagens %}
         <div class="erro">{{ texto }}</div>
@@ -71,9 +65,9 @@ if ("serviceWorker" in navigator) {
     {% if erro %}<div class="erro">{{ erro }}</div>{% endif %}
 
     <form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label for="telefone">Telefone (com DDD)</label>
-      <input type="text" id="telefone" name="telefone" placeholder="31999999999" required autofocus autocomplete="username" inputmode="tel">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="identificador">E-mail ou telefone</label>
+      <input type="text" id="identificador" name="identificador" placeholder="seu@email.com ou 31999999999" required autofocus autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false">
 
       <label for="senha">Senha</label>
       <input type="password" id="senha" name="senha" required autocomplete="current-password">
@@ -83,38 +77,44 @@ if ("serviceWorker" in navigator) {
       <button type="submit">Entrar</button>
     </form>
     <script>
-    // "Lembrar dados no próximo acesso": só neste aparelho. O telefone fica
+    // "Lembrar dados no próximo acesso": só neste aparelho. O e-mail/telefone fica
     // guardado no próprio navegador (localStorage) e a SENHA fica no gerenciador
     // de senhas do navegador/celular (cofre protegido do próprio aparelho) -- o
     // sistema nunca grava a senha. O servidor também mantém o aparelho conectado
     // por até 30 dias (cookie assinado, invisível ao JavaScript).
     (function () {
-      var form = document.querySelector('form'), tel = document.getElementById('telefone'),
+      var form = document.querySelector('form'), ident = document.getElementById('identificador'),
           senha = document.getElementById('senha'), chk = document.getElementById('lembrar');
       try {
         if (localStorage.getItem('lifemax_lembrar') === '1') {
           chk.checked = true;
-          var t = localStorage.getItem('lifemax_telefone'); if (t) { tel.value = t; senha.focus(); }
+          var t = localStorage.getItem('lifemax_identificador') || localStorage.getItem('lifemax_telefone');
+          if (t) { ident.value = t; senha.focus(); }
         }
       } catch (e) {}
       form.addEventListener('submit', function () {
         try {
-          if (chk.checked) { localStorage.setItem('lifemax_lembrar', '1'); localStorage.setItem('lifemax_telefone', tel.value); }
-          else { localStorage.removeItem('lifemax_lembrar'); localStorage.removeItem('lifemax_telefone'); }
+          if (chk.checked) { localStorage.setItem('lifemax_lembrar', '1'); localStorage.setItem('lifemax_identificador', ident.value); }
+          else { localStorage.removeItem('lifemax_lembrar'); localStorage.removeItem('lifemax_identificador'); localStorage.removeItem('lifemax_telefone'); }
         } catch (e) {}
         if (chk.checked && window.PasswordCredential && navigator.credentials) {
-          try { navigator.credentials.store(new PasswordCredential({ id: tel.value, password: senha.value, name: 'Lifemax' })); } catch (e) {}
+          try { navigator.credentials.store(new PasswordCredential({ id: ident.value, password: senha.value, name: 'Lifemax' })); } catch (e) {}
         }
       });
     })();
     </script>
+    {% if google_ativo %}
+    <div class="ou"><span>ou</span></div>
+    <a class="btn-google" href="{{ url_for('auth.login_google', next=request.args.get('next')) }}">
+      <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+      Entrar com Google
+    </a>
+    {% endif %}
+  </div>
 
-    <div class="rodape">
-      Primeiro acesso? <a href="{{ url_for('auth.primeiro_acesso') }}">Criar senha</a>
-    </div>
-    <div class="rodape">
-      <a href="{{ url_for('auth.esqueci_senha') }}">Esqueci minha senha</a>
-    </div>
+  <div class="links">
+    <div class="rodape">Primeiro acesso? <a href="{{ url_for('auth.primeiro_acesso') }}">Criar senha</a></div>
+    <div class="rodape"><a href="{{ url_for('auth.esqueci_senha') }}">Esqueci minha senha</a></div>
   </div>
 </body>
 </html>

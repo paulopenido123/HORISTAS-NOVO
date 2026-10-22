@@ -1,1 +1,123 @@
-<!doctype html><html lang="pt-BR"><head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin — Lifemax</title><style>body{margin:0;font-family:Inter,Arial;background:#F5F8FA;color:#102A43}.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between}.nav{padding:14px 28px;background:#fff;border-bottom:1px solid #e3ebef}.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}.wrap{max-width:1180px;margin:auto;padding:30px 24px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:22px}.num{font-size:30px;font-weight:800}.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{display:inline-block;padding:11px 15px;border-radius:8px;background:#0EA5A0;color:#fff;text-decoration:none;font-weight:700;font-size:13px}.btn.alt{background:#082A3D}table{width:100%;border-collapse:collapse;margin-top:25px;background:#fff}th,td{padding:11px;border-bottom:1px solid #e3ebef;text-align:left;font-size:13px}th{color:#62788A}.aviso-pendente{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;background:#FBEAE6;color:#B33;border:1px solid #F3C7BE;border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:13.5px;font-weight:600}.aviso-pendente a{color:#B33;font-weight:800;text-decoration:underline;white-space:nowrap}</style><link rel="stylesheet" href="/static/css/base-mobile.css"></head><body><div class="top"><strong>LIFEMAX ADMIN</strong><span>Administrador</span></div><div class="nav"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a><a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a><a href="{{ url_for('admin.consultorios') }}">Consultórios</a><a href="{{ url_for('admin.clientes') }}">Clientes</a><a href="{{ url_for('admin.horas') }}">Horas</a><a href="{{ url_for('admin.relatorios') }}">Relatórios</a><a href="{{ url_for('admin.admin_logout') }}">Sair</a></div><div class="wrap">{% if medicos_pendentes %}<div class="aviso-pendente"><span>⚠ {{ medicos_pendentes|length }} cliente{{ 's' if medicos_pendentes|length != 1 else '' }} aguardando liberação de acesso: {{ medicos_pendentes[:4]|map(attribute='nome')|join(', ') }}{% if medicos_pendentes|length > 4 %} e mais {{ medicos_pendentes|length - 4 }}{% endif %}.</span><a href="{{ url_for('admin.clientes') }}">Liberar agora →</a></div>{% endif %}<div class="cards"><div class="card"><div class="num">{{ consultorios|length }}</div><div>Consultórios</div></div><div class="card"><div class="num">{{ medicos|length }}</div><div>Profissionais ativos</div></div><div class="card"><div class="num">{{ reservas|length }}</div><div>Reservas recentes</div></div></div><div class="card" style="margin-top:18px"><h2>Operação</h2><div class="actions"><a class="btn" href="{{ url_for('admin.matriz') }}">Gerar / editar matriz</a><a class="btn alt" href="{{ url_for('admin.consultorios') }}">Configurar consultórios</a></div></div><div class="card" style="margin-top:18px"><h2>Reservas recentes</h2><table><tr><th>Data</th><th>Consultório</th><th>Médico</th><th>Status</th></tr>{% for r in reservas %}<tr><td>{{ r.data[8:10] }}/{{ r.data[5:7] }}/{{ r.data[0:4] }}</td><td>{{ (r.consultorios.nome if r.consultorios else '') }}</td><td>{{ (r.medicos.nome if r.medicos else '') }}</td><td>{{ r.status }}</td></tr>{% else %}<tr><td colspan="4">Nenhuma reserva.</td></tr>{% endfor %}</table></div></div></body></html>
+<!doctype html><html lang="pt-BR"><head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --teal:#0EA5A0; --teal-dark:#0C8B87; --navy-card:#0B3A57; --mint:#D8F1EF; --line:#E1EAEE; --ink:#10222E; --muted:#55707C; --display:'Manrope',sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Inter',-apple-system,Arial,sans-serif; background:#F5F8F9; color:var(--ink); }
+  h1,h2,h3 { font-family:var(--display); margin:0; }
+  .ic { width:1.1em; height:1.1em; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; vertical-align:-0.15em; }
+  .hero { background:linear-gradient(160deg,#0A3650 0%,#0B4A5F 55%,#0C5867 100%); color:#fff; border-radius:0 0 34px 34px; padding-bottom:70px; }
+  .hero-topo { display:grid; grid-template-columns:auto 1fr auto; align-items:start; gap:14px; max-width:1040px; margin:0 auto; padding:22px 18px 0; }
+  .brand-logo { height:54px; width:auto; display:block; background:#fff; border-radius:16px; padding:10px 14px; box-shadow:0 4px 14px rgba(0,0,0,.18); }
+  .hero-titulo .eyebrow { font-size:12.5px; font-weight:700; letter-spacing:.05em; color:#34D2CC; text-transform:uppercase; margin-bottom:2px; }
+  .hero-titulo h1 { font-weight:800; font-size:clamp(26px,6.4vw,40px); line-height:1.08; color:#fff; }
+  .hero-titulo p { margin:8px 0 0; font-size:clamp(13.5px,3.4vw,16px); line-height:1.45; color:rgba(234,242,245,.9); max-width:520px; }
+  .sair { display:flex; flex-direction:column; align-items:center; gap:5px; color:#fff; text-decoration:none; font-weight:800; font-size:13px; }
+  .sair .circ { width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:24px; }
+  .wrap { max-width:1004px; margin:-52px auto 0; padding:0 12px 40px; position:relative; }
+  .caixa { background:#fff; border-radius:22px; box-shadow:0 8px 26px rgba(11,58,87,.12); padding:14px; margin-bottom:14px; }
+  .aviso-pendente { display:flex; justify-content:space-between; align-items:center; gap:10px 14px; flex-wrap:wrap; background:#FDECEA; color:#B3261E; border-radius:18px; padding:14px 16px; margin-bottom:14px; font-size:14px; font-weight:700; line-height:1.4; box-shadow:0 4px 16px rgba(11,58,87,.08); }
+  .aviso-pendente a { display:inline-flex; align-items:center; justify-content:center; height:42px; padding:0 18px; border-radius:12px; background:#D42E1B; color:#fff; text-decoration:none; font-weight:800; white-space:nowrap; }
+  .stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+  .stat { display:flex; align-items:center; gap:10px; padding:4px; }
+  .stat .ico { width:46px; height:46px; border-radius:50%; background:var(--mint); color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+  .stat .num { font-family:var(--display); font-weight:800; font-size:32px; line-height:1; }
+  .stat .rot { font-size:13px; color:var(--muted); margin-top:3px; line-height:1.2; }
+  .secao { display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:19px; font-weight:800; font-family:var(--display); }
+  .secao .ic { font-size:24px; color:var(--teal); }
+  .atalhos { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+  .atalho { display:flex; align-items:center; gap:10px; min-height:72px; padding:12px; border-radius:18px; text-decoration:none; font-family:var(--display); font-weight:800; font-size:15.5px; line-height:1.2; background:#EAF4F3; color:#0B3A57; }
+  .atalho .ico { width:42px; height:42px; border-radius:13px; background:#fff; color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:23px; flex-shrink:0; }
+  .atalho.navy { background:var(--navy-card); color:#fff; }
+  .atalho.navy .ico { background:rgba(255,255,255,.14); color:#fff; }
+  .atalho:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  @media (min-width:641px) { .atalho:last-child:nth-child(odd) { grid-column: auto; } }
+  .atalho:hover { filter:brightness(.97); }
+  .res-lista { display:flex; flex-direction:column; gap:10px; }
+  .res { display:grid; grid-template-columns:auto 1px 1fr auto; align-items:center; gap:12px; padding:12px 14px; border-radius:16px; border:1px solid #CFE9DC; background:#EEF8F2; }
+  .res.cancelada { background:#FDEDEC; border-color:#F5C9C4; }
+  .res .dt { text-align:center; line-height:1.1; min-width:46px; }
+  .res .dt b { display:block; font-family:var(--display); font-size:28px; font-weight:800; color:var(--teal); }
+  .res.cancelada .dt b { color:#D42E1B; }
+  .res .dt span { display:block; font-size:12px; color:var(--muted); }
+  .res .sep { align-self:stretch; background:rgba(11,58,87,.14); }
+  .res .cons { font-family:var(--display); font-weight:800; font-size:17px; }
+  .res .med { font-size:13.5px; color:var(--muted); margin-top:2px; }
+  .pill { display:inline-flex; align-items:center; padding:5px 12px; border-radius:99px; font-size:13px; font-weight:800; background:#D6F0E1; color:#1D7F4B; white-space:nowrap; }
+  .pill.no { background:#FAD6D2; color:#C62A1B; }
+  .vazio { color:#8AA0A9; padding:14px 4px; font-size:14px; }
+  @media (max-width:640px) {
+    .hero-topo { padding:18px 14px 0; gap:10px; } .brand-logo { height:46px; padding:8px 10px; }
+    .stats { grid-template-columns:1fr; gap:6px; }
+    .stat { border-bottom:1px solid var(--line); padding:6px 4px; } .stat:last-child { border-bottom:0; }
+    .atalhos { grid-template-columns:1fr 1fr; }
+    .res { grid-template-columns:auto 1px 1fr; } .res .st { grid-column:1 / -1; }
+    .res .dt b { font-size:25px; }
+  }
+</style>
+<link rel="stylesheet" href="/static/css/base-mobile.css"></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M16 8l4 4-4 4M20 12H9"/></symbol>
+<symbol id="i-bld" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.5 0 4.5 1.5 4.5 4.5"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+<symbol id="i-calplus" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M12 13v5M9.5 15.5h5"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></symbol>
+</defs></svg>
+
+<header class="hero">
+  <div class="hero-topo">
+    <div><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
+    <div class="hero-titulo">
+      <div class="eyebrow">Administrador</div>
+      <h1>Painel Lifemax</h1>
+      <p>Acompanhe consultórios, clientes, horas e reservas.</p>
+    </div>
+    <a class="sair" href="{{ url_for('admin.admin_logout') }}"><span class="circ"><svg class="ic"><use href="#i-logout"/></svg></span>Sair</a>
+  </div>
+</header>
+
+<div class="wrap">
+  {% if medicos_pendentes %}<div class="aviso-pendente"><span>⚠ {{ medicos_pendentes|length }} cliente{{ 's' if medicos_pendentes|length != 1 else '' }} aguardando liberação de acesso: {{ medicos_pendentes[:4]|map(attribute='nome')|join(', ') }}{% if medicos_pendentes|length > 4 %} e mais {{ medicos_pendentes|length - 4 }}{% endif %}.</span><a href="{{ url_for('admin.clientes') }}">Liberar agora →</a></div>{% endif %}
+
+  <div class="caixa">
+    <div class="stats">
+      <div class="stat"><span class="ico"><svg class="ic"><use href="#i-bld"/></svg></span><div><div class="num">{{ consultorios|length }}</div><div class="rot">Consultórios</div></div></div>
+      <div class="stat"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span><div><div class="num">{{ medicos|length }}</div><div class="rot">Profissionais ativos</div></div></div>
+      <div class="stat"><span class="ico"><svg class="ic"><use href="#i-cal"/></svg></span><div><div class="num">{{ reservas|length }}</div><div class="rot">Reservas recentes</div></div></div>
+    </div>
+  </div>
+
+  <div class="caixa">
+    <div class="secao"><svg class="ic"><use href="#i-check"/></svg> Operação</div>
+    <div class="atalhos">
+      <a class="atalho navy" href="{{ url_for('admin.matriz') }}"><span class="ico"><svg class="ic"><use href="#i-calplus"/></svg></span>Gerar Matriz</a>
+      <a class="atalho navy" href="{{ url_for('admin.consultorios') }}"><span class="ico"><svg class="ic"><use href="#i-bld"/></svg></span>Consultórios</a>
+      <a class="atalho navy" href="{{ url_for('admin.clientes') }}"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span>Clientes</a>
+      <a class="atalho" href="{{ url_for('admin.horas') }}"><span class="ico"><svg class="ic"><use href="#i-clock"/></svg></span>Horas</a>
+      <a class="atalho" href="{{ url_for('admin.relatorios') }}"><span class="ico"><svg class="ic"><use href="#i-chart"/></svg></span>Relatórios</a>
+    </div>
+  </div>
+
+  <div class="caixa">
+    <div class="secao"><svg class="ic"><use href="#i-cal"/></svg> Reservas recentes</div>
+    <div class="res-lista">
+      {% set meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] %}
+      {% for r in reservas %}
+      {% set cancelada = (r.status or '') == 'cancelada' %}
+      <article class="res {{ 'cancelada' if cancelada else '' }}">
+        <div class="dt"><b>{{ r.data[8:10] }}</b><span>{{ meses[r.data[5:7]|int - 1] }}</span><span>{{ r.data[0:4] }}</span></div>
+        <div class="sep"></div>
+        <div><div class="cons">{{ (r.consultorios.nome if r.consultorios else '—') }}</div><div class="med">{{ (r.medicos.nome if r.medicos else '—') }}</div></div>
+        <div class="st"><span class="pill {{ 'no' if cancelada else '' }}">{{ (r.status or '—')|capitalize }}</span></div>
+      </article>
+      {% else %}
+      <div class="vazio">Nenhuma reserva.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+</body></html>

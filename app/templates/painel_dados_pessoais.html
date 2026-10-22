@@ -51,7 +51,8 @@
   textarea { resize: vertical; min-height: 70px; }
   .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:0 14px; }
   @media (max-width:600px){ .grid-2 { grid-template-columns:1fr; } }
-  .barra-acoes { display:flex; gap:10px; justify-content:flex-end; margin-bottom:20px; }
+  .barra-acoes { display:flex; gap:10px; justify-content:space-between; margin-bottom:20px; }
+  .btn-voltar { display:inline-flex; align-items:center; text-decoration:none; background:#E8EEF2 !important; color:#1F3A4D !important; }
   .btn { background: var(--cyan); color:#fff; border:none; padding:11px 20px; border-radius:7px;
          font-family: var(--display); font-weight:700; font-size:13.5px; cursor:pointer; }
   .btn:disabled { background: var(--line-strong); color: var(--ink-faint); cursor: not-allowed; }
@@ -97,6 +98,7 @@
      consultórios.</strong></div>
 
   <div class="barra-acoes">
+    <a class="btn btn-voltar" id="link-voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar</a>
     <button type="button" class="btn" id="btn-salvar">💾 Salvar</button>
   </div>
   <div id="status-msg"></div>
@@ -361,7 +363,7 @@ function _autoSalvarAntesDeSair(link) {
   });
 }
 // qualquer saída da página (Sair e menu inferior) salva antes
-document.querySelectorAll('#link-sair, .nav-inf a').forEach(_autoSalvarAntesDeSair);
+document.querySelectorAll('#link-sair, #link-voltar, .nav-inf a').forEach(_autoSalvarAntesDeSair);
 </script>
 
 </body>

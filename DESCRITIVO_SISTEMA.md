@@ -418,3 +418,5 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - **Painel:** removida a busca da agenda (`#ag-busca`); cartão LifeDoctor agora usa o logo oficial (`static/images/lifedoctor-logo.png`, fundo transparente).
 - **Meus dados e Pacientes:** novo padrão visual compartilhado — `static/css/padrao-medico.css`, `templates/_topo_medico.html` (topo com logo e Sair) e `templates/_nav_medico.html` (menu inferior). Em Meus dados, sair/menu continuam salvando antes de navegar.
 - (v50) Grade de turnos, **só no celular**: dentro de cada consultório, ao lado do número da sala, aparece o mês em exibição com seta ← à esquerda e → à direita; as setas acionam os mesmos botões do alto da página (trocam a semana de todos os consultórios).
+- (v51) Meus dados: botão "← Voltar" (ao lado de Salvar) leva ao painel e salva os dados antes de sair.
+- (v52) /admin (admin_dashboard.html) no novo padrão visual: topo com logo, cartão de números, atalhos (Gerar Matriz, Consultórios, Clientes, Horas, Relatórios), reservas recentes em cartões, aviso de clientes pendentes. Demais telas do admin ainda no visual antigo.

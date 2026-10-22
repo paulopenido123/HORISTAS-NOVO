@@ -1,0 +1,46 @@
+/* Padrão visual do admin (22/10/2026) -- mesmo estilo do painel do médico no celular.
+   Carregado POR ÚLTIMO em cada página do admin, por isso sobrepõe o CSS antigo. */
+:root { --teal:#0EA5A0; --teal-dark:#0C8B87; --navy:#0B3A57; --mint:#D8F1EF; --line:#E1EAEE; --display:'Manrope',sans-serif; }
+body { background:#F5F8F9 !important; font-family:'Inter',-apple-system,Arial,sans-serif; color:#10222E; }
+h1,h2,h3 { font-family:var(--display); }
+.ic { width:1.1em; height:1.1em; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; vertical-align:-0.15em; }
+.hero { background:linear-gradient(160deg,#0A3650 0%,#0B4A5F 55%,#0C5867 100%); color:#fff; border-radius:0 0 34px 34px; padding-bottom:70px; }
+.hero-topo { display:grid; grid-template-columns:auto 1fr auto; align-items:start; gap:14px; max-width:1180px; margin:0 auto; padding:22px 18px 0; }
+.brand-logo { height:54px; width:auto; display:block; background:#fff; border-radius:16px; padding:10px 14px; box-shadow:0 4px 14px rgba(0,0,0,.18); }
+.hero-titulo .eyebrow { font-size:12.5px; font-weight:700; letter-spacing:.05em; color:#34D2CC; text-transform:uppercase; margin-bottom:2px; }
+.hero-titulo h1 { margin:0; font-weight:800; font-size:clamp(24px,6.2vw,36px); line-height:1.1; color:#fff; }
+.hero-titulo p { margin:8px 0 0; font-size:clamp(13px,3.3vw,15.5px); line-height:1.45; color:rgba(234,242,245,.9); }
+.hero .sair { display:flex; flex-direction:column; align-items:center; gap:5px; color:#fff; text-decoration:none; font-weight:800; font-size:13px; }
+.hero .sair .circ { width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:24px; }
+.menu-admin { display:flex; gap:8px; overflow-x:auto; max-width:1180px; margin:-50px auto 12px; padding:2px 12px 4px; position:relative; }
+.menu-admin a { flex-shrink:0; padding:10px 16px; border-radius:14px; background:#fff; color:var(--navy); text-decoration:none; font-family:var(--display); font-weight:800; font-size:14px; box-shadow:0 2px 8px rgba(11,58,87,.12); }
+.menu-admin a.on { background:var(--navy); color:#fff; }
+.wrap, .container { max-width:1180px !important; margin:0 auto !important; padding:0 12px 50px !important; }
+.card, .painel, .bloco { background:#fff !important; border:0 !important; border-radius:22px !important; box-shadow:0 6px 22px rgba(11,58,87,.10); }
+.card { padding:16px; }
+input[type=text], input[type=email], input[type=password], input[type=number], input[type=date], input[type=month], input[type=search], input[type=tel], select, textarea { border-radius:12px !important; border:1px solid #DCE6EA !important; background:#F7FAFB !important; font-size:15px !important; font-family:inherit; }
+input[type=text], input[type=email], input[type=password], input[type=number], input[type=date], input[type=month], input[type=search], input[type=tel], select { min-height:46px; }
+.btn, button.btn, a.btn, button[type=submit] { border-radius:12px !important; font-family:var(--display); font-weight:800 !important; }
+.btn:not(.alt):not(.sec) { background:var(--teal); color:#fff; }
+.flash { border-radius:14px !important; font-weight:700; }
+table { width:100%; }
+th { font-family:var(--display); }
+@media (min-width:761px) { table tr td, table tr th { border-bottom:1px solid #DCEBE8; } }
+/* ---- tabelas viram cartões no celular (marque a tabela com class="cartoes" + data-label nos td) ---- */
+@media (max-width:760px) {
+  .hero-topo { padding:18px 14px 0; gap:10px; } .brand-logo { height:46px; padding:8px 10px; }
+  table.cartoes, table.cartoes thead, table.cartoes tbody, table.cartoes tr, table.cartoes td { display:block; width:100%; }
+  table.cartoes thead { display:none; }
+  table.cartoes tr { margin-bottom:12px; border:1px solid #DCEBE8; border-left:6px solid var(--teal); border-radius:16px; background:#F5FAF9; overflow:hidden; }
+  table.cartoes td { display:flex; flex-wrap:wrap; justify-content:flex-start; align-items:center; gap:6px 10px; min-width:0; border:0 !important; border-bottom:1px solid rgba(11,58,87,.10) !important; padding:10px 14px; text-align:left; background:transparent !important; }
+  table.cartoes td form { margin:0; max-width:100%; } table.cartoes td .btn, table.cartoes td button, table.cartoes td a { max-width:100%; }
+  table.cartoes td:last-child { border-bottom:0 !important; }
+  table.cartoes td[data-label]::before { content:attr(data-label); font-family:var(--display); font-size:11.5px; font-weight:800; color:#6B8493; text-transform:uppercase; letter-spacing:.02em; text-align:left; flex:0 0 100%; }
+  .wrap-tabela { overflow:visible !important; }
+}
+
+/* grades de duas colunas do admin empilham no celular */
+@media (max-width:760px) {
+  .grid { grid-template-columns:1fr !important; }
+  .item.inativo { margin-left:0 !important; }
+}

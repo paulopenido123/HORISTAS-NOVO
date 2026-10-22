@@ -50,6 +50,7 @@
   .btn-emitir-nf{height:40px;padding:0 16px;border:0;border-radius:12px;background:var(--teal);color:#fff;font-family:var(--display);font-weight:800;font-size:14px;cursor:pointer}
   .aviso-nfe{background:#FFF6E5;color:#8a6100;border-radius:14px;padding:12px 16px;font-size:13.5px;margin-bottom:14px;line-height:1.45}
   .link-nf{color:var(--navy);font-weight:800}
+  .visoes{display:flex;gap:8px;margin-bottom:14px}.visoes a{flex:1;text-align:center;padding:12px;border-radius:14px;border:1.5px solid #CFE3E1;background:#fff;color:var(--navy);text-decoration:none;font-family:var(--display);font-weight:800;font-size:15px}.visoes a.on{background:#111;border-color:#111;color:#fff}
   .rec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
   .rec-card{background:#F5FAF9;border:1px solid #DCEBE8;border-radius:16px;padding:12px 14px}
   .rec-card .n{font-family:var(--display);font-size:20px;font-weight:800}.rec-card .r{font-size:12px;color:var(--muted)}
@@ -106,27 +107,42 @@
     {% if tipo == 'receitas' %}
     <form class="filtro" method="get">
       <input type="hidden" name="tipo" value="receitas">
+      <input type="hidden" name="visao" value="{{ visao_receitas }}">
       <div><label>Por período — de</label><input type="date" name="data_inicio" value="{{ filtros.data_inicio if not mes_receitas else '' }}"></div>
       <div><label>até</label><input type="date" name="data_fim" value="{{ filtros.data_fim if not mes_receitas else '' }}"></div>
       <button type="submit">Ver período</button>
       <div style="margin-left:14px"><label>Mês</label><input type="month" name="mes" value="{{ mes_receitas }}" onchange="this.form.submit()"></div>
-      <a class="btn-limpar" href="{{ url_for('admin.relatorios', tipo='receitas') }}">Últimos 120 dias</a>
-      <a class="btn-escuro" href="{{ url_for('admin.relatorios', tipo='receitas', data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, medico_id=filtros.medico_id, cliente=filtros.cliente, formato='csv') }}">⬇ Baixar planilha (CSV)</a>
+      <a class="btn-limpar" href="{{ url_for('admin.relatorios', tipo='receitas', visao=visao_receitas) }}">Últimos 120 dias</a>
+      <a class="btn-escuro" href="{{ url_for('admin.relatorios', tipo='receitas', data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, medico_id=filtros.medico_id, cliente=filtros.cliente, visao=visao_receitas, mes=mes_receitas, formato='csv') }}">⬇ Baixar planilha (CSV)</a>
     </form>
+    <div class="visoes">
+      <a class="{{ 'on' if visao_receitas == 'pagamentos' else '' }}" href="{{ url_for('admin.relatorios', tipo='receitas', visao='pagamentos', data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, mes=mes_receitas) }}">Pagamentos</a>
+      <a class="{{ 'on' if visao_receitas == 'profissionais' else '' }}" href="{{ url_for('admin.relatorios', tipo='receitas', visao='profissionais', data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, mes=mes_receitas) }}">Profissionais</a>
+    </div>
     <div class="rec-grid">
       <div class="rec-card"><div class="r">Período</div><div class="n" style="font-size:15px">{{ filtros.data_inicio[8:10] }}/{{ filtros.data_inicio[5:7] }}/{{ filtros.data_inicio[:4] }} a {{ filtros.data_fim[8:10] }}/{{ filtros.data_fim[5:7] }}/{{ filtros.data_fim[:4] }}</div></div>
       <div class="rec-card"><div class="r">Total recebido</div><div class="rec-total">R$ {{ '%.2f'|format(total_valor or 0)|replace('.', ',') }}</div></div>
       <div class="rec-card"><div class="r">Pagamentos</div><div class="n">{{ linhas|length }}</div></div>
+      {% if visao_receitas == 'profissionais' %}<div class="rec-card"><div class="r">Profissionais</div><div class="n">{{ ranking|length }}</div></div>{% endif %}
     </div>
     <div class="wrap-tabela">
-    {% if linhas %}
+    {% if linhas and visao_receitas == 'profissionais' %}
       <table>
-        <thead><tr><th>Data</th><th>Hora</th><th>Cliente</th><th>Forma</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead>
+        <thead><tr><th>Profissional</th><th>Compras feitas</th><th style="text-align:right">Total</th></tr></thead>
+        <tbody>
+        {% for d in ranking %}
+          <tr><td data-label="Profissional"><strong>{{ loop.index }}º · {{ d.nome }}</strong></td><td data-label="Compras feitas">{{ d.compras }}</td><td data-label="Total" style="text-align:right"><strong>R$ {{ '%.2f'|format(d.total)|replace('.', ',') }}</strong></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% elif linhas %}
+      <table>
+        <thead><tr><th>Data</th><th>Hora</th><th>Profissional</th><th>Forma</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead>
         <tbody>
         {% for d in resumo_dias %}
           <tr class="rec-dia"><td colspan="5">{{ d.data[8:10] }}/{{ d.data[5:7] }}/{{ d.data[:4] }} · {{ d.qtd }} pagamento(s)</td><td style="text-align:right">R$ {{ '%.2f'|format(d.total)|replace('.', ',') }}</td></tr>
           {% for l in linhas if l.data == d.data %}
-          <tr><td data-label="Data">{{ l.data[8:10] }}/{{ l.data[5:7] }}</td><td data-label="Hora">{{ l.hora }}</td><td data-label="Cliente">{{ l.cliente }}</td><td data-label="Forma">{{ l.forma }}</td><td data-label="Descrição">{{ l.descricao }}</td><td data-label="Valor" style="text-align:right">R$ {{ '%.2f'|format(l.valor)|replace('.', ',') }}</td></tr>
+          <tr><td data-label="Data">{{ l.data[8:10] }}/{{ l.data[5:7] }}</td><td data-label="Hora">{{ l.hora }}</td><td data-label="Profissional"><strong>{{ l.cliente }}</strong></td><td data-label="Forma">{{ l.forma }}</td><td data-label="Descrição">{{ l.descricao }}</td><td data-label="Valor" style="text-align:right">R$ {{ '%.2f'|format(l.valor)|replace('.', ',') }}</td></tr>
           {% endfor %}
         {% endfor %}
         </tbody>

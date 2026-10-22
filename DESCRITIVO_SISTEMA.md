@@ -441,3 +441,7 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 
 ## Atualização 22/10/2026 (v59) — Relatórios no novo padrão
 - `admin_relatorios.html` (Agendamentos, Transações, Não faturadas, Faturadas e Receitas) com o visual do painel: topo com logo, menu em botões, filtros em cartão, abas coloridas. No **celular** cada linha da tabela vira um **cartão** com rótulo/valor, borda colorida (verde = ok/agendamento/NF emitida, vermelho = cancelamento/NF não emitida, verde-água = demais) e linhas separando os campos; no PC continua em tabela com linhas separadas por cor. Sem rolagem lateral.
+
+## v60
+- Relatórios > Receitas: coluna "Profissional" em cada pagamento; novo botão "Profissionais" (ranking por total: nome, compras feitas, total) com os mesmos filtros de período e mês; CSV para as duas visões.
+- Padrão visual do celular aplicado a todas as páginas do admin: parcial `_admin_topo.html` (cabeçalho + menu) e `static/css/admin-padrao.css` (tabelas viram cartões com `class="cartoes"` + `data-label`; grades empilham no celular). Páginas: login, clientes, cliente (ver/editar/novo), consultórios, fotos, horas, matriz e agenda da matriz.

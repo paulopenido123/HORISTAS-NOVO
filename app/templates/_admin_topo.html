@@ -1,0 +1,15 @@
+{# Topo padrão do admin (22/10/2026): faixa azul com logo + menu em botões. Variáveis: titulo, subtitulo, ativo ('dashboard'|'matriz'|'consultorios'|'clientes'|'horas'|'relatorios') #}
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M16 8l4 4-4 4M20 12H9"/></symbol></defs></svg>
+<header class="hero"><div class="hero-topo">
+  <div><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
+  <div class="hero-titulo"><div class="eyebrow">Administrador</div><h1>{{ titulo }}</h1>{% if subtitulo %}<p>{{ subtitulo }}</p>{% endif %}</div>
+  <a class="sair" href="{{ url_for('admin.admin_logout') }}"><span class="circ"><svg class="ic"><use href="#i-logout"/></svg></span>Sair</a>
+</div></header>
+<nav class="menu-admin">
+  <a href="{{ url_for('admin.dashboard') }}" class="{{ 'on' if ativo == 'dashboard' else '' }}">Dashboard</a>
+  <a href="{{ url_for('admin.matriz') }}" class="{{ 'on' if ativo == 'matriz' else '' }}">Gerar Matriz</a>
+  <a href="{{ url_for('admin.consultorios') }}" class="{{ 'on' if ativo == 'consultorios' else '' }}">Consultórios</a>
+  <a href="{{ url_for('admin.clientes') }}" class="{{ 'on' if ativo == 'clientes' else '' }}">Clientes</a>
+  <a href="{{ url_for('admin.horas') }}" class="{{ 'on' if ativo == 'horas' else '' }}">Horas</a>
+  <a href="{{ url_for('admin.relatorios') }}" class="{{ 'on' if ativo == 'relatorios' else '' }}">Relatórios</a>
+</nav>

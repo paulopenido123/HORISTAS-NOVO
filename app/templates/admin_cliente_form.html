@@ -1,9 +1,5 @@
 <!doctype html><html lang="pt-BR"><head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ 'Novo cliente' if modo == 'novo' else 'Editar cliente' }} — Lifemax Admin</title><style>
 body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
-.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between}
-.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}
-.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}
-.nav a.active{color:#0EA5A0}
 .wrap{max-width:760px;margin:auto;padding:28px 24px}
 .card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:24px}
 .voltar{display:inline-block;margin-bottom:14px;color:#62788A;text-decoration:none;font-size:13px;font-weight:600}
@@ -24,16 +20,8 @@ button{padding:12px 22px;border:0;border-radius:8px;background:#0EA5A0;color:#ff
 .flash.erro{background:#FBEAE6;color:#B33}
 .dica{font-size:12px;color:#8AA0A9;margin-top:4px}
 @media(max-width:640px){.linha.duas,.linha.tres{grid-template-columns:1fr}}
-</style><link rel="stylesheet" href="/static/css/base-mobile.css"></head><body>
-<div class="top"><strong>LIFEMAX ADMIN · CLIENTES</strong><span>Administrador</span></div>
-<div class="nav">
-  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
-  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
-  <a href="{{ url_for('admin.clientes') }}" class="active">Clientes</a>
-  <a href="{{ url_for('admin.horas') }}">Horas</a>
-  <a href="{{ url_for('admin.relatorios') }}">Relatórios</a><a href="{{ url_for('admin.admin_logout') }}">Sair</a>
-</div>
+</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head><body>
+{% with titulo='Cliente', ativo='clientes' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
   {% if modo == 'editar' %}
   <a class="voltar" href="{{ url_for('admin.visualizar_cliente', medico_id=medico.id) }}">← Voltar pra Visualizar</a>

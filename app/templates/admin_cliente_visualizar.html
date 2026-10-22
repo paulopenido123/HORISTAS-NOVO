@@ -1,9 +1,5 @@
 <!doctype html><html lang="pt-BR"><head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ medico.nome }} — Lifemax Admin</title><style>
 body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
-.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between}
-.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}
-.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}
-.nav a.active{color:#0EA5A0}
 .wrap{max-width:900px;margin:auto;padding:28px 24px}
 .card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:24px;margin-bottom:20px}
 .voltar{display:inline-block;margin-bottom:14px;color:#62788A;text-decoration:none;font-size:13px;font-weight:600}
@@ -44,16 +40,8 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
 .vazio-lista{color:#8AA0A9;font-size:13px;padding:16px 0;text-align:center}
 .wrap-tabela{overflow-x:auto}
 @media(max-width:640px){.grid-dados{grid-template-columns:1fr}}
-</style><link rel="stylesheet" href="/static/css/base-mobile.css"></head><body>
-<div class="top"><strong>LIFEMAX ADMIN · CLIENTES</strong><span>Administrador</span></div>
-<div class="nav">
-  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
-  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
-  <a href="{{ url_for('admin.clientes') }}" class="active">Clientes</a>
-  <a href="{{ url_for('admin.horas') }}">Horas</a>
-  <a href="{{ url_for('admin.relatorios') }}">Relatórios</a><a href="{{ url_for('admin.admin_logout') }}">Sair</a>
-</div>
+</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head><body>
+{% with titulo='Cliente', ativo='clientes' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
   <a class="voltar" href="{{ url_for('admin.clientes') }}">← Voltar pra Clientes</a>
 
@@ -128,19 +116,19 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
     <div class="secao" style="margin-top:0; padding-top:0; border-top:0;">Histórico de transações</div>
     {% if transacoes %}
     <div class="wrap-tabela">
-      <table>
+      <table class="cartoes">
         <thead><tr><th>Data</th><th>Carteira</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Saldo após</th></tr></thead>
         <tbody>
           {% for t in transacoes %}
           <tr>
-            <td>{{ t.criado_em[8:10] }}/{{ t.criado_em[5:7] }}/{{ t.criado_em[0:4] }}</td>
-            <td>Salas/Horas</td>
-            <td>{{ {'compra': 'Recarga', 'consumo': 'Uso', 'ajuste': 'Ajuste'}.get(t.tipo, t.tipo) }}</td>
-            <td>{{ t.descricao or '—' }}</td>
-            <td class="{{ 'valor-positivo' if t.horas_exibicao > 0 else 'valor-negativo' }}">
+            <td data-label="Data">{{ t.criado_em[8:10] }}/{{ t.criado_em[5:7] }}/{{ t.criado_em[0:4] }}</td>
+            <td data-label="Carteira">Salas/Horas</td>
+            <td data-label="Tipo">{{ {'compra': 'Recarga', 'consumo': 'Uso', 'ajuste': 'Ajuste'}.get(t.tipo, t.tipo) }}</td>
+            <td data-label="Descrição">{{ t.descricao or '—' }}</td>
+            <td data-label="Valor" class="{{ 'valor-positivo' if t.horas_exibicao > 0 else 'valor-negativo' }}">
               {% if t.horas_exibicao == t.horas_exibicao|int %}{{ t.horas_exibicao|int }}h{% else %}{{ '%.1f'|format(t.horas_exibicao) }}h{% endif %}
             </td>
-            <td>{{ t.saldo_apos_horas }}h</td>
+            <td data-label="Saldo após">{{ t.saldo_apos_horas }}h</td>
           </tr>
           {% endfor %}
         </tbody>

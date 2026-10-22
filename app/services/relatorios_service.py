@@ -269,7 +269,7 @@ def listar_receitas(data_inicio: str, data_fim: str, medico_id: str | None = Non
         parcelas = p.get("parcelas") or 1
         forma = {"pix": "Pix", "cartao": "Cartão"}.get(p.get("forma_pagamento"), p.get("forma_pagamento") or "—")
         linhas.append({
-            "data": dia, "hora": _hora_local(momento), "cliente": medico_nome, "forma": forma,
+            "data": dia, "hora": _hora_local(momento), "cliente": medico_nome, "medico_id": p.get("medico_id"), "forma": forma,
             "descricao": (f"Pacote de {horas}h" if horas else "Recarga de horas")
                          + (f" · {parcelas}x" if forma == "Cartão" and parcelas > 1 else ""),
             "valor": float(p.get("valor") or 0),
@@ -284,3 +284,15 @@ def listar_receitas(data_inicio: str, data_fim: str, medico_id: str | None = Non
         d["total"] = round(d["total"] + l["valor"], 2)
     resumo = sorted(por_dia.values(), key=lambda d: d["data"], reverse=True)
     return linhas, resumo, round(sum(l["valor"] for l in linhas), 2)
+
+
+def ranking_profissionais(linhas: list[dict]) -> list[dict]:
+    """Profissionais que compraram no período, do maior para o menor valor
+    (desempate: mais compras, depois nome). Recebe as linhas de listar_receitas."""
+    por: dict[str, dict] = {}
+    for l in linhas:
+        chave = l.get("medico_id") or l["cliente"]
+        d = por.setdefault(chave, {"nome": l["cliente"], "compras": 0, "total": 0.0})
+        d["compras"] += 1
+        d["total"] = round(d["total"] + l["valor"], 2)
+    return sorted(por.values(), key=lambda d: (-d["total"], -d["compras"], d["nome"].lower()))

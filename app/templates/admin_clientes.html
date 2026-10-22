@@ -4,10 +4,6 @@
    relação ao original (ex: body 14px->15.5px, tabela 13px->14.5px,
    nav/th/muted também cresceram). */
 body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43;font-size:15.5px}
-.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between;font-size:15px}
-.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}
-.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:15.5px}
-.nav a.active{color:#0EA5A0}
 .wrap{max-width:1180px;margin:auto;padding:28px 24px}
 .card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px}
 input,select{padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:14.5px}
@@ -54,14 +50,8 @@ details.ajuste summary::-webkit-details-marker{display:none}
 .lista-selecao input{width:auto}
 .modal-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 .modal-status{font-size:13px;margin-top:10px}
-</style><link rel="stylesheet" href="/static/css/base-mobile.css"></head><body>
-<div class="top"><strong>LIFEMAX ADMIN · CLIENTES</strong><span>Administrador</span></div>
-<div class="nav">
-  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
-  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
-  <a href="{{ url_for('admin.clientes') }}" class="active">Clientes</a><a href="{{ url_for('admin.horas') }}">Horas</a><a href="{{ url_for('admin.relatorios') }}">Relatórios</a><a href="{{ url_for('admin.admin_logout') }}">Sair</a>
-</div>
+</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head><body>
+{% with titulo='Clientes', ativo='clientes' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
   {% with mensagens = get_flashed_messages(with_categories=true) %}
     {% for categoria, texto in mensagens %}
@@ -84,7 +74,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
       {% if busca %}<a class="btn alt" href="{{ url_for('admin.clientes') }}">Limpar</a>{% endif %}
     </form>
 
-    <table>
+    <table class="cartoes">
       <thead>
         <tr>
           <th>Nome</th>
@@ -97,9 +87,9 @@ details.ajuste summary::-webkit-details-marker{display:none}
       <tbody>
         {% for m in medicos %}
         <tr>
-          <td><strong class="{{ 'nome-bloqueado' if not m.autorizado else '' }}">{{ m.nome }}</strong>{% if not m.ativo %}<br><span class="muted">(inativo)</span>{% endif %}</td>
-          <td class="muted">{{ m.telefone or '—' }}{% if m.email %}<br>{{ m.email }}{% if m.email_confirmado %} <span title="E-mail confirmado pelo médico">⭐</span>{% endif %}{% endif %}</td>
-          <td>
+          <td data-label="Nome"><strong class="{{ 'nome-bloqueado' if not m.autorizado else '' }}">{{ m.nome }}</strong>{% if not m.ativo %}<br><span class="muted">(inativo)</span>{% endif %}</td>
+          <td data-label="Contato" class="muted">{{ m.telefone or '—' }}{% if m.email %}<br>{{ m.email }}{% if m.email_confirmado %} <span title="E-mail confirmado pelo médico">⭐</span>{% endif %}{% endif %}</td>
+          <td data-label="Acesso">
             {% if m.autorizado %}
             <span class="status-tag liberado">Autorizado</span>
             {% else %}
@@ -117,7 +107,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
               {% endif %}
             </form>
           </td>
-          <td>
+          <td data-label="Saldo Salas/Horas">
             <div class="saldo-horas-num">{{ m.saldo_horas }}h</div>
             {# Cópia do botão "Alterar saldo" -- pedido do Paulo em
                23/09/2026 (item 1): a tela "Visualizar" já tinha esse
@@ -138,7 +128,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
               </form>
             </details>
           </td>
-          <td>
+          <td data-label="Ação">
             <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.visualizar_cliente', medico_id=m.id) }}">🔍 Visualizar</a>
             <details class="ajuste">
               <summary>Enviar link de acesso</summary>
@@ -154,7 +144,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">Nenhum cliente encontrado.</td></tr>
+        <tr><td data-label="Nome" colspan="5" class="muted">Nenhum cliente encontrado.</td></tr>
         {% endfor %}
       </tbody>
     </table>

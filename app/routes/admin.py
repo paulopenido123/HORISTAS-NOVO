@@ -555,6 +555,8 @@ def relatorios():
     total_horas = None
     total_valor = None
     resumo_dias = []
+    ranking = []
+    visao_receitas = 'pagamentos'
     mes_receitas = request.args.get('mes', '').strip()
     if tipo == 'receitas':
         # "Receitas" (22/10/2026): tudo que entrou de dinheiro, por data de pagamento.
@@ -563,15 +565,22 @@ def relatorios():
         filtros['data_inicio'], filtros['data_fim'] = ini, fim
         linhas, resumo_dias, total_valor = relatorios_service.listar_receitas(
             ini, fim, medico_id=filtros['medico_id'] or None, cliente_busca=filtros['cliente'])
+        visao_receitas = 'profissionais' if request.args.get('visao') == 'profissionais' else 'pagamentos'
+        ranking = relatorios_service.ranking_profissionais(linhas) if visao_receitas == 'profissionais' else []
         if request.args.get('formato') == 'csv':
             import csv, io
             buf = io.StringIO()
             w = csv.writer(buf, delimiter=';')
-            w.writerow(['Data', 'Hora', 'Cliente', 'Forma', 'Descrição', 'Valor (R$)'])
-            for l in linhas:
-                w.writerow([f"{l['data'][8:10]}/{l['data'][5:7]}/{l['data'][:4]}", l['hora'], l['cliente'], l['forma'],
-                            l['descricao'], f"{l['valor']:.2f}".replace('.', ',')])
-            w.writerow([]); w.writerow(['', '', '', '', 'TOTAL', f"{total_valor:.2f}".replace('.', ',')])
+            if visao_receitas == 'profissionais':
+                w.writerow(['Profissional', 'Compras', 'Total (R$)'])
+                for d in ranking:
+                    w.writerow([d['nome'], d['compras'], f"{d['total']:.2f}".replace('.', ',')])
+            else:
+                w.writerow(['Data', 'Hora', 'Profissional', 'Forma', 'Descrição', 'Valor (R$)'])
+                for l in linhas:
+                    w.writerow([f"{l['data'][8:10]}/{l['data'][5:7]}/{l['data'][:4]}", l['hora'], l['cliente'], l['forma'],
+                                l['descricao'], f"{l['valor']:.2f}".replace('.', ',')])
+            w.writerow([]); w.writerow(['TOTAL', len(linhas), f"{total_valor:.2f}".replace('.', ',')])
             from flask import Response
             return Response('\ufeff' + buf.getvalue(), mimetype='text/csv; charset=utf-8',
                             headers={'Content-Disposition': f'attachment; filename=receitas_{ini}_a_{fim}.csv'})
@@ -599,7 +608,7 @@ def relatorios():
     return render_template(
         'admin_relatorios.html', tipo=tipo, consultorios=consultorios, medicos=medicos,
         linhas=linhas, total_horas=total_horas, total_valor=total_valor, filtros=filtros,
-        resumo_dias=resumo_dias, mes_receitas=mes_receitas,
+        resumo_dias=resumo_dias, mes_receitas=mes_receitas, ranking=ranking, visao_receitas=visao_receitas,
         operacoes=relatorios_service.OPERACOES_AGENDAMENTOS,
         nfe_configurado=nfe_service.configurado(),
     )

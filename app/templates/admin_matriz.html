@@ -13,10 +13,6 @@
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: Inter, Arial, sans-serif; background: #F5F8F9; color: #10222E; }
-  .top { background: var(--navy); color: #fff; padding: 18px 28px; display:flex; justify-content:space-between; align-items:center; }
-  .nav { padding: 14px 28px; background: #fff; border-bottom: 1px solid #e3ebef; }
-  .nav a { margin-right: 18px; color: #0B3A52; text-decoration: none; font-weight: 600; font-size: 14px; }
-  .nav a.ativo { color: var(--teal); border-bottom: 2px solid var(--teal); padding-bottom: 4px; }
   .container { max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
 
   h1 { font-size: 19px; margin: 0 0 4px; }
@@ -111,22 +107,13 @@
   .modal-caixa.larga { max-width: 640px; }
 
   @media (max-width: 760px) {
-    .top, .nav { padding: 14px 16px; }
     .container { padding: 14px 12px 50px; }
     .grade-meses { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
-<link rel="stylesheet" href="/static/css/base-mobile.css"></head>
+<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head>
 <body>
-<div class="top"><strong>LIFEMAX ADMIN · MATRIZ DE AGENDAMENTO</strong></div>
-<div class="nav">
-  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-  <a href="{{ url_for('admin.matriz') }}" class="ativo">Gerar Matriz</a>
-  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
-  <a href="{{ url_for('admin.clientes') }}">Clientes</a>
-  <a href="{{ url_for('admin.horas') }}">Horas</a>
-  <a href="{{ url_for('admin.relatorios') }}">Relatórios</a><a href="{{ url_for('admin.admin_logout') }}">Sair</a>
-</div>
+{% with titulo='Matriz de agendamento', ativo='matriz' %}{% include '_admin_topo.html' %}{% endwith %}
 
 <div class="container">
   <div class="cabecalho-titulo">

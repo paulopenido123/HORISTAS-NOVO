@@ -438,3 +438,6 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 ## Atualização 22/10/2026 (v57) — Link de primeiro acesso permanente
 - O link enviado pelo admin (Clientes > Enviar link de acesso) **não expira e pode ser usado quantas vezes for preciso** (`recuperacao_senha_service`: expiração em 2099, nunca marcado como usado; contexto `primeiro_acesso`). Cada envio cria um novo link e os anteriores continuam valendo. Links de "Recuperar senha" continuam de 30 min e uso único. Quem abre o link define a senha e entra direto no painel do médico — tratar o link como credencial.
 - (v58) Tela do link de primeiro acesso (`redefinir_senha.html`): aviso de contato mostra só os telefones (31) 99754-6473 e (31) 97207-8423, sem nomes.
+
+## Atualização 22/10/2026 (v59) — Relatórios no novo padrão
+- `admin_relatorios.html` (Agendamentos, Transações, Não faturadas, Faturadas e Receitas) com o visual do painel: topo com logo, menu em botões, filtros em cartão, abas coloridas. No **celular** cada linha da tabela vira um **cartão** com rótulo/valor, borda colorida (verde = ok/agendamento/NF emitida, vermelho = cancelamento/NF não emitida, verde-água = demais) e linhas separando os campos; no PC continua em tabela com linhas separadas por cor. Sem rolagem lateral.

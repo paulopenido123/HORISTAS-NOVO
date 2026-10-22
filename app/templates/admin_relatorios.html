@@ -1,62 +1,93 @@
 <!doctype html><html lang="pt-BR"><head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatórios — Lifemax Admin</title><style>
-body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
-.top{background:#082A3D;color:#fff;padding:18px 28px;display:flex;justify-content:space-between}
-.nav{background:#fff;padding:14px 28px;border-bottom:1px solid #e3ebef}
-.nav a{margin-right:18px;color:#0B3A52;text-decoration:none;font-weight:600;font-size:14px}
-.nav a.active{color:#0EA5A0}
-.wrap{max-width:1280px;margin:auto;padding:28px 24px}
-.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px}
-.subtabs{display:flex;gap:10px;margin-bottom:18px}
-.subtabs a{padding:9px 16px;border-radius:8px;background:#EAF4F3;color:#0B3A52;text-decoration:none;font-weight:700;font-size:13.5px}
-.subtabs a.active{background:#0EA5A0;color:#fff}
-.subtabs a.aba-preta{background:#111;color:#fff}
-.subtabs a.aba-preta.active{background:#000;box-shadow:0 0 0 3px #0EA5A0}
-.subtabs{flex-wrap:wrap}
-.rec-dia td{background:#F0F7F7;font-weight:800;color:#0B3A52}
-.rec-total{font-size:22px;font-weight:800;color:#0B7B45}
-.rec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
-.rec-card{background:#F5F8FA;border-radius:12px;padding:12px 14px}
-.rec-card .n{font-size:20px;font-weight:800}
-.rec-card .r{font-size:12px;color:#62788A}
-.btn-escuro{padding:9px 16px;border:0;border-radius:8px;background:#111;color:#fff;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
-.filtro{display:flex;align-items:flex-end;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-.filtro label{display:block;font-size:11.5px;font-weight:700;color:#62788A;margin-bottom:6px;text-transform:uppercase;letter-spacing:.02em}
-.filtro input,.filtro select{padding:9px 10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px;min-width:140px}
-.filtro button,.filtro a.btn-limpar{padding:9px 16px;border:0;border-radius:8px;background:#0EA5A0;color:#fff;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
-.filtro a.btn-limpar{background:#fff;color:#62788A;border:1px solid #d8e3e7}
-.resumo{font-size:13px;color:#62788A;margin-bottom:14px;font-weight:600}
-.resumo strong{color:#102A43}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;color:#62788A;font-weight:700;padding:9px 8px;border-bottom:2px solid #e3ebef;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
-td{padding:9px 8px;border-bottom:1px solid #e3ebef;vertical-align:top}
-tr:hover td{background:#F8FBFB}
-.tag-op{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-.tag-op.agendamento{background:#E3F7EE;color:#0B7B45}
-.tag-op.cancelamento{background:#FBEAE6;color:#B33}
-.tag-tipo{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#EAF4F3;color:#0B3A52}
-.vazio{color:#8AA0A9;font-size:13px;padding:20px 0;text-align:center}
-.wrap-tabela{overflow-x:auto}
-.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}
-.flash.ok{background:#E3F7EE;color:#0B7B45}
-.flash.erro{background:#FBEAE6;color:#B33}
-.tag-nf{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-.tag-nf.nao_emitida{background:#FBEAE6;color:#B33}
-.tag-nf.emitida,.tag-nf.enviada{background:#E3F7EE;color:#0B7B45}
-.btn-emitir-nf{padding:6px 12px;border:0;border-radius:7px;background:#0EA5A0;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer}
-.aviso-nfe{background:#FFF6E5;color:#8a6100;border:1px solid #f3dca3;border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:16px}
-.link-nf{color:#0B3A52;font-weight:700}
-@media(max-width:760px){.filtro{gap:8px}.filtro input,.filtro select{min-width:120px}}
-</style><link rel="stylesheet" href="/static/css/base-mobile.css"></head><body>
-<div class="top"><strong>LIFEMAX ADMIN · RELATÓRIOS</strong><span>Administrador</span></div>
-<div class="nav">
-  <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-  <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
-  <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
-  <a href="{{ url_for('admin.clientes') }}">Clientes</a>
-  <a href="{{ url_for('admin.horas') }}">Horas</a>
-  <a href="{{ url_for('admin.relatorios') }}" class="active">Relatórios</a><a href="{{ url_for('admin.admin_logout') }}">Sair</a>
-</div>
+  :root{--teal:#0EA5A0;--teal-dark:#0C8B87;--navy:#0B3A57;--mint:#D8F1EF;--line:#E1EAEE;--ink:#10222E;--muted:#55707C;--display:'Manrope',sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:#F5F8F9;font-family:'Inter',-apple-system,Arial,sans-serif;color:var(--ink)}
+  .ic{width:1.1em;height:1.1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;vertical-align:-0.15em}
+  .hero{background:linear-gradient(160deg,#0A3650 0%,#0B4A5F 55%,#0C5867 100%);color:#fff;border-radius:0 0 34px 34px;padding-bottom:64px}
+  .hero-topo{display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:14px;max-width:1180px;margin:0 auto;padding:22px 18px 0}
+  .brand-logo{height:54px;width:auto;display:block;background:#fff;border-radius:16px;padding:10px 14px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+  .hero-titulo .eyebrow{font-size:12.5px;font-weight:700;letter-spacing:.05em;color:#34D2CC;text-transform:uppercase;margin-bottom:2px}
+  .hero-titulo h1{margin:0;font-family:var(--display);font-weight:800;font-size:clamp(26px,6.4vw,38px);line-height:1.08}
+  .hero-titulo p{margin:8px 0 0;font-size:clamp(13px,3.3vw,15.5px);line-height:1.45;color:rgba(234,242,245,.9)}
+  .sair{display:flex;flex-direction:column;align-items:center;gap:5px;color:#fff;text-decoration:none;font-weight:800;font-size:13px}
+  .sair .circ{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:24px}
+  .wrap{max-width:1180px;margin:-40px auto 0;padding:0 12px 50px;position:relative}
+  .menu{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding:2px 0 4px}
+  .menu a{flex-shrink:0;padding:10px 16px;border-radius:14px;background:#fff;color:var(--navy);text-decoration:none;font-family:var(--display);font-weight:800;font-size:14px;box-shadow:0 2px 8px rgba(11,58,87,.10)}
+  .menu a.active{background:var(--navy);color:#fff}
+  .card{background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(11,58,87,.12);padding:16px;margin-bottom:14px}
+  .subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .subtabs a{padding:11px 16px;border-radius:14px;background:#fff;border:1.5px solid #CFE3E1;color:var(--navy);text-decoration:none;font-family:var(--display);font-weight:800;font-size:14px}
+  .subtabs a.active{background:var(--teal);border-color:var(--teal);color:#fff}
+  .subtabs a.aba-preta{background:#111;border-color:#111;color:#fff}
+  .subtabs a.aba-preta.active{background:#000;box-shadow:0 0 0 3px var(--teal)}
+  .filtro{display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .filtro label{display:block;font-family:var(--display);font-size:11.5px;font-weight:700;color:#6B8493;margin-bottom:6px;text-transform:uppercase;letter-spacing:.02em}
+  .filtro input,.filtro select{height:46px;padding:0 12px;border:1px solid #DCE6EA;background:#F7FAFB;border-radius:12px;font-size:15px;font-family:inherit;min-width:150px;max-width:100%}
+  .filtro button,.filtro a.btn-limpar,.btn-escuro{height:46px;padding:0 18px;border:0;border-radius:12px;background:var(--teal);color:#fff;font-family:var(--display);font-weight:800;font-size:14.5px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+  .filtro a.btn-limpar{background:#fff;color:#3C5667;border:1.5px solid #CFE3E1}
+  .btn-escuro{background:#111;color:#fff}
+  .resumo{font-size:14px;color:var(--muted);margin-bottom:14px;font-weight:600;background:#EAF4F3;border-radius:14px;padding:12px 14px;line-height:1.45}
+  .resumo strong{color:var(--ink)}
+  table{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:14px}
+  th{text-align:left;color:#6B8493;font-weight:700;padding:6px 12px;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;font-family:var(--display)}
+  td{padding:12px;background:#F5FAF9;vertical-align:middle;border-top:1px solid #DCEBE8;border-bottom:1px solid #DCEBE8}
+  td:first-child{border-left:5px solid var(--teal);border-radius:14px 0 0 14px}
+  td:last-child{border-right:1px solid #DCEBE8;border-radius:0 14px 14px 0}
+  tr.t-ok td{background:#EEF8F2}tr.t-ok td:first-child{border-left-color:#1DA56A}
+  tr.t-no td{background:#FDEDEC}tr.t-no td:first-child{border-left-color:#D42E1B}
+  tr:hover td{filter:brightness(.98)}
+  .rec-dia td{background:var(--navy);color:#fff;font-family:var(--display);font-weight:800;border:0;border-radius:0}
+  .rec-dia td:first-child{border-radius:14px 0 0 14px;border-left:0}.rec-dia td:last-child{border-radius:0 14px 14px 0}
+  .tag-op,.tag-tipo,.tag-nf{display:inline-block;font-size:12.5px;font-weight:800;padding:4px 12px;border-radius:99px;white-space:nowrap}
+  .tag-op.agendamento,.tag-nf.emitida,.tag-nf.enviada{background:#D6F0E1;color:#1D7F4B}
+  .tag-op.cancelamento,.tag-nf.nao_emitida{background:#FAD6D2;color:#C62A1B}
+  .tag-tipo{background:var(--mint);color:#0B6E6A}
+  .vazio{color:#8AA0A9;font-size:14px;padding:20px 0;text-align:center}
+  .wrap-tabela{overflow-x:auto}
+  .flash{padding:12px 16px;border-radius:14px;margin-bottom:14px;font-size:14px;font-weight:700}
+  .flash.ok{background:#D6F0E1;color:#1D7F4B}.flash.erro{background:#FDECEA;color:#C62A1B}
+  .btn-emitir-nf{height:40px;padding:0 16px;border:0;border-radius:12px;background:var(--teal);color:#fff;font-family:var(--display);font-weight:800;font-size:14px;cursor:pointer}
+  .aviso-nfe{background:#FFF6E5;color:#8a6100;border-radius:14px;padding:12px 16px;font-size:13.5px;margin-bottom:14px;line-height:1.45}
+  .link-nf{color:var(--navy);font-weight:800}
+  .rec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .rec-card{background:#F5FAF9;border:1px solid #DCEBE8;border-radius:16px;padding:12px 14px}
+  .rec-card .n{font-family:var(--display);font-size:20px;font-weight:800}.rec-card .r{font-size:12px;color:var(--muted)}
+  .rec-total{font-family:var(--display);font-size:24px;font-weight:800;color:#1D7F4B}
+  @media(max-width:760px){
+    .hero-topo{padding:18px 14px 0;gap:10px}.brand-logo{height:46px;padding:8px 10px}
+    .filtro{gap:10px}.filtro>div{flex:1 1 140px}.filtro input,.filtro select{width:100%;min-width:0}
+    .filtro button,.filtro a.btn-limpar,.btn-escuro{flex:1 1 140px}
+    .wrap-tabela{overflow:visible}
+    table,thead,tbody,tr,td{display:block;width:100%}
+    thead{display:none}
+    table{border-spacing:0}
+    tr{margin-bottom:12px;border:1px solid #DCEBE8;border-left:6px solid var(--teal);border-radius:16px;background:#F5FAF9;overflow:hidden}
+    tr.t-ok{border-left-color:#1DA56A;background:#EEF8F2}tr.t-no{border-left-color:#D42E1B;background:#FDEDEC}
+    td,td:first-child,td:last-child{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;border-bottom:1px solid rgba(11,58,87,.10);border-radius:0;background:transparent !important;padding:10px 14px;text-align:right}
+    tr td:last-child{border-bottom:0}
+    td[data-label]::before{content:attr(data-label);font-family:var(--display);font-size:11.5px;font-weight:800;color:#6B8493;text-transform:uppercase;letter-spacing:.02em;text-align:left;flex-shrink:0}
+    tr.rec-dia{background:var(--navy);border:0;border-radius:14px;margin:14px 0 8px}
+    .rec-dia td{display:flex;border:0;padding:12px 14px;color:#fff}
+  }
+</style>
+<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M16 8l4 4-4 4M20 12H9"/></symbol></defs></svg>
+<header class="hero"><div class="hero-topo">
+  <div><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
+  <div class="hero-titulo"><div class="eyebrow">Administrador</div><h1>Relatórios</h1><p>Agendamentos, transações, faturamento e receitas.</p></div>
+  <a class="sair" href="{{ url_for('admin.admin_logout') }}"><span class="circ"><svg class="ic"><use href="#i-logout"/></svg></span>Sair</a>
+</div></header>
 <div class="wrap">
+  <nav class="menu">
+    <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
+    <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
+    <a href="{{ url_for('admin.clientes') }}">Clientes</a>
+    <a href="{{ url_for('admin.horas') }}">Horas</a>
+    <a href="{{ url_for('admin.relatorios') }}" class="active">Relatórios</a>
+  </nav>
+
   {% with mensagens = get_flashed_messages(with_categories=true) %}
     {% for categoria, texto in mensagens %}
       <div class="flash {{ categoria }}">{{ texto }}</div>
@@ -95,7 +126,7 @@ tr:hover td{background:#F8FBFB}
         {% for d in resumo_dias %}
           <tr class="rec-dia"><td colspan="5">{{ d.data[8:10] }}/{{ d.data[5:7] }}/{{ d.data[:4] }} · {{ d.qtd }} pagamento(s)</td><td style="text-align:right">R$ {{ '%.2f'|format(d.total)|replace('.', ',') }}</td></tr>
           {% for l in linhas if l.data == d.data %}
-          <tr><td>{{ l.data[8:10] }}/{{ l.data[5:7] }}</td><td>{{ l.hora }}</td><td>{{ l.cliente }}</td><td>{{ l.forma }}</td><td>{{ l.descricao }}</td><td style="text-align:right">R$ {{ '%.2f'|format(l.valor)|replace('.', ',') }}</td></tr>
+          <tr><td data-label="Data">{{ l.data[8:10] }}/{{ l.data[5:7] }}</td><td data-label="Hora">{{ l.hora }}</td><td data-label="Cliente">{{ l.cliente }}</td><td data-label="Forma">{{ l.forma }}</td><td data-label="Descrição">{{ l.descricao }}</td><td data-label="Valor" style="text-align:right">R$ {{ '%.2f'|format(l.valor)|replace('.', ',') }}</td></tr>
           {% endfor %}
         {% endfor %}
         </tbody>
@@ -185,13 +216,13 @@ tr:hover td{background:#F8FBFB}
         <thead><tr><th>Ocorrência</th><th>Operador (user)</th><th>Cliente</th><th>Operação</th><th>Cons.</th><th>Descrição</th></tr></thead>
         <tbody>
           {% for l in linhas %}
-          <tr>
-            <td>{{ l.ocorrencia[8:10] }}/{{ {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'}.get(l.ocorrencia[5:7], l.ocorrencia[5:7]) }}/{{ l.ocorrencia[2:4] }} {{ l.ocorrencia[11:16] }}</td>
-            <td>{{ l.operador }}</td>
-            <td>{{ l.cliente }}</td>
-            <td><span class="tag-op {{ 'cancelamento' if l.operacao == 'Cancelamento' else 'agendamento' }}">{{ l.operacao }}</span></td>
-            <td>{{ l.consultorio }}</td>
-            <td>{{ l.descricao }}</td>
+          <tr class="{{ 't-no' if l.operacao == 'Cancelamento' else 't-ok' }}">
+            <td data-label="Ocorrência">{{ l.ocorrencia[8:10] }}/{{ {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'}.get(l.ocorrencia[5:7], l.ocorrencia[5:7]) }}/{{ l.ocorrencia[2:4] }} {{ l.ocorrencia[11:16] }}</td>
+            <td data-label="Operador (user)">{{ l.operador }}</td>
+            <td data-label="Cliente">{{ l.cliente }}</td>
+            <td data-label="Operação"><span class="tag-op {{ 'cancelamento' if l.operacao == 'Cancelamento' else 'agendamento' }}">{{ l.operacao }}</span></td>
+            <td data-label="Cons.">{{ l.consultorio }}</td>
+            <td data-label="Descrição">{{ l.descricao }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -202,11 +233,11 @@ tr:hover td{background:#F8FBFB}
         <tbody>
           {% for l in linhas %}
           <tr>
-            <td>{{ l.ocorrencia[8:10] }}/{{ {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'}.get(l.ocorrencia[5:7], l.ocorrencia[5:7]) }}/{{ l.ocorrencia[2:4] }} {{ l.ocorrencia[11:16] }}</td>
-            <td>{{ l.operador }}</td>
-            <td>{{ l.cliente }}</td>
-            <td><span class="tag-tipo">{{ l.tipo }}</span></td>
-            <td>{{ l.qtd_horas }}h</td>
+            <td data-label="Ocorrência">{{ l.ocorrencia[8:10] }}/{{ {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'}.get(l.ocorrencia[5:7], l.ocorrencia[5:7]) }}/{{ l.ocorrencia[2:4] }} {{ l.ocorrencia[11:16] }}</td>
+            <td data-label="Operador (user)">{{ l.operador }}</td>
+            <td data-label="Cliente">{{ l.cliente }}</td>
+            <td data-label="Tipo"><span class="tag-tipo">{{ l.tipo }}</span></td>
+            <td data-label="Qtd Horas">{{ l.qtd_horas }}h</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -216,19 +247,19 @@ tr:hover td{background:#F8FBFB}
         <thead><tr><th>Ocorrência (pago em)</th><th>Cliente</th><th>Forma</th><th>Valor</th><th>Nota Fiscal</th>{% if tipo == 'nao_faturadas' %}<th>Ação</th>{% endif %}</tr></thead>
         <tbody>
           {% for l in linhas %}
-          <tr>
-            <td>{{ l.ocorrencia[8:10] }}/{{ {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'}.get(l.ocorrencia[5:7], l.ocorrencia[5:7]) }}/{{ l.ocorrencia[2:4] }} {{ l.ocorrencia[11:16] }}</td>
-            <td>{{ l.cliente }}</td>
-            <td>{{ l.forma_pagamento }}</td>
-            <td>R$ {{ '%.2f'|format(l.valor or 0) }}</td>
-            <td>
+          <tr class="{{ 't-no' if l.nota_fiscal_status == 'nao_emitida' else 't-ok' }}">
+            <td data-label="Ocorrência (pago em)">{{ l.ocorrencia[8:10] }}/{{ {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'}.get(l.ocorrencia[5:7], l.ocorrencia[5:7]) }}/{{ l.ocorrencia[2:4] }} {{ l.ocorrencia[11:16] }}</td>
+            <td data-label="Cliente">{{ l.cliente }}</td>
+            <td data-label="Forma">{{ l.forma_pagamento }}</td>
+            <td data-label="Valor">R$ {{ '%.2f'|format(l.valor or 0) }}</td>
+            <td data-label="Nota Fiscal">
               <span class="tag-nf {{ l.nota_fiscal_status }}">{{ {'nao_emitida': 'Não emitida', 'emitida': 'Emitida', 'enviada': 'Enviada'}.get(l.nota_fiscal_status, l.nota_fiscal_status) }}</span>
               {% if l.nota_fiscal_numero %}
               <div style="margin-top:4px;font-size:12px;">Nº {{ l.nota_fiscal_numero }}{% if l.nota_fiscal_url %} · <a class="link-nf" href="{{ l.nota_fiscal_url }}" target="_blank" rel="noopener">ver nota</a>{% endif %}</div>
               {% endif %}
             </td>
             {% if tipo == 'nao_faturadas' %}
-            <td>
+            <td data-label="Ação">
               <form method="post" action="{{ url_for('admin.emitir_nf_pagamento', pagamento_id=l.id) }}" style="margin:0;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn-emitir-nf">Emitir NF</button>

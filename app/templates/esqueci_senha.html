@@ -3,72 +3,60 @@
 <head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Esqueci minha senha — Lifemax</title>
+<title>Recuperar senha — Lifemax</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --line: #DCE6E8; --muted: #55707C; }
+  :root { --teal:#0EA5A0; --teal-dark:#0C8B87; --navy:#0B3A57; --line:#DCE6EA; --muted:#55707C; }
   * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(160deg, var(--navy), var(--navy-soft));
-    padding: 20px;
-  }
-  .card { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 380px; }
-  h1 { margin: 0 0 4px; font-size: 20px; color: var(--navy); font-family: 'Manrope', sans-serif; }
-  .login-logo { height: 28px; width: auto; display: block; margin: 0 0 4px; }
-  p.sub { margin: 0 0 24px; font-size: 13px; color: var(--muted); }
-  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
-  input {
-    width: 100%; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--line);
-    font-family: inherit; font-size: 14px; margin-bottom: 16px;
-  }
-  input:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
-  button {
-    width: 100%; background: var(--navy); color: white; border: none; padding: 12px;
-    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
-  }
-  button:hover { opacity: 0.92; }
-  .aviso { background: #EAF4F3; color: #0E6B66; padding: 12px 14px; border-radius: 8px; font-size: 13.5px; margin-bottom: 16px; line-height: 1.5; }
-  .rodape { text-align: center; margin-top: 18px; font-size: 13px; }
-  .rodape a { color: var(--teal); text-decoration: none; font-weight: 600; }
-
-  @media (max-width: 480px) {
-    body { padding: 16px; }
-    .card { max-width: 100%; padding: 24px 20px; border-radius: 14px; }
-    h1 { font-size: 18px; }
-  }
+  body { margin:0; min-height:100vh; font-family:'Inter',-apple-system,sans-serif; background:#F5F8F9; color:#10222E; }
+  h1, h2 { font-family:'Manrope',sans-serif; margin:0; }
+  .hero { background:linear-gradient(160deg,#0A3650 0%,#0B4A5F 55%,#0C5867 100%); color:#fff; border-radius:0 0 34px 34px; padding:30px 18px 96px; text-align:center; }
+  .login-logo { height:60px; width:auto; display:inline-block; background:#fff; border-radius:18px; padding:11px 16px; box-shadow:0 4px 14px rgba(0,0,0,.18); }
+  .hero .eyebrow { margin-top:18px; font-size:12.5px; font-weight:700; letter-spacing:.05em; color:#34D2CC; text-transform:uppercase; }
+  .hero h1 { font-weight:800; font-size:clamp(28px,7vw,38px); line-height:1.1; margin-top:2px; }
+  .hero p { margin:8px auto 0; font-size:14.5px; color:rgba(234,242,245,.9); max-width:360px; line-height:1.45; }
+  .card { position:relative; background:#fff; border-radius:22px; box-shadow:0 8px 26px rgba(11,58,87,.14); padding:24px 20px; width:calc(100% - 24px); max-width:440px; margin:-64px auto 0; }
+  label { display:block; font-family:'Manrope',sans-serif; font-weight:700; font-size:12.5px; text-transform:uppercase; letter-spacing:.02em; margin:0 0 6px; color:#6B8493; }
+  input[type=text], input[type=password] { width:100%; height:52px; padding:0 14px; border-radius:14px; border:1px solid var(--line); background:#F7FAFB; font-family:inherit; font-size:16px; margin-bottom:16px; }
+  input:focus { outline:2px solid var(--teal); outline-offset:1px; background:#fff; }
+  button { width:100%; height:54px; background:var(--teal); color:#fff; border:none; border-radius:14px; font-family:'Manrope',sans-serif; font-size:17px; font-weight:800; cursor:pointer; }
+  button:hover { background:var(--teal-dark); }
+  .erro { background:#FDECEA; color:#C62A1B; padding:12px 14px; border-radius:14px; font-size:14px; font-weight:600; margin-bottom:16px; line-height:1.4; }
+  .rodape { text-align:center; margin-top:16px; font-size:14px; color:var(--muted); }
+  .rodape a { color:var(--teal); text-decoration:none; font-weight:800; }
+  label.lembrar { display:flex; align-items:center; gap:10px; font-family:'Inter',sans-serif; text-transform:none; letter-spacing:0; font-size:14.5px; font-weight:600; color:var(--navy); margin:2px 0 16px; cursor:pointer; }
+  label.lembrar input { width:20px; height:20px; margin:0; accent-color:var(--teal); }
+  .btn-recuperar { display:flex; align-items:center; justify-content:center; height:52px; margin-top:14px; border-radius:14px; border:1.5px solid var(--teal); background:#fff; color:#0B6E6A; font-family:'Manrope',sans-serif; font-weight:800; font-size:16px; text-decoration:none; }
+  .btn-recuperar:hover { background:#EAF4F3; }
+  .aviso { background:#EAF4F3; color:#0E6B66; padding:14px; border-radius:14px; font-size:14.5px; line-height:1.5; margin-bottom:6px; }
+  .links { max-width:440px; margin:0 auto; padding:6px 12px 30px; }
 </style>
 <link rel="stylesheet" href="/static/css/base-mobile.css"></head>
 <body>
+  <header class="hero">
+    <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="login-logo">
+    <div class="eyebrow">Área do cliente</div>
+    <h1>Recuperar senha</h1>
+    <p>Enviamos um link para o e-mail cadastrado na sua conta.</p>
+  </header>
+
   <div class="card">
-    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Lifemax" class="login-logo">
-    <h1>Esqueci minha senha</h1>
-
     {% if enviado %}
-      <p class="aviso">
-        Se esse telefone estiver cadastrado e tiver um e-mail vinculado, enviamos um link
-        para redefinir a senha. Confira sua caixa de entrada (e o spam) — o link vale por 30 minutos.
-      </p>
-      <div class="rodape">
-        <a href="{{ rota_login }}">← Voltar para o login</a>
+      <div class="aviso">
+        Se esse e-mail ou telefone estiver cadastrado e tiver um e-mail vinculado, enviamos um link
+        para criar uma nova senha. Confira sua caixa de entrada (e o spam) — o link vale por 30 minutos.
       </div>
+      <a class="btn-recuperar" href="{{ rota_login }}">← Voltar para o login</a>
     {% else %}
-      <p class="sub">Digite o telefone cadastrado. Se houver um e-mail vinculado a essa conta,
-        enviaremos um link para você criar uma nova senha.</p>
-
       <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label for="telefone">Telefone (com DDD)</label>
-        <input type="text" id="telefone" name="telefone" placeholder="31999999999" required autofocus>
-
+        <label for="identificador">E-mail ou telefone</label>
+        <input type="text" id="identificador" name="identificador" placeholder="seu@email.com ou 31999999999" required autofocus autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false">
         <button type="submit">Enviar link por e-mail</button>
       </form>
-
-      <div class="rodape">
-        <a href="{{ rota_login }}">← Voltar para o login</a>
-      </div>
+      <a class="btn-recuperar" href="{{ rota_login }}">← Voltar para o login</a>
     {% endif %}
   </div>
 </body>

@@ -9,6 +9,16 @@ body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
 .subtabs{display:flex;gap:10px;margin-bottom:18px}
 .subtabs a{padding:9px 16px;border-radius:8px;background:#EAF4F3;color:#0B3A52;text-decoration:none;font-weight:700;font-size:13.5px}
 .subtabs a.active{background:#0EA5A0;color:#fff}
+.subtabs a.aba-preta{background:#111;color:#fff}
+.subtabs a.aba-preta.active{background:#000;box-shadow:0 0 0 3px #0EA5A0}
+.subtabs{flex-wrap:wrap}
+.rec-dia td{background:#F0F7F7;font-weight:800;color:#0B3A52}
+.rec-total{font-size:22px;font-weight:800;color:#0B7B45}
+.rec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.rec-card{background:#F5F8FA;border-radius:12px;padding:12px 14px}
+.rec-card .n{font-size:20px;font-weight:800}
+.rec-card .r{font-size:12px;color:#62788A}
+.btn-escuro{padding:9px 16px;border:0;border-radius:8px;background:#111;color:#fff;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
 .filtro{display:flex;align-items:flex-end;gap:12px;margin-bottom:18px;flex-wrap:wrap}
 .filtro label{display:block;font-size:11.5px;font-weight:700;color:#62788A;margin-bottom:6px;text-transform:uppercase;letter-spacing:.02em}
 .filtro input,.filtro select{padding:9px 10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px;min-width:140px}
@@ -58,9 +68,43 @@ tr:hover td{background:#F8FBFB}
     <a href="{{ url_for('admin.relatorios', tipo='transacoes') }}" class="{{ 'active' if tipo == 'transacoes' else '' }}">Transações</a>
     <a href="{{ url_for('admin.relatorios', tipo='nao_faturadas') }}" class="{{ 'active' if tipo == 'nao_faturadas' else '' }}">Transações ainda não faturadas</a>
     <a href="{{ url_for('admin.relatorios', tipo='faturadas') }}" class="{{ 'active' if tipo == 'faturadas' else '' }}">Transações faturadas</a>
+    <a href="{{ url_for('admin.relatorios', tipo='receitas') }}" class="aba-preta {{ 'active' if tipo == 'receitas' else '' }}">Receitas</a>
   </div>
 
   <div class="card">
+    {% if tipo == 'receitas' %}
+    <form class="filtro" method="get">
+      <input type="hidden" name="tipo" value="receitas">
+      <div><label>Por período — de</label><input type="date" name="data_inicio" value="{{ filtros.data_inicio if not mes_receitas else '' }}"></div>
+      <div><label>até</label><input type="date" name="data_fim" value="{{ filtros.data_fim if not mes_receitas else '' }}"></div>
+      <button type="submit">Ver período</button>
+      <div style="margin-left:14px"><label>Mês</label><input type="month" name="mes" value="{{ mes_receitas }}" onchange="this.form.submit()"></div>
+      <a class="btn-limpar" href="{{ url_for('admin.relatorios', tipo='receitas') }}">Últimos 120 dias</a>
+      <a class="btn-escuro" href="{{ url_for('admin.relatorios', tipo='receitas', data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, medico_id=filtros.medico_id, cliente=filtros.cliente, formato='csv') }}">⬇ Baixar planilha (CSV)</a>
+    </form>
+    <div class="rec-grid">
+      <div class="rec-card"><div class="r">Período</div><div class="n" style="font-size:15px">{{ filtros.data_inicio[8:10] }}/{{ filtros.data_inicio[5:7] }}/{{ filtros.data_inicio[:4] }} a {{ filtros.data_fim[8:10] }}/{{ filtros.data_fim[5:7] }}/{{ filtros.data_fim[:4] }}</div></div>
+      <div class="rec-card"><div class="r">Total recebido</div><div class="rec-total">R$ {{ '%.2f'|format(total_valor or 0)|replace('.', ',') }}</div></div>
+      <div class="rec-card"><div class="r">Pagamentos</div><div class="n">{{ linhas|length }}</div></div>
+    </div>
+    <div class="wrap-tabela">
+    {% if linhas %}
+      <table>
+        <thead><tr><th>Data</th><th>Hora</th><th>Cliente</th><th>Forma</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead>
+        <tbody>
+        {% for d in resumo_dias %}
+          <tr class="rec-dia"><td colspan="5">{{ d.data[8:10] }}/{{ d.data[5:7] }}/{{ d.data[:4] }} · {{ d.qtd }} pagamento(s)</td><td style="text-align:right">R$ {{ '%.2f'|format(d.total)|replace('.', ',') }}</td></tr>
+          {% for l in linhas if l.data == d.data %}
+          <tr><td>{{ l.data[8:10] }}/{{ l.data[5:7] }}</td><td>{{ l.hora }}</td><td>{{ l.cliente }}</td><td>{{ l.forma }}</td><td>{{ l.descricao }}</td><td style="text-align:right">R$ {{ '%.2f'|format(l.valor)|replace('.', ',') }}</td></tr>
+          {% endfor %}
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="vazio">Nenhum pagamento recebido neste período.</div>
+    {% endif %}
+    </div>
+    {% else %}
     {% if tipo == 'nao_faturadas' and not nfe_configurado %}
     <div class="aviso-nfe">⚠️ A emissão automática de Nota Fiscal ainda não está configurada (certificado A1 da Lifemax). O botão "Emitir NF" vai mostrar um aviso até essas credenciais serem preenchidas no sistema.</div>
     {% endif %}
@@ -200,6 +244,7 @@ tr:hover td{background:#F8FBFB}
       <div class="vazio">Nenhum resultado para os filtros escolhidos.</div>
     {% endif %}
     </div>
+    {% endif %}
   </div>
 </div>
 </body></html>

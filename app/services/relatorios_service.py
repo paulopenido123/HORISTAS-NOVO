@@ -194,3 +194,93 @@ def listar_faturamento(faturadas: bool, data_inicio: str | None = None, data_fim
     linhas.sort(key=lambda l: l["ocorrencia"] or "", reverse=(ordenar != "asc"))
     total_valor = round(sum(l["valor"] or 0 for l in linhas), 2)
     return linhas, total_valor
+
+
+# ---------------------------------------------------------------------------
+# Receitas (22/10/2026) -- tudo que EFETIVAMENTE entrou de dinheiro, por data.
+# Fonte: pagamentos_pix com status 'pago' (Pix e cartão confirmados pelo Asaas),
+# na data do pagamento (pago_em), no horário de Brasília -- independente de a
+# nota fiscal já ter sido emitida ou não.
+# ---------------------------------------------------------------------------
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
+
+_FUSO = ZoneInfo("America/Sao_Paulo")
+
+
+def _data_local(valor) -> str:
+    """'YYYY-MM-DD' no fuso de Brasília a partir de str ISO ou datetime."""
+    if not valor:
+        return ""
+    try:
+        dt = valor if isinstance(valor, datetime) else datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            return dt.date().isoformat()
+        return dt.astimezone(_FUSO).date().isoformat()
+    except ValueError:
+        return str(valor)[:10]
+
+
+def _hora_local(valor) -> str:
+    try:
+        dt = valor if isinstance(valor, datetime) else datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
+        return (dt.astimezone(_FUSO) if dt.tzinfo else dt).strftime("%H:%M")
+    except (ValueError, TypeError):
+        return ""
+
+
+def periodo_receitas(data_inicio: str = "", data_fim: str = "", mes: str = "") -> tuple[str, str]:
+    """Resolve o período pedido: `mes` ('YYYY-MM') vale mais que de/até; sem nada,
+    devolve os últimos 120 dias até hoje."""
+    hoje = datetime.now(_FUSO).date()
+    mes = (mes or "").strip()
+    if len(mes) == 7 and mes[4] == "-":
+        try:
+            ini = date(int(mes[:4]), int(mes[5:7]), 1)
+            prox = date(ini.year + (ini.month == 12), ini.month % 12 + 1, 1)
+            return ini.isoformat(), (prox - timedelta(days=1)).isoformat()
+        except ValueError:
+            pass
+    if data_inicio or data_fim:
+        return data_inicio, data_fim
+    return (hoje - timedelta(days=119)).isoformat(), hoje.isoformat()
+
+
+def listar_receitas(data_inicio: str, data_fim: str, medico_id: str | None = None,
+                    cliente_busca: str = "") -> tuple[list[dict], list[dict], float]:
+    """Devolve (linhas, resumo_por_dia, total). `linhas` em ordem cronológica
+    decrescente; `resumo_por_dia` = [{data, qtd, total}] também decrescente."""
+    query = db.get_client().table("pagamentos_pix").select("*, medicos(nome)").eq("status", "pago")
+    if medico_id:
+        query = query.eq("medico_id", medico_id)
+    resp = query.execute().data or []
+
+    cliente_busca = (cliente_busca or "").strip().lower()
+    linhas = []
+    for p in resp:
+        medico_nome = (p.get("medicos") or {}).get("nome") or "—"
+        if cliente_busca and cliente_busca not in medico_nome.lower():
+            continue
+        momento = p.get("pago_em") or p.get("criado_em")
+        dia = _data_local(momento)
+        if not dia or (data_inicio and dia < data_inicio) or (data_fim and dia > data_fim):
+            continue
+        horas = p.get("horas_pacote")
+        parcelas = p.get("parcelas") or 1
+        forma = {"pix": "Pix", "cartao": "Cartão"}.get(p.get("forma_pagamento"), p.get("forma_pagamento") or "—")
+        linhas.append({
+            "data": dia, "hora": _hora_local(momento), "cliente": medico_nome, "forma": forma,
+            "descricao": (f"Pacote de {horas}h" if horas else "Recarga de horas")
+                         + (f" · {parcelas}x" if forma == "Cartão" and parcelas > 1 else ""),
+            "valor": float(p.get("valor") or 0),
+            "_ordem": str(momento),
+        })
+    linhas.sort(key=lambda l: l["_ordem"], reverse=True)
+
+    por_dia: dict[str, dict] = {}
+    for l in linhas:
+        d = por_dia.setdefault(l["data"], {"data": l["data"], "qtd": 0, "total": 0.0})
+        d["qtd"] += 1
+        d["total"] = round(d["total"] + l["valor"], 2)
+    resumo = sorted(por_dia.values(), key=lambda d: d["data"], reverse=True)
+    return linhas, resumo, round(sum(l["valor"] for l in linhas), 2)

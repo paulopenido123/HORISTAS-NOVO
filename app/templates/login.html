@@ -28,10 +28,8 @@
   .rodape a { color:var(--teal); text-decoration:none; font-weight:800; }
   label.lembrar { display:flex; align-items:center; gap:10px; font-family:'Inter',sans-serif; text-transform:none; letter-spacing:0; font-size:14.5px; font-weight:600; color:var(--navy); margin:2px 0 16px; cursor:pointer; }
   label.lembrar input { width:20px; height:20px; margin:0; accent-color:var(--teal); }
-  .ou { display:flex; align-items:center; gap:12px; margin:18px 0 14px; color:#8AA0A9; font-size:13px; }
-  .ou::before, .ou::after { content:''; flex:1; height:1px; background:var(--line); }
-  .btn-google { display:flex; align-items:center; justify-content:center; gap:12px; height:54px; border-radius:14px; border:1.5px solid #DCE6EA; background:#fff; color:#10222E; font-family:'Manrope',sans-serif; font-weight:800; font-size:16px; text-decoration:none; }
-  .btn-google:hover { background:#F7FAFB; }
+  .btn-recuperar { display:flex; align-items:center; justify-content:center; height:52px; margin-top:14px; border-radius:14px; border:1.5px solid var(--teal); background:#fff; color:#0B6E6A; font-family:'Manrope',sans-serif; font-weight:800; font-size:16px; text-decoration:none; }
+  .btn-recuperar:hover { background:#EAF4F3; }
   .links { max-width:440px; margin:0 auto; padding:6px 12px 30px; }
 </style>
 <link rel="manifest" href="/static/manifest.json">
@@ -103,18 +101,11 @@ if ("serviceWorker" in navigator) {
       });
     })();
     </script>
-    {% if google_ativo %}
-    <div class="ou"><span>ou</span></div>
-    <a class="btn-google" href="{{ url_for('auth.login_google', next=request.args.get('next')) }}">
-      <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
-      Entrar com Google
-    </a>
-    {% endif %}
   </div>
 
   <div class="links">
     <div class="rodape">Primeiro acesso? <a href="{{ url_for('auth.primeiro_acesso') }}">Criar senha</a></div>
-    <div class="rodape"><a href="{{ url_for('auth.esqueci_senha') }}">Esqueci minha senha</a></div>
+    <a class="btn-recuperar" href="{{ url_for('auth.esqueci_senha') }}">Recuperar senha</a>
   </div>
 </body>
 </html>

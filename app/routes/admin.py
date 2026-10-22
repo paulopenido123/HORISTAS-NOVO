@@ -536,7 +536,7 @@ def relatorios():
     esses dois leem pagamentos_pix (os pagamentos em R$ recebidos de
     verdade) e separam pelo status da nota fiscal."""
     tipo = request.args.get('tipo', 'agendamentos')
-    if tipo not in ('agendamentos', 'transacoes', 'nao_faturadas', 'faturadas'):
+    if tipo not in ('agendamentos', 'transacoes', 'nao_faturadas', 'faturadas', 'receitas'):
         tipo = 'agendamentos'
 
     consultorios = db.listar_todos_consultorios()
@@ -554,7 +554,28 @@ def relatorios():
 
     total_horas = None
     total_valor = None
-    if tipo == 'transacoes':
+    resumo_dias = []
+    mes_receitas = request.args.get('mes', '').strip()
+    if tipo == 'receitas':
+        # "Receitas" (22/10/2026): tudo que entrou de dinheiro, por data de pagamento.
+        # Sem filtro, mostra os últimos 120 dias; "mes" (AAAA-MM) vale mais que de/até.
+        ini, fim = relatorios_service.periodo_receitas(filtros['data_inicio'], filtros['data_fim'], mes_receitas)
+        filtros['data_inicio'], filtros['data_fim'] = ini, fim
+        linhas, resumo_dias, total_valor = relatorios_service.listar_receitas(
+            ini, fim, medico_id=filtros['medico_id'] or None, cliente_busca=filtros['cliente'])
+        if request.args.get('formato') == 'csv':
+            import csv, io
+            buf = io.StringIO()
+            w = csv.writer(buf, delimiter=';')
+            w.writerow(['Data', 'Hora', 'Cliente', 'Forma', 'Descrição', 'Valor (R$)'])
+            for l in linhas:
+                w.writerow([f"{l['data'][8:10]}/{l['data'][5:7]}/{l['data'][:4]}", l['hora'], l['cliente'], l['forma'],
+                            l['descricao'], f"{l['valor']:.2f}".replace('.', ',')])
+            w.writerow([]); w.writerow(['', '', '', '', 'TOTAL', f"{total_valor:.2f}".replace('.', ',')])
+            from flask import Response
+            return Response('\ufeff' + buf.getvalue(), mimetype='text/csv; charset=utf-8',
+                            headers={'Content-Disposition': f'attachment; filename=receitas_{ini}_a_{fim}.csv'})
+    elif tipo == 'transacoes':
         linhas, total_horas = relatorios_service.listar_transacoes(
             data_inicio=filtros['data_inicio'] or None, data_fim=filtros['data_fim'] or None,
             medico_id=filtros['medico_id'] or None, cliente_busca=filtros['cliente'],
@@ -578,6 +599,7 @@ def relatorios():
     return render_template(
         'admin_relatorios.html', tipo=tipo, consultorios=consultorios, medicos=medicos,
         linhas=linhas, total_horas=total_horas, total_valor=total_valor, filtros=filtros,
+        resumo_dias=resumo_dias, mes_receitas=mes_receitas,
         operacoes=relatorios_service.OPERACOES_AGENDAMENTOS,
         nfe_configurado=nfe_service.configurado(),
     )

@@ -5,7 +5,7 @@ a senha dele é a variável ADMIN_PASSWORD no Render, trocada direto lá,
 sem cadastro de e-mail nem tela de recuperação própria.
 
 Fluxo:
-  1. solicitar_recuperacao(tipo, telefone) -- se o telefone existir e
+  1. solicitar_recuperacao(tipo, identificador) -- se o telefone/e-mail existir e
      tiver e-mail cadastrado, gera um token (secrets.token_urlsafe),
      guarda só o HASH sha256 dele (nunca o token em si) com validade de
      30 minutos, e manda por e-mail o link de redefinição. A tela que
@@ -33,44 +33,49 @@ def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-def _buscar_usuario(tipo: str, telefone: str) -> dict | None:
+def _buscar_usuarios(tipo: str, identificador: str) -> list[dict]:
+    """Aceita telefone OU e-mail (22/10/2026). Médico com "@" é procurado pelo e-mail
+    cadastrado; os demais casos, pelo telefone."""
     if tipo == "medico":
         from app.services import supabase_client as db
-        return db.get_medico_by_telefone(telefone)
+        if "@" in identificador:
+            return db.listar_medicos_por_email(identificador)
+        m = db.get_medico_by_telefone(identificador)
+        return [m] if m else []
     if tipo == "secretaria":
         from app.services import secretarias_service as sec_db
-        return sec_db.get_secretaria_by_telefone(telefone)
-    return None
+        m = sec_db.get_secretaria_by_telefone(identificador)
+        return [m] if m else []
+    return []
 
 
-def solicitar_recuperacao(tipo: str, telefone: str) -> None:
-    """Não devolve nada e nunca levanta erro por telefone não encontrado
-    ou sem e-mail cadastrado -- a tela sempre mostra a mesma mensagem
-    genérica pra quem pediu, independente do que aconteceu aqui dentro."""
-    telefone = (telefone or "").strip()
-    if tipo not in ("medico", "secretaria") or not telefone:
+def solicitar_recuperacao(tipo: str, identificador: str) -> None:
+    """Não devolve nada e nunca levanta erro por cadastro não encontrado
+    ou sem e-mail -- a tela sempre mostra a mesma mensagem genérica pra
+    quem pediu, independente do que aconteceu aqui dentro. O link vai
+    SEMPRE para o e-mail cadastrado na conta, nunca para o digitado."""
+    identificador = (identificador or "").strip()
+    if tipo not in ("medico", "secretaria") or not identificador:
         return
-
-    usuario = _buscar_usuario(tipo, telefone)
-    if usuario is None or not usuario.get("email"):
-        return
-
-    token = secrets.token_urlsafe(32)
-    expira_em = datetime.now(timezone.utc) + timedelta(minutes=_VALIDADE_MINUTOS)
-
-    get_client().table("tokens_recuperacao_senha").insert({
-        "tipo": tipo,
-        "usuario_id": usuario["id"],
-        "token_hash": _hash_token(token),
-        "expira_em": expira_em.isoformat(),
-        "contexto": "recuperacao",
-    }).execute()
 
     from flask import url_for
-    rota = "auth.redefinir_senha" if tipo == "medico" else "secretaria_auth.redefinir_senha"
-    link = url_for(rota, token=token, _external=True)
+    for usuario in _buscar_usuarios(tipo, identificador):
+        if not usuario.get("email"):
+            continue
+        token = secrets.token_urlsafe(32)
+        expira_em = datetime.now(timezone.utc) + timedelta(minutes=_VALIDADE_MINUTOS)
 
-    email_service.notificar_recuperacao_senha(usuario.get("nome", ""), link, usuario["email"])
+        get_client().table("tokens_recuperacao_senha").insert({
+            "tipo": tipo,
+            "usuario_id": usuario["id"],
+            "token_hash": _hash_token(token),
+            "expira_em": expira_em.isoformat(),
+            "contexto": "recuperacao",
+        }).execute()
+
+        rota = "auth.redefinir_senha" if tipo == "medico" else "secretaria_auth.redefinir_senha"
+        link = url_for(rota, token=token, _external=True)
+        email_service.notificar_recuperacao_senha(usuario.get("nome", ""), link, usuario["email"])
 
 
 _VALIDADE_HORAS_PRIMEIRO_ACESSO = 48

@@ -423,5 +423,14 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 
 ## Atualização 22/10/2026 (v53) — Login
 - Tela `/login` no novo padrão. Campo único **"E-mail ou telefone"** + senha (`identificador`; se tiver "@" busca por e-mail sem diferenciar maiúsculas — `supabase_client.listar_medicos_por_email`; senão por telefone). E-mail repetido em mais de um cadastro: entra o cadastro cuja senha confere.
-- **Entrar com Google** (`/login/google` e `/login/google/retorno`, em `routes/auth.py`): só libera quem já tem cadastro com aquele e-mail (verificado pelo Google) e único; não cria conta. O botão só aparece se as variáveis `GOOGLE_LOGIN_CLIENT_ID` e `GOOGLE_LOGIN_CLIENT_SECRET` (ou `GOOGLE_CLIENT_ID/SECRET`) estiverem definidas no Render. Opcional: `GOOGLE_LOGIN_REDIRECT_URI`. URI autorizada no Google: `https://horistas-novo.onrender.com/login/google/retorno`.
-- (v54) Entrar com Google: GOOGLE_LOGIN_REDIRECT_URI só é usada se apontar para o próprio site e terminar em /login/google/retorno; senão o endereço é montado automaticamente.
+
+## Atualização 22/10/2026 (v55) — Login
+- **Removido** o "Entrar com Google" (rotas `/login/google*`, botão e variáveis `GOOGLE_LOGIN_*` não são mais usadas; `GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI` seguem só para o Google Agenda).
+- Botão **"Recuperar senha"** na tela de login → `/esqueci-senha` (novo padrão visual): aceita e-mail OU telefone; o link de redefinição (30 min) sempre vai para o **e-mail cadastrado** na conta, com a mesma mensagem genérica quando não há cadastro (`recuperacao_senha_service.solicitar_recuperacao(tipo, identificador)`). Depende do SMTP configurado.
+
+## Atualização 22/10/2026 (v56) — Relatórios > Receitas
+- Nova aba preta **"Receitas"** (`/admin/relatorios?tipo=receitas`), à direita de "Transações faturadas" (que não foi alterada — ela mostra notas fiscais emitidas).
+- Lista todo dinheiro **efetivamente recebido** (`pagamentos_pix` com status `pago`, Pix e cartão), por **data do pagamento em horário de Brasília**, com subtotal por dia e total do período. Independe de nota fiscal.
+- Filtros: **Por período (de/até)** e **Mês** (escolher o mês já mostra o relatório). Sem filtro, mostra automaticamente os **últimos 120 dias**. Botão "Baixar planilha (CSV)" exporta o que está na tela.
+- Código: `relatorios_service.periodo_receitas / listar_receitas`, `routes/admin.py` (`tipo == 'receitas'`), `admin_relatorios.html`.
+- Limite: só aparecem pagamentos que o sistema registrou como pagos (webhook/consulta do Asaas); não há importação direta do extrato do Asaas.

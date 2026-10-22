@@ -3,10 +3,6 @@ Autenticação dos médicos: primeiro acesso (agora com auto-cadastro —
 o médico se cadastra sozinho, sem precisar que o admin crie antes) e
 login normal.
 """
-import os
-import secrets
-import requests
-from urllib.parse import urlencode
 from flask import Blueprint, request, render_template, redirect, url_for, session, flash
 from app.services import supabase_client as db
 from app.services import creditos_service as creditos_db
@@ -168,95 +164,7 @@ def login():
             destino = request.args.get("next") or url_for("medico_painel.painel")
             return redirect(destino)
 
-    return render_template("login.html", erro=erro, google_ativo=google_login_ativo())
-
-
-# ---------------------------------------------------------------------------
-# Entrar com Google (22/10/2026). O Google só confirma QUEM é a pessoa (e-mail
-# verificado); o acesso só é liberado se esse e-mail já estiver cadastrado como
-# médico -- o botão não cria conta nova. Variáveis de ambiente:
-#   GOOGLE_LOGIN_CLIENT_ID / GOOGLE_LOGIN_CLIENT_SECRET  (se não existirem, usa
-#   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET) e, opcionalmente,
-#   GOOGLE_LOGIN_REDIRECT_URI (por padrão: <site>/login/google/retorno, em https).
-# ---------------------------------------------------------------------------
-_GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-_GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-_GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
-
-
-def _google_credenciais():
-    cid = os.getenv("GOOGLE_LOGIN_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID")
-    segredo = os.getenv("GOOGLE_LOGIN_CLIENT_SECRET") or os.getenv("GOOGLE_CLIENT_SECRET")
-    return (cid, segredo) if cid and segredo else (None, None)
-
-
-def google_login_ativo() -> bool:
-    return _google_credenciais()[0] is not None
-
-
-def _google_redirect_uri() -> str:
-    # A variável só vale se apontar para ESTE site e para a rota de retorno certa
-    # (evita herdar um endereço de outro serviço, como o do lifemax-assistant).
-    uri = (os.getenv("GOOGLE_LOGIN_REDIRECT_URI") or "").strip()
-    if uri and uri.split("?")[0].endswith("/login/google/retorno") and request.host in uri:
-        return uri
-    uri = url_for("auth.login_google_retorno", _external=True)
-    if uri.startswith("http://") and "localhost" not in uri and "127.0.0.1" not in uri:
-        uri = "https://" + uri[len("http://"):]
-    return uri
-
-
-@auth_bp.route("/login/google")
-@limiter.limit("20 per minute")
-def login_google():
-    cid, _ = _google_credenciais()
-    if not cid:
-        flash("Entrar com Google ainda não está configurado.")
-        return redirect(url_for("auth.login"))
-    estado = secrets.token_urlsafe(24)
-    session["google_login_state"] = estado
-    destino = request.args.get("next")
-    if destino and destino.startswith("/") and not destino.startswith("//"):
-        session["google_login_next"] = destino
-    params = {"client_id": cid, "redirect_uri": _google_redirect_uri(), "response_type": "code",
-              "scope": "openid email", "state": estado, "prompt": "select_account"}
-    return redirect(_GOOGLE_AUTH_URL + "?" + urlencode(params))
-
-
-@auth_bp.route("/login/google/retorno")
-@limiter.limit("20 per minute")
-def login_google_retorno():
-    cid, segredo = _google_credenciais()
-    estado = session.pop("google_login_state", None)
-    destino = session.pop("google_login_next", None)
-    if not cid or request.args.get("error") or not estado or request.args.get("state") != estado:
-        flash("Não foi possível entrar com o Google. Tente novamente.")
-        return redirect(url_for("auth.login"))
-    try:
-        tok = requests.post(_GOOGLE_TOKEN_URL, data={
-            "code": request.args.get("code", ""), "client_id": cid, "client_secret": segredo,
-            "redirect_uri": _google_redirect_uri(), "grant_type": "authorization_code"}, timeout=10)
-        tok.raise_for_status()
-        info = requests.get(_GOOGLE_USERINFO_URL, headers={"Authorization": "Bearer " + tok.json()["access_token"]}, timeout=10)
-        info.raise_for_status()
-        dados = info.json()
-    except Exception as e:
-        print(f"[login_google] erro: {e}")
-        flash("Não foi possível entrar com o Google. Tente novamente.")
-        return redirect(url_for("auth.login"))
-
-    email = (dados.get("email") or "").strip().lower()
-    if not email or dados.get("email_verified") is not True:
-        flash("O Google não confirmou o seu e-mail.")
-        return redirect(url_for("auth.login"))
-    candidatos = db.listar_medicos_por_email(email)
-    if len(candidatos) != 1:
-        flash("Não encontramos um cadastro único com o e-mail %s. Entre com telefone e senha ou fale com a administração." % email
-              if not candidatos else "Esse e-mail está em mais de um cadastro. Entre com telefone e senha.")
-        return redirect(url_for("auth.login"))
-    auth_service.login_medico(candidatos[0]["id"])
-    session["lembrar"] = True
-    return redirect(destino or url_for("medico_painel.painel"))
+    return render_template("login.html", erro=erro)
 
 
 @auth_bp.route("/logout")
@@ -270,9 +178,11 @@ def logout():
 def esqueci_senha():
     enviado = False
     if request.method == "POST":
-        telefone = telefone_utils.normalizar_telefone(request.form.get("telefone", "")) or ""
-        rec_senha.solicitar_recuperacao("medico", telefone)
-        # Mensagem sempre igual, telefone cadastrado ou não -- evita que
+        identificador = (request.form.get("identificador") or request.form.get("telefone") or "").strip()
+        if "@" not in identificador:
+            identificador = telefone_utils.normalizar_telefone(identificador) or ""
+        rec_senha.solicitar_recuperacao("medico", identificador)
+        # Mensagem sempre igual, e-mail/telefone cadastrado ou não -- evita que
         # alguém descubra, tentando telefones ao acaso, quais têm conta.
         enviado = True
 

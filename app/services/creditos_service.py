@@ -657,7 +657,7 @@ def estatisticas_gerais(mes: int | None = None, ano: int | None = None) -> dict:
 
 # `estimar_horas_compraveis` tem um teto padrão de 60h (limite=60) -- faz
 # sentido lá porque é usado pra mostrar "quanto EU tenho pra gastar" no
-# painel de um médico só. Nas contas agregadas do admin (estatisticas_horas
+# painel de um médico só. Nas contas agregadas do admin (horas_na_praca_total
 # abaixo) é o oposto: é uma SOMA de todo mundo, então um teto por-médico
 # corromperia o total (achado testando: com 1 médico com +900h de saldo, a
 # praça inteira aparecia como 75h em vez de milhares). `limite=SEM_TETO` na
@@ -665,87 +665,17 @@ def estatisticas_gerais(mes: int | None = None, ano: int | None = None) -> dict:
 SEM_TETO = 10**9
 
 
-def _somar_vendidas_e_utilizadas(compras: list[dict], consumos: list[dict], pacotes_atuais: list[dict]) -> tuple[int, int]:
-    """Soma horas_vendidas/horas_utilizadas para uma lista de transações já
-    filtrada (ou não) por mês/ano -- extraído de estatisticas_horas pra
-    poder calcular o mesmo par de números duas vezes (mês escolhido e
-    acumulado geral) sem duplicar a lógica."""
-    # Soma a quantidade EXATA de horas já gravada em cada compra (todo
-    # pacote fechado grava isso desde 10/09/2026); só estima (pelo valor
-    # em R$, no preço vigente) o que não tiver isso gravado -- compras
-    # bem antigas, de antes desse campo existir.
-    horas_exatas = sum(int(t["quantidade_horas"]) for t in compras if t.get("quantidade_horas"))
-    valor_sem_horas_exatas = round(
-        sum(float(t["valor"]) for t in compras if not t.get("quantidade_horas")), 2
-    )
-    horas_vendidas = horas_exatas + estimar_horas_compraveis(valor_sem_horas_exatas, pacotes_atuais, limite=SEM_TETO)
-    horas_utilizadas = sum(int(t["quantidade_horas"] or 0) for t in consumos)
-    return horas_vendidas, horas_utilizadas
-
-
-def estatisticas_horas(mes: int | None = None, ano: int | None = None) -> dict:
-    """Painel "Horas" do admin (pedido do Paulo em 10/09/2026, baseado
-    numa tela parecida que já existia no sistema maior original) -- só da
-    carteira de Salas/Horas (a de IA não entra aqui, ela é medida em R$ e
-    tem seu próprio jeito de olhar consumo):
-
-    - horas_vendidas / horas_utilizadas: soma de TODOS os médicos,
-      filtrada pro mês/ano escolhido -- só transações tipo 'compra'
-      (pacote comprado de verdade via Asaas) e 'consumo' (reserva paga
-      com o saldo) entram aqui; ajuste manual do admin e transferência
-      entre carteiras (ambos tipo='ajuste') ficam de fora de propósito,
-      não são "venda" nem "uso" de verdade.
-    - horas_vendidas_total / horas_utilizadas_total: os MESMOS dois
-      números acima, mas acumulados desde sempre (sem filtro de mês) --
-      pedido do Paulo em 10/09/2026, pra ver o total histórico junto do
-      recorte do mês, sem precisar ficar trocando o filtro mês a mês.
-    - horas_na_praca_mes: saldo LÍQUIDO gerado dentro do mês/ano filtrado
-      (horas_vendidas do mês menos horas_utilizadas do mês) -- pedido do
-      Paulo em 10/09/2026, pra ver se a praça de horas cresceu ou
-      encolheu naquele mês especificamente.
-    - horas_na_praca_total: soma do saldo ATUAL (em horas) de todos os
-      médicos -- não é filtrada por mês/ano, é uma fotografia de agora
-      (quanto já foi comprado e ainda não foi usado, desde sempre)."""
-    client = get_client()
-    compras = (
-        client.table("creditos_transacoes")
-        .select("valor, quantidade_horas, criado_em")
-        .eq("tipo", "compra").eq("carteira", "salas")
-        .execute().data
-    )
-    consumos = (
-        client.table("creditos_transacoes")
-        .select("quantidade_horas, criado_em")
-        .eq("tipo", "consumo").eq("carteira", "salas")
-        .execute().data
-    )
-    medicos = (
-        client.table("medicos").select("id, saldo_creditos")
-        .execute().data
-    )
-
-    compras_filtradas = _filtrar_por_mes_ano(compras, mes, ano)
-    consumos_filtrados = _filtrar_por_mes_ano(consumos, mes, ano)
+def horas_na_praca_total() -> int:
+    """Painel "Horas" do admin: soma do saldo ATUAL (em horas) de todos os
+    profissionais (carteira de Salas/Horas) -- fotografia de agora, sem filtro
+    de mês. Simplificado a pedido do Paulo em 22/10/2026 (antes mostrava também
+    horas vendidas/utilizadas por mês e acumuladas)."""
+    medicos = get_client().table("medicos").select("id, saldo_creditos").execute().data
     pacotes_atuais = listar_pacotes_horas()
-
-    horas_vendidas, horas_utilizadas = _somar_vendidas_e_utilizadas(compras_filtradas, consumos_filtrados, pacotes_atuais)
-    # acumulado geral = mesma conta, mas com as listas SEM filtro de mês/ano
-    horas_vendidas_total, horas_utilizadas_total = _somar_vendidas_e_utilizadas(compras, consumos, pacotes_atuais)
-
-    horas_na_praca_total = sum(
+    return sum(
         estimar_horas_compraveis(float(m.get("saldo_creditos") or 0), pacotes_atuais, limite=SEM_TETO)
         for m in medicos
     )
-    horas_na_praca_mes = horas_vendidas - horas_utilizadas
-
-    return {
-        "horas_vendidas": horas_vendidas,
-        "horas_utilizadas": horas_utilizadas,
-        "horas_vendidas_total": horas_vendidas_total,
-        "horas_utilizadas_total": horas_utilizadas_total,
-        "horas_na_praca_mes": horas_na_praca_mes,
-        "horas_na_praca_total": horas_na_praca_total,
-    }
 
 
 def marcar_alerta_saldo_baixo_enviado(medico_id: str):

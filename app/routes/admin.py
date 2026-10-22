@@ -65,35 +65,15 @@ def dashboard():
                             medicos_pendentes=medicos_pendentes)
 
 
-_NOMES_MESES = [
-    None, 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
-]
-
-
 @admin_bp.route('/horas')
 @_admin
 def horas():
-    """Painel "Horas" do admin -- pedido do Paulo em 10/09/2026 (mandou
-    print de uma tela parecida do sistema maior original): horas
-    vendidas e horas utilizadas num mês escolhido, mais o saldo total de
-    horas "na praça" (soma do saldo de todo mundo, sem filtro de mês --
-    ver creditos_service.estatisticas_horas)."""
-    hoje = date.today()
-    mes_valor = request.args.get('mes') or f"{hoje.year:04d}-{hoje.month:02d}"
-    try:
-        ano, mes = (int(p) for p in mes_valor.split('-', 1))
-        if not (1 <= mes <= 12):
-            raise ValueError
-    except ValueError:
-        ano, mes = hoje.year, hoje.month
-        mes_valor = f"{ano:04d}-{mes:02d}"
-
-    stats = creditos_db.estatisticas_horas(mes, ano)
-    endereco = creditos_db.obter_endereco_padrao()
+    """Painel "Horas" do admin -- mostra só as "horas na praça": soma das horas
+    (saldo) de todos os profissionais hoje (pedido do Paulo em 22/10/2026,
+    ver creditos_service.horas_na_praca_total) + endereço padrão."""
     return render_template(
-        'admin_horas.html', stats=stats, mes=mes, ano=ano,
-        mes_valor=mes_valor, mes_nome=_NOMES_MESES[mes], endereco=endereco,
+        'admin_horas.html', horas_na_praca=creditos_db.horas_na_praca_total(),
+        endereco=creditos_db.obter_endereco_padrao(),
     )
 
 

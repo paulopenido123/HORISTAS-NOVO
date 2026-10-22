@@ -1,4 +1,5 @@
 import os
+import time
 import traceback
 from datetime import timedelta
 from flask import Flask, session, request, jsonify
@@ -26,7 +27,10 @@ def create_app():
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = Config.FORCE_HTTPS_COOKIES
-    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
+    # Cookie de sessão dura até 30 dias, mas só quem marcou "Lembrar dados no
+    # próximo acesso" no login usa tudo isso; a sessão normal continua
+    # expirando após 8h sem uso (ver _tornar_sessao_permanente).
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
     app.config["WTF_CSRF_TIME_LIMIT"] = 8 * 60 * 60
 
     @app.errorhandler(Exception)
@@ -44,6 +48,12 @@ def create_app():
     @app.before_request
     def _tornar_sessao_permanente():
         session.permanent = True
+        agora = time.time()
+        if not session.get("lembrar"):
+            ultimo = session.get("_ultimo_acesso")
+            if ultimo and agora - ultimo > 8 * 3600:
+                session.clear()
+        session["_ultimo_acesso"] = agora
 
     app.register_blueprint(turnos_bp)
     app.register_blueprint(auth_bp)

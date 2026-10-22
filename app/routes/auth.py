@@ -144,6 +144,10 @@ def login():
             erro = "Telefone ou senha incorretos."
         else:
             auth_service.login_medico(medico["id"])
+            # "Lembrar dados no próximo acesso": mantém este aparelho
+            # conectado por até 30 dias (cookie assinado e HttpOnly -- a
+            # senha NUNCA é guardada em lugar nenhum).
+            session["lembrar"] = request.form.get("lembrar") == "1"
             destino = request.args.get("next") or url_for("medico_painel.painel")
             return redirect(destino)
 

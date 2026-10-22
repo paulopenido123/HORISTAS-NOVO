@@ -41,6 +41,8 @@
     .card { max-width: 100%; padding: 24px 20px; border-radius: 14px; }
     h1 { font-size: 18px; }
   }
+  label.lembrar { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--navy); margin: 4px 0 14px; cursor: pointer; }
+  label.lembrar input { width: auto; margin: 0; }
 </style>
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#0E2A3B">
@@ -71,13 +73,41 @@ if ("serviceWorker" in navigator) {
     <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label for="telefone">Telefone (com DDD)</label>
-      <input type="text" id="telefone" name="telefone" placeholder="31999999999" required autofocus>
+      <input type="text" id="telefone" name="telefone" placeholder="31999999999" required autofocus autocomplete="username" inputmode="tel">
 
       <label for="senha">Senha</label>
-      <input type="password" id="senha" name="senha" required>
+      <input type="password" id="senha" name="senha" required autocomplete="current-password">
+
+      <label class="lembrar" for="lembrar"><input type="checkbox" id="lembrar" name="lembrar" value="1"> Lembrar dados no próximo acesso</label>
 
       <button type="submit">Entrar</button>
     </form>
+    <script>
+    // "Lembrar dados no próximo acesso": só neste aparelho. O telefone fica
+    // guardado no próprio navegador (localStorage) e a SENHA fica no gerenciador
+    // de senhas do navegador/celular (cofre protegido do próprio aparelho) -- o
+    // sistema nunca grava a senha. O servidor também mantém o aparelho conectado
+    // por até 30 dias (cookie assinado, invisível ao JavaScript).
+    (function () {
+      var form = document.querySelector('form'), tel = document.getElementById('telefone'),
+          senha = document.getElementById('senha'), chk = document.getElementById('lembrar');
+      try {
+        if (localStorage.getItem('lifemax_lembrar') === '1') {
+          chk.checked = true;
+          var t = localStorage.getItem('lifemax_telefone'); if (t) { tel.value = t; senha.focus(); }
+        }
+      } catch (e) {}
+      form.addEventListener('submit', function () {
+        try {
+          if (chk.checked) { localStorage.setItem('lifemax_lembrar', '1'); localStorage.setItem('lifemax_telefone', tel.value); }
+          else { localStorage.removeItem('lifemax_lembrar'); localStorage.removeItem('lifemax_telefone'); }
+        } catch (e) {}
+        if (chk.checked && window.PasswordCredential && navigator.credentials) {
+          try { navigator.credentials.store(new PasswordCredential({ id: tel.value, password: senha.value, name: 'Lifemax' })); } catch (e) {}
+        }
+      });
+    })();
+    </script>
 
     <div class="rodape">
       Primeiro acesso? <a href="{{ url_for('auth.primeiro_acesso') }}">Criar senha</a>

@@ -398,3 +398,17 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Cadastro rápido de paciente: só nome, telefone e e-mail (nova coluna `pacientes.telefone` — `sql/migration_paciente_telefone.sql`).
 - Venda de horas avulsas: botão "Comprar" por pacote (abre a compra com valor preenchido; PIX ou cartão parcelado via Asaas).
 - Verde padrão dos botões: #0EA5A0 (hover #0C8B87). Regra única de celular em /static/css/base-mobile.css.
+
+
+## Atualização 22/10/2026 (v46) — Novo padrão visual do painel do médico
+- `painel_medico.html` redesenhado conforme a foto enviada pelo Paulo (celular idêntico; PC segue o mesmo padrão, centralizado, menu inferior flutuante).
+- Topo azul-petróleo com logo, "Bem-vindo, <nome>!", botão Sair; cartão "Saldo de horas" com + Comprar horas / Meus dados; cartões Reservar consultórios e LifeDoctor.
+- Minha agenda: Ver todos, Cadastrar paciente, busca (por data/consultório), abas Próximas/Hoje/Semana/Mês, cartões de consulta (Confirmada/Cancelada, Enviar e-mail, menu ⋮ com cancelar).
+- Visão geral da conta (saldo e atalho para Histórico de uso) e menu inferior fixo: Início, Agenda, Pacientes, Meu perfil.
+- Removidos: botão Ocultar/Exibir da agenda (substituído por Ver todos), célula "Meu perfil" e botão Pacientes no cabeçalho (agora no menu inferior).
+
+## Atualização 22/10/2026 (v47) — Grade de turnos (`turnos.html`) no novo padrão
+- Visual igual ao painel do médico: topo com logo, cartão de saldo (Meus dados / Voltar ao painel), caixa Reservar/Cancelar geral, navegação de mês, legenda e um cartão por consultório. Celular exibe os 7 dias inteiros sem rolagem lateral (como na foto); PC usa o mesmo estilo centralizado.
+- Cada consultório ganhou os botões **Ver foto | Reservar | Cancelar**, todos do mesmo tamanho. O modo escolhido num consultório vale só para ele; os botões gerais do topo valem para todos (`modoConsultorio` em JS; `clicarSlotLivre`/`clicarBlocoReservado` validam o consultório).
+- Cores: livre = menta claro, reservado por mim = verde, reservado (outros/admin) = azul, indisponível = azul-marinho.
+- Removido "Ver detalhes" (duplicava Ver foto, que já mostra descrição).

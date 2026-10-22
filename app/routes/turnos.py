@@ -89,6 +89,22 @@ def api_grade():
     return jsonify(grade)
 
 
+@turnos_bp.route("/api/turnos/primeiro-dia-visivel", methods=["GET"])
+@requer_login_medico
+def api_primeiro_dia_visivel():
+    """Primeiro dia, a partir de hoje, que o administrador NÃO ocultou. A
+    Grade de Turnos abre nessa data (em vez de abrir numa semana inteira
+    oculta) -- pedido do Paulo em 22/10/2026."""
+    hoje = date.today()
+    ocultos = set(template_service.listar_dias_ocultos(hoje.isoformat()))
+    dia = hoje
+    for _ in range(400):  # limite de segurança
+        if dia.isoformat() not in ocultos:
+            break
+        dia += timedelta(days=1)
+    return jsonify({"data": dia.isoformat()})
+
+
 @turnos_bp.route("/api/turnos/reservar", methods=["POST"])
 @requer_login_medico
 def api_reservar():

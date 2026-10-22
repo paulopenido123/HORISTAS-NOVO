@@ -25,6 +25,7 @@ def login_medico(medico_id: str):
 
 def logout_medico():
     session.pop("medico_id", None)
+    session.pop("lembrar", None)
     session.pop("prontuario_2fa_verificado_medico_id", None)
 
 

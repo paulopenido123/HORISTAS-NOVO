@@ -11,14 +11,14 @@
   :root {
     --navy: #0E2A3B; --navy-soft: #15425C; --teal: #0EA5A0; --teal-soft: #EAF4F3;
     --line: #DCE6E8; --muted: #55707C; --coral: #D65C3F; --coral-soft: #fbeae6;
-    --bege: #1F3A5F; --verde: #EAF4FF; --rosa: #7FA3D1;
+    --bege: #123456; --verde: #DDF3EE; --rosa: #5B8BDD;
     /* Cores da grade -- pedido do Paulo em 11/09/2026: voltar a usar
        exatamente a mesma paleta da Matriz do admin (admin_matriz.html),
        pra ficar visualmente igual nas duas telas: Livre/Disponível =
        verde, Reservado por mim = azul (mesmo azul da "Reserva
        confirmada" da Matriz), Reservado (por outro médico ou pelo
        administrador) = rosa, Indisponível = cinza. */
-    --azul-confirmado: #22A7C5;
+    --azul-confirmado: #14B88A;
   }
   * { box-sizing: border-box; }
   body {
@@ -26,12 +26,31 @@
     background: #F5F8F9; color: #10222E;
   }
   h1, h2, h3 { font-family: 'Manrope', sans-serif; }
-  header {
-    background: var(--navy); color: white; padding: 20px 24px;
-    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
-  }
-  header h1 { margin: 0; font-size: 20px; font-weight: 700; }
-  header p { margin: 4px 0 0; font-size: 13px; color: #9FB8C4; }
+  /* ===== NOVO PADRÃO VISUAL (22/10/2026) -- mesma linguagem do painel do
+     médico: celular idêntico à foto do Paulo, PC no mesmo estilo ===== */
+  .ic { width: 1.1em; height: 1.1em; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; vertical-align: -0.15em; }
+  .hero { background: linear-gradient(160deg, #0A3650 0%, #0B4A5F 55%, #0C5867 100%); color: #fff; border-radius: 0 0 34px 34px; padding-bottom: 70px; }
+  .hero-topo { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 16px; max-width: 1040px; margin: 0 auto; padding: 22px 18px 0; }
+  .brand-logo { height: 54px; width: auto; display: block; background: #fff; border-radius: 16px; padding: 10px 14px; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+  .hero-titulo .eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: .05em; color: #34D2CC; text-transform: uppercase; margin-bottom: 2px; }
+  .hero-titulo h1 { margin: 0; font-weight: 800; font-size: clamp(30px, 8vw, 42px); line-height: 1.05; color: #fff; }
+  .hero-titulo p { margin: 8px 0 0; font-size: clamp(13px, 3.3vw, 15.5px); line-height: 1.45; color: rgba(234,242,245,.92); max-width: 640px; }
+  .saldo-card { position: relative; max-width: 1004px; margin: -52px 12px 0; background: #fff; border-radius: 22px; box-shadow: 0 8px 26px rgba(11,58,87,.14); padding: 14px; display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 12px; }
+  .saldo-ic { width: 56px; height: 56px; border-radius: 50%; background: #D8F1EF; color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 30px; }
+  .saldo-txt { border-left: 1px solid var(--line); padding-left: 12px; }
+  .saldo-txt .r { font-size: 12.5px; color: #55707C; text-transform: uppercase; letter-spacing: .02em; }
+  .saldo-txt .v { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 38px; line-height: 1.05; color: #10222E; }
+  .btn-pad { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 56px; padding: 0 16px; border-radius: 14px; border: 0; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; text-decoration: none; cursor: pointer; line-height: 1.15; text-align: center; }
+  .btn-pad.menta { background: #D8F1EF; color: #0B6E6A; }
+  .btn-pad.cinza { background: #E8EEF2; color: #1F3A4D; }
+  .caixa { max-width: 1004px; margin: 14px 12px 0; background: #fff; border-radius: 20px; box-shadow: 0 4px 16px rgba(11,58,87,.08); padding: 14px; }
+  .modo-botoes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn-modo { display: flex; align-items: center; justify-content: center; gap: 10px; height: 52px; border-radius: 12px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 19px; cursor: pointer; padding: 0 10px; }
+  .btn-modo.reservar { background: var(--teal); border: 1.5px solid var(--teal); color: #fff; }
+  .btn-modo.cancelar { background: #FDECEA; border: 1.5px solid #E8685A; color: #D42E1B; }
+  .btn-modo.reservar.ativo { background: #0C8B87; box-shadow: 0 0 0 3px rgba(14,165,160,.3); }
+  .btn-modo.cancelar.ativo { background: #D42E1B; color: #fff; box-shadow: 0 0 0 3px rgba(212,46,27,.25); }
+  .btn-modo.pequeno { height: 38px; font-size: 14px; border-radius: 10px; padding: 0 14px; gap: 6px; }
   .container { max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px; }
 
   .barra-controles {
@@ -52,51 +71,30 @@
   button.btn-nav { cursor: pointer; background: var(--teal-soft); border-color: var(--teal); color: var(--navy); font-weight: 700; }
   button.btn-nav:hover { background: #DCEEEC; }
 
-  /* Botão "Voltar ao painel" no header -- pedido do Paulo em 15/09/2026:
-     padrão de botão branco com letra da cor da faixa azul escura, igual
-     ao botão "Reservar consultórios" do painel do médico. */
-  .btn-voltar-header {
-    background: #fff; color: var(--navy); border: 1px solid #fff; text-decoration: none;
-    font-weight: 700; font-size: 13px; padding: 8px 16px; border-radius: 7px;
-    display: inline-block; transition: background 0.15s;
-  }
-  .btn-voltar-header:hover { background: #DCEEEC; }
-
-  /* Saldo de horas no alto da página -- pedido do Paulo em 24/09/2026:
-     mesmo destaque visual do bloco "Saldo de horas" do hero do painel
-     (painel_medico.html), só que compacto pra caber ao lado do botão
-     "Voltar ao painel" aqui no header da Grade de Turnos. */
-  .saldo-header { text-align: right; }
-  .saldo-header .rotulo { font-size: 11px; color: #9FB8C4; text-transform: uppercase; letter-spacing: .03em; font-weight: 700; }
-  .saldo-header .valor { font-size: 22px; font-weight: 800; color: #fff; font-family: 'Manrope', sans-serif; }
-
   /* ---- botões "Reservar" / "Cancelar", no alto da página -- pedido do
      Paulo em 14/09/2026: em vez de preencher Data + Hora início +
      Quantidade de horas num formulário, o médico clica em "Reservar" e
      depois clica direto no horário verde da grade (1h por clique, pode
      clicar em vários); pra cancelar é a mesma lógica: clica em
      "Cancelar" e depois no horário reservado por ele (azul). ---- */
-  .painel-horas-avulsas { background:white; border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:20px; }
-  .btn-nav.ativo { background: var(--navy); color: #fff; border-color: var(--navy); }
-  #btn-modo-cancelar.ativo { background: var(--coral); color: #fff; border-color: var(--coral); }
   /* realce visual dos horários clicáveis conforme o modo ativo */
-  #lista-consultorios.modo-reservar .slot-vago:not(.indisponivel) { outline: 2px solid var(--teal); outline-offset: -2px; }
-  #lista-consultorios.modo-cancelar .bloco-reserva.minha { outline: 2px solid var(--coral); outline-offset: -2px; }
+  .bloco-consultorio.modo-reservar .slot-vago:not(.indisponivel) { outline: 2px solid var(--teal); outline-offset: -2px; }
+  .bloco-consultorio.modo-cancelar .bloco-reserva.minha { outline: 2px solid var(--coral); outline-offset: -2px; }
 
-  .cabecalho-calendario {
-    display: flex; align-items: center; justify-content: space-between;
-    background: white; border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; margin-bottom: 12px;
-  }
+  .cabecalho-calendario { display: flex; align-items: center; justify-content: space-between; gap: 8px; max-width: 1004px; margin: 14px 12px 0; background: #fff; border-radius: 20px; box-shadow: 0 4px 16px rgba(11,58,87,.08); padding: 12px 14px; }
   .nav-semana { display: flex; align-items: center; gap: 10px; }
-  .nav-semana.direita { flex-direction: row-reverse; }
-  .nav-semana .rotulo-semana { font-size: 12.5px; font-weight: 700; color: var(--navy); }
-  .btn-seta {
-    cursor: pointer; background: var(--teal-soft); border: 1px solid var(--teal); color: var(--navy);
-    font-weight: 700; font-size: 18px; width: 38px; height: 38px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0;
-  }
-  .btn-seta:hover { background: #DCEEEC; }
-  .mes-ano-atual { font-size: 17px; font-weight: 700; color: var(--navy); text-transform: capitalize; text-align: center; flex: 1; }
+  .nav-semana .rotulo-semana { display: none; }
+  .btn-seta { cursor: pointer; background: #fff; border: 1.5px solid var(--teal); color: #0B3A57; font-weight: 700; font-size: 22px; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; padding: 0; }
+  .btn-seta:hover { background: var(--teal-soft); }
+  .mes-ano-atual { font-family: 'Manrope', sans-serif; font-size: 19px; font-weight: 800; color: #0B3A57; text-transform: capitalize; text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .mes-ano-atual .ic { font-size: 24px; }
+  .legenda { display: flex; justify-content: space-between; gap: 8px 14px; font-size: 14px; color: var(--muted); flex-wrap: wrap; }
+  .legenda span { display: inline-flex; align-items: center; gap: 7px; }
+  .dot { width: 18px; height: 18px; border-radius: 50%; display: inline-block; }
+  .dot.livre { background: var(--verde); border: 1px solid #BFE6DE; }
+  .dot.meu { background: var(--azul-confirmado); }
+  .dot.outro { background: var(--rosa); }
+  .dot.bege { background: var(--bege); }
 
   /* ---- um bloco de grade por consultório, empilhados, com uma pequena
      separação entre eles pra não confundir os campos de um com os do
@@ -105,18 +103,15 @@
   /* Espaçamento reduzido -- pedido do Paulo em 14/09/2026: compactar mais
      os blocos de consultório pra caber mais informação visível na tela,
      igual à referência de layout que ele mandou por foto. */
-  #lista-consultorios { display: flex; flex-direction: column; gap: 3px; }
-  .bloco-consultorio { background: white; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .bloco-consultorio-header {
-    display: flex; justify-content: flex-start; align-items: center; gap: 12px;
-    padding: 3px 10px; border-bottom: 1px solid var(--line); background: #FAFCFC;
-  }
-  .bloco-consultorio-nome { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 21px; color: var(--navy); }
-  .btn-ver-foto {
-    cursor: pointer; background: var(--teal-soft); border: 1px solid var(--teal); color: var(--navy);
-    font-weight: 700; font-size: 12.5px; padding: 7px 14px; border-radius: 7px;
-  }
-  .btn-ver-foto:hover { background: #DCEEEC; }
+  #lista-consultorios { display: flex; flex-direction: column; gap: 14px; max-width: 1004px; margin: 14px 12px 0; }
+  .bloco-consultorio { background: white; border-radius: 20px; box-shadow: 0 4px 16px rgba(11,58,87,.08); overflow: hidden; }
+  .bloco-consultorio-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; flex-wrap: wrap; }
+  .bloco-consultorio-nome { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 30px; color: #0B3A57; display: flex; align-items: center; gap: 10px; padding-right: 10px; border-right: 1px solid var(--line); }
+  .bloco-consultorio-nome .ic { font-size: 30px; color: #5E7A89; }
+  .bloco-acoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; flex: 1; min-width: 260px; }
+  .bloco-acoes .btn-modo { width: 100%; height: 42px; font-size: 14.5px; padding: 0 6px; white-space: nowrap; }
+  .btn-modo.foto { background: var(--teal-soft); border: 1.5px solid #BFDCDA; color: #0B3A57; }
+  .btn-modo.foto:hover { background: #DCEEEC; }
 
   /* ---- grade por horário, igual à da Agenda dos Médicos Fixos:
      posicionamento por minuto (não uma tabela com células soltas), pra
@@ -132,12 +127,12 @@
      com min-width igual ao do corpo (pra não ficar comprimido diferente,
      que era a causa do desalinhamento de colunas) e `position: sticky`
      pra continuar visível ao rolar verticalmente. */
-  .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-bottom: 1px solid var(--line); min-width: 760px; position: sticky; top: 0; z-index: 2; background: #fff; }
+  .grade-cabecalho { display: grid; grid-template-columns: 64px repeat(7, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 760px; position: sticky; top: 0; z-index: 2; background: #fff; }
   .grade-cabecalho .col-hora-vazia { border-right: 1px solid var(--line); }
   /* Fonte dos dias/números e das horas aumentada bastante, e negrito
      preto -- pedido do Paulo em 22/09/2026 (mesma mudança já feita na
      Agenda Horistas do admin, agora espelhada aqui). */
-  .grade-cabecalho .col-dia { text-align: center; padding: 5px 4px; font-size: 15px; font-weight: 800; color: #10222E; border-right: 1px solid var(--line); }
+  .grade-cabecalho .col-dia { text-align: center; padding: 8px 2px; font-size: 14.5px; font-weight: 500; color: #10222E; border-right: 1px solid var(--line); }
   .grade-cabecalho .col-dia .numero { font-family: 'Manrope', sans-serif; font-size: 17px; font-weight: 800; }
   /* padding vertical -- pedido do Paulo em 21/09/2026: sem isso, a marca
      "08:00" (e a "20:00" no fim) ficava cortada pelo overflow, porque o
@@ -148,8 +143,8 @@
      24/09/2026: a marca da primeira hora (08:00) usa
      transform:translateY(-50%) pra centralizar o texto na linha, o que
      fazia a metade de cima do texto ficar cortada no topo da grade. */
-  .grade-scroll-vertical { max-height: 520px; overflow-y: auto; overflow-x: auto; padding: 14px 0 7px; }
-  .grade-corpo { display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
+  .grade-scroll-vertical { max-height: 520px; overflow-y: auto; overflow-x: auto; padding: 0 0 14px; }
+  .grade-corpo { margin-top: 12px; display: grid; grid-template-columns: 64px repeat(7, 1fr); position: relative; min-width: 760px; }
   .coluna-horas { position: relative; border-right: 1px solid var(--line); }
   .coluna-horas .marca-hora { position: absolute; left: 0; right: 0; font-size: 12px; font-weight: 700; color: #10222E; text-align: right; padding-right: 6px; transform: translateY(-50%); }
   .coluna-dia {
@@ -163,7 +158,7 @@
     position: absolute; left: 2px; right: 2px; border-radius: 3px; cursor: pointer;
     border: 1px dashed #e3e8ea; box-sizing: border-box;
   }
-  .slot-vago { background: var(--verde); border: 1px solid #BCD6F2; }
+  .slot-vago { background: var(--verde); border: 1px solid #CFEBE4; border-radius: 6px; }
   .slot-vago.indisponivel { background: var(--bege); border: 1px solid #16304F; cursor: not-allowed; }
   .slot-vago.indisponivel:hover { border-color: #16304F; background: var(--bege); }
   .bloco-reserva {
@@ -174,10 +169,11 @@
   /* Bordas delineadas e nome sempre em negrito preto -- pedido do Paulo
      em 22/09/2026 (antes o texto ficava branco em cima do azul, difícil
      de ler). */
-  .bloco-reserva.minha { background: var(--azul-confirmado); border: 1.5px solid #0E6B7D; cursor: pointer; }
-  .bloco-reserva.outro-medico { background: var(--rosa); border: 1.5px solid #4E78AE; }
-  .bloco-reserva .h { font-weight: 800; color: #10222E; }
-  .bloco-reserva .nome { font-weight: 800; color: #10222E; overflow: hidden; text-overflow: ellipsis; }
+  .bloco-reserva.minha { background: var(--azul-confirmado); border: 1.5px solid #0E8F6C; cursor: pointer; border-radius: 6px; }
+  .bloco-reserva.outro-medico { background: var(--rosa); border: 1.5px solid #4670BE; border-radius: 6px; }
+  .bloco-reserva.minha .h, .bloco-reserva.minha .nome, .bloco-reserva.outro-medico .h, .bloco-reserva.outro-medico .nome { color: #fff; }
+  .bloco-reserva .h { font-weight: 700; color: #fff; }
+  .bloco-reserva .nome { font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; }
   #aviso-12h { display:none; background: var(--coral-soft); color: var(--coral); padding:10px 12px; border-radius:8px; font-size:12.5px; margin-top:10px; font-weight:600; }
 
   /* Pedido do Paulo em 24/09/2026 (item 1): o aviso de erro (ex: cadastro
@@ -215,13 +211,31 @@
     text-align: center; padding: 0 10px; font-size: 13px; color: var(--muted); font-style: italic;
   }
 
+  .container { padding: 0 0 60px; }
+  .saldo-card, .caixa, .cabecalho-calendario, #lista-consultorios { margin-left: auto !important; margin-right: auto !important; width: calc(100% - 24px); }
+  #status-horas { font-size: 13px; margin-top: 10px; }
+  #status-horas:empty { display: none; }
+  #status-msg { margin: 12px 14px 0; }
+  .estado-vazio { background: #fff; border-radius: 20px; padding: 30px; text-align: center; color: var(--muted); }
   @media (max-width: 760px) {
-    header { padding: 14px 16px; }
-    header h1 { font-size: 17px; }
-    .container { padding: 14px 12px 50px; }
-    .barra-controles { padding: 12px; gap: 10px; }
-    .legenda { flex-wrap: wrap; gap: 8px 14px; }
-    .nav-semana .rotulo-semana { display: none; }
+    .saldo-card { grid-template-columns: auto 1fr auto auto; gap: 8px; padding: 12px 10px; }
+    .saldo-ic { width: 48px; height: 48px; font-size: 26px; }
+    .saldo-txt { padding-left: 9px; } .saldo-txt .r { font-size: 11px; } .saldo-txt .v { font-size: 32px; }
+    .btn-pad { height: 58px; padding: 0 9px; font-size: 13.5px; gap: 6px; max-width: 98px; }
+    .btn-pad .ic { display: block; }
+    .btn-modo { font-size: 17px; height: 48px; }
+    .mes-ano-atual { font-size: 17px; gap: 6px; } .mes-ano-atual .ic { font-size: 22px; }
+    .legenda { font-size: 12.5px; gap: 6px 10px; } .dot { width: 15px; height: 15px; }
+    .bloco-consultorio-nome { font-size: 28px; }
+    .bloco-acoes { min-width: 100%; }
+    .bloco-acoes .btn-modo { font-size: 13.5px; gap: 4px; }
+    /* grade cabe inteira na largura do celular (7 colunas, sem rolagem lateral), como na foto */
+    .grade-cabecalho, .grade-corpo { min-width: 0 !important; grid-template-columns: 50px repeat(var(--ncol, 7), 1fr) !important; }
+    .grade-scroll-vertical { max-height: none; padding: 0 0 12px; }
+    .coluna-horas .marca-hora { font-size: 12px; }
+    .bloco-reserva { justify-content: center; padding: 0; left: 1.5px; right: 1.5px; }
+    .bloco-reserva .nome { display: none; } .bloco-reserva .h { font-size: 11.5px; font-weight: 600; }
+    .grade-cabecalho .col-dia { font-size: 13px; } .grade-cabecalho .col-dia .numero { font-size: 15px; }
   }
 </style>
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -243,56 +257,64 @@
 })();
 </script>
 
-<header>
-  <div>
-    <h1>Grade de Turnos — Lifemax</h1>
-    <p>Veja a disponibilidade de todos os consultórios da semana. Clique em "Reservar" e depois no horário verde que deseja ocupar (1h por clique). Para cancelar, clique em "Cancelar" e depois no horário reservado por você (azul).</p>
-  </div>
-  <div style="display:flex; align-items:center; gap:18px;">
-    {% if medico %}
-    <div class="saldo-header">
-      <div class="rotulo">Saldo de horas</div>
-      <div class="valor" id="saldo-header-valor">{{ saldo_horas }}h</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+<symbol id="i-calplus" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M12 13v5M9.5 15.5h5"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+<symbol id="i-bld" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></symbol>
+</defs></svg>
+
+<header class="hero">
+  <div class="hero-topo">
+    <div><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
+    <div class="hero-titulo">
+      <div class="eyebrow">Grade de turnos</div>
+      <h1>Lifemax</h1>
+      <p>Veja a disponibilidade de todos os consultórios da semana. Clique em "Reservar" e depois no horário verde que deseja ocupar (1h por clique). Para cancelar, clique em "Cancelar" e depois no horário reservado por você (azul).</p>
     </div>
-    {% endif %}
-    <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" class="btn-voltar-header">Meus dados</a>
-    <a href="{{ url_for('medico_painel.painel') }}" class="btn-voltar-header">← Voltar ao painel</a>
   </div>
 </header>
 
+<div class="saldo-card">
+  <div class="saldo-ic"><svg class="ic"><use href="#i-clock"/></svg></div>
+  <div class="saldo-txt">
+    {% if medico %}<div class="r">Saldo de horas</div><div class="v" id="saldo-header-valor">{{ saldo_horas }}h</div>{% else %}<div class="r">Grade de turnos</div>{% endif %}
+  </div>
+  <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" class="btn-pad menta"><svg class="ic"><use href="#i-user"/></svg><span>Meus dados</span></a>
+  <a href="{{ url_for('medico_painel.painel') }}" class="btn-pad cinza"><svg class="ic"><use href="#i-back"/></svg><span>Voltar ao painel</span></a>
+</div>
+
 <div class="container">
   {% if medico and not medico.autorizado %}
-  <div style="background:var(--coral-soft, #FBEAE6); color:var(--coral, #B33); padding:12px 16px; border-radius:8px; font-size:13px; margin-bottom:18px;">
+  <div style="background:var(--coral-soft, #FBEAE6); color:var(--coral, #B33); padding:12px 16px; border-radius:14px; font-size:13px; margin:14px 12px 0;">
     Seu cadastro ainda está aguardando liberação do administrador. Você pode navegar pela grade,
     mas a reserva só é confirmada depois que seu acesso for autorizado.
   </div>
   {% endif %}
 
-  {# Botões "Reservar" / "Cancelar" -- pedido do Paulo em 14/09/2026: sem
-     campos de Data/Hora início/Quantidade de horas -- é só escolher o
-     modo aqui e depois clicar direto no horário desejado na grade. #}
-  <div class="painel-horas-avulsas">
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button type="button" class="btn-nav" id="btn-modo-reservar" style="padding:10px 18px; font-weight:800;" onclick="alternarModo('reservar')">🏥 Reservar</button>
-      <button type="button" class="btn-nav" id="btn-modo-cancelar" style="padding:10px 18px; font-weight:800; background:var(--coral-soft); border-color:var(--coral); color:var(--coral);" onclick="alternarModo('cancelar')">✕ Cancelar</button>
+  {# Botões "Reservar" / "Cancelar" gerais (valem para todos os consultórios);
+     cada consultório também tem os seus, ao lado de "Ver foto". #}
+  <div class="caixa">
+    <div class="modo-botoes">
+      <button type="button" class="btn-modo reservar" id="btn-modo-reservar" onclick="alternarModo('reservar')"><svg class="ic"><use href="#i-calplus"/></svg> Reservar</button>
+      <button type="button" class="btn-modo cancelar" id="btn-modo-cancelar" onclick="alternarModo('cancelar')"><svg class="ic"><use href="#i-x"/></svg> Cancelar</button>
     </div>
-    <div id="status-horas" style="font-size:13px; margin-top:10px;"></div>
+    <div id="status-horas"></div>
     <div id="aviso-12h">⚠️ O cancelamento com menos de 12 horas não gera reembolso.</div>
   </div>
 
   <div class="cabecalho-calendario">
-    <div class="nav-semana">
-      <button class="btn-seta" id="btn-anterior" title="Semana anterior">&larr;</button>
-      <span class="rotulo-semana">Semana anterior</span>
-    </div>
-    <div class="mes-ano-atual" id="mes-ano-atual">—</div>
-    <div class="nav-semana direita">
-      <button class="btn-seta" id="btn-proxima" title="Próxima semana">&rarr;</button>
-      <span class="rotulo-semana">Próxima semana</span>
-    </div>
+    <div class="nav-semana"><button class="btn-seta" id="btn-anterior" title="Semana anterior">&larr;</button></div>
+    <div class="mes-ano-atual"><svg class="ic"><use href="#i-cal"/></svg><span id="mes-ano-atual">—</span></div>
+    <div class="nav-semana"><button class="btn-seta" id="btn-proxima" title="Próxima semana">&rarr;</button></div>
   </div>
 
-  <div class="barra-controles">
+  <div class="caixa">
     <div class="legenda">
       <span><span class="dot livre"></span> Livre</span>
       <span><span class="dot meu"></span> Reservado por mim</span>
@@ -370,6 +392,8 @@ const INICIO_DO_TURNO = { manha: '08:00', tarde: '13:00', noite: '17:30' };
 // há um modo ativo -- reservar clica em horário verde, cancelar clica
 // no horário reservado por mim (azul).
 let modoAtual = null;
+// null = o modo vale para todos os consultórios (botões do topo); senão, id do consultório cujo botão foi clicado
+let modoConsultorio = null;
 
 const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -530,7 +554,7 @@ function renderizarGrade() {
   const semMatriz = new Set(gradeAtual.dias_sem_matriz || []);
   const dias = diasDaSemana.filter(d => !ocultos.has(d));
   const nSemMatriz = dias.filter(d => semMatriz.has(d)).length;
-  const estiloGrade = `grid-template-columns:64px repeat(${Math.max(dias.length, 1)}, 1fr); min-width:${Math.max(64 + dias.length * 96, 280)}px;`;
+  const estiloGrade = `--ncol:${Math.max(dias.length, 1)}; grid-template-columns:64px repeat(${Math.max(dias.length, 1)}, 1fr); min-width:${Math.max(64 + dias.length * 96, 280)}px;`;
 
   const cabecalhoDiasHtml = '<div class="col-hora-vazia"></div>' +
     dias.map(d => {
@@ -599,7 +623,7 @@ function renderizarGrade() {
           const classe = minha ? 'minha' : 'outro-medico';
           const titulo = ocupado.admin ? 'Reservado pelo administrador' : (minha ? 'Clique em "Cancelar" e depois aqui pra cancelar' : 'Reservado por outro profissional');
           const onclickAttr = minha
-            ? ` onclick="clicarBlocoReservado('${ocupado.reservaId}', '${ocupado.dataIso}', '${ocupado.horaInicio}')"`
+            ? ` onclick="clicarBlocoReservado('${ocupado.reservaId}', '${ocupado.dataIso}', '${ocupado.horaInicio}', '${consultorio.id}')"`
             : '';
           html += `<div class="bloco-reserva ${classe}" style="top:${top}px; height:${altura}px;" title="${titulo}"${onclickAttr}>
             <div class="h">${hora}</div><div class="nome">${ocupado.admin ? 'Reservado' : (minha ? 'Você' : ocupado.nome)}</div>
@@ -622,10 +646,15 @@ function renderizarGrade() {
       return html;
     }).join('');
 
-    return `<div class="bloco-consultorio">
+    const mc = (modoConsultorio === consultorio.id) ? modoAtual : (modoConsultorio === null ? modoAtual : null);
+    return `<div class="bloco-consultorio${mc ? ' modo-' + mc : ''}" data-consultorio-id="${consultorio.id}">
       <div class="bloco-consultorio-header">
-        <div class="bloco-consultorio-nome">${consultorio.nome}</div>
-        <button type="button" class="btn-ver-foto" onclick="abrirFotoConsultorio('${consultorio.id}')">📷 Ver foto</button>
+        <div class="bloco-consultorio-nome"><svg class="ic"><use href="#i-bld"/></svg>${consultorio.nome}</div>
+        <div class="bloco-acoes">
+          <button type="button" class="btn-modo foto pequeno" onclick="abrirFotoConsultorio('${consultorio.id}')"><svg class="ic"><use href="#i-cam"/></svg> Ver foto</button>
+          <button type="button" class="btn-modo reservar pequeno${modoConsultorio === consultorio.id && modoAtual === 'reservar' ? ' ativo' : ''}" onclick="alternarModo('reservar', '${consultorio.id}')"><svg class="ic"><use href="#i-calplus"/></svg> Reservar</button>
+          <button type="button" class="btn-modo cancelar pequeno${modoConsultorio === consultorio.id && modoAtual === 'cancelar' ? ' ativo' : ''}" onclick="alternarModo('cancelar', '${consultorio.id}')"><svg class="ic"><use href="#i-x"/></svg> Cancelar</button>
+        </div>
       </div>
       <div class="grade-scroll-vertical">
         <div class="grade-cabecalho" style="${estiloGrade}">${cabecalhoDiasHtml}</div>
@@ -635,7 +664,6 @@ function renderizarGrade() {
   }).join('');
 
   const listaEl = document.getElementById('lista-consultorios');
-  listaEl.className = modoAtual ? `modo-${modoAtual}` : '';
   listaEl.innerHTML = (dias.length === 0 && (gradeAtual.consultorios || []).length ? '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum dia disponível para reserva nesta semana.' + ' Use as setas para ver outra semana.</div>' : blocosHtml) ||
     '<div style="background:white; border:1px solid var(--line); border-radius:10px; padding:30px; text-align:center; color:var(--muted);">Nenhum consultório cadastrado ainda.</div>';
   if (nSemMatriz) listaEl.insertAdjacentHTML('afterbegin', '<div style="background:#FFF4E5; border:1px solid #F2C27A; color:#7A4B00; border-radius:10px; padding:10px 14px; margin-bottom:10px; font-size:13px;">Parte desta semana ainda não tem agenda liberada pelo administrador: não é possível reservar nesses dias. Em caso de dúvida, entre em contato por telefone ou e-mail.</div>');
@@ -647,10 +675,15 @@ function _formatarDataBR(dataIso) {
 
 // Alterna o modo ativo -- pedido do Paulo em 14/09/2026: clicar de novo
 // no mesmo botão desliga o modo; clicar no outro botão troca direto.
-function alternarModo(modo) {
-  modoAtual = (modoAtual === modo) ? null : modo;
-  document.getElementById('btn-modo-reservar').classList.toggle('ativo', modoAtual === 'reservar');
-  document.getElementById('btn-modo-cancelar').classList.toggle('ativo', modoAtual === 'cancelar');
+// O modo escolhido vale para todos os consultórios, ou só para o consultório cujo botão foi clicado.
+function _modoValeNoConsultorio(consultorioId) { return modoConsultorio === null || modoConsultorio === consultorioId; }
+
+function alternarModo(modo, consultorioId) {
+  const alvo = consultorioId || null;
+  if (modoAtual === modo && modoConsultorio === alvo) { modoAtual = null; modoConsultorio = null; }
+  else { modoAtual = modo; modoConsultorio = alvo; }
+  document.getElementById('btn-modo-reservar').classList.toggle('ativo', modoAtual === 'reservar' && modoConsultorio === null);
+  document.getElementById('btn-modo-cancelar').classList.toggle('ativo', modoAtual === 'cancelar' && modoConsultorio === null);
   const statusEl = document.getElementById('status-horas');
   if (modoAtual === 'reservar') {
     statusEl.textContent = 'Clique num horário verde da grade abaixo para reservar.';
@@ -668,7 +701,7 @@ function alternarModo(modo) {
 
 async function clicarSlotLivre(consultorioId, dataIso, hora) {
   const statusEl = document.getElementById('status-horas');
-  if (modoAtual !== 'reservar') {
+  if (modoAtual !== 'reservar' || !_modoValeNoConsultorio(consultorioId)) {
     statusEl.textContent = 'Clique primeiro em "Reservar" e depois no horário desejado.';
     statusEl.style.color = '#D65C3F';
     statusEl.classList.add('erro');
@@ -729,9 +762,9 @@ async function clicarSlotLivre(consultorioId, dataIso, hora) {
   }
 }
 
-async function clicarBlocoReservado(reservaId, dataIso, horaInicio) {
+async function clicarBlocoReservado(reservaId, dataIso, horaInicio, consultorioId) {
   const statusEl = document.getElementById('status-horas');
-  if (modoAtual !== 'cancelar') {
+  if (modoAtual !== 'cancelar' || !_modoValeNoConsultorio(consultorioId)) {
     statusEl.textContent = 'Clique primeiro em "Cancelar" e depois no horário reservado por você.';
     statusEl.style.color = '#D65C3F';
     statusEl.classList.add('erro');
@@ -807,7 +840,15 @@ document.getElementById('btn-proxima').addEventListener('click', () => {
   carregarGrade();
 });
 
-carregarGrade();
+// Abre na primeira semana que tem dia visível (o admin pode ter ocultado
+// dias/meses inteiros) -- 22/10/2026.
+(async function iniciar() {
+  try {
+    const resp = await fetch('/api/turnos/primeiro-dia-visivel');
+    if (resp.ok) { const d = await resp.json(); if (d.data) dataInicioAtual = d.data; }
+  } catch (e) { /* mantém hoje */ }
+  carregarGrade();
+})();
 </script>
 
 </body>

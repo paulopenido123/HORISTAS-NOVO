@@ -24,65 +24,6 @@
   body { background: var(--bg); color: var(--ink); font-family: var(--display); -webkit-font-smoothing: antialiased; }
   a { color: inherit; }
 
-  /* Faixa de topo (logo + nome + Sair) -- pedido do Paulo em 11/09/2026:
-     antes eram DUAS faixas escuras empilhadas (o <header> sticky em cima
-     do <section class="hero">), agora é uma só: essa linha de topo vive
-     DENTRO do próprio .hero, sem o header separado. */
-  .hero-topo {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 28px 6px; flex-wrap: wrap; gap: 14px;
-  }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; color: var(--onnavy-ink); }
-  .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan-glow); box-shadow: 0 0 10px var(--cyan-glow); }
-  .brand-logo { height: 52px; width: auto; display: block; background: #fff; border-radius: 8px; padding: 5px 10px; }
-  /* Pedido do Paulo em 19/10/2026: título da área do cliente na mesma altura da logo, ao centro do topo. */
-  .hero-titulo { flex: 1; min-width: 240px; }
-  .hero-titulo .eyebrow { font-size: 12px; margin-bottom: 2px; }
-  .hero-titulo h1 { font-size: clamp(22px, 2.6vw, 30px); }
-  .hero-titulo .lead { font-size: 13.5px; margin-top: 2px; max-width: none; line-height: 1.4; }
-  .hero-topo-direita { display: flex; align-items: center; gap: 16px; }
-  .hero-nome { font-weight: 700; font-size: 15px; color: var(--onnavy-ink); }
-  /* Pedido do Paulo em 23/09/2026 (item 2): todo botão de fundo branco
-     vira verde claro, igual ao "+ Comprar horas" -- esse aqui era o
-     único com fundo branco fora do hero. */
-  .sair {
-    font-size: 14px; font-weight: 700; color: #fff; text-decoration: none;
-    padding: 8px 16px; border-radius: 7px; background: var(--verde); transition: background 0.15s;
-  }
-  .sair:hover { background: #0C8B87; }
-
-  /* ---------- HERO (Área do cliente) ---------- */
-  .hero { padding: 0 0 22px; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%); }
-  .eyebrow { font-size: 13.5px; font-weight: 700; color: var(--cyan-glow); letter-spacing: 0.04em; margin-bottom: 10px; text-transform: uppercase; }
-  .hero h1 { font-weight: 800; font-size: clamp(26px, 3.6vw, 44px); line-height: 1.12; letter-spacing: -0.01em; color: #fff; }
-  .lead { color: rgba(234,242,245,0.82); font-size: 15.5px; margin-top: 10px; max-width: 520px; line-height: 1.6; }
-
-  /* ---------- Saldo de horas + botão "Reservar consultórios" no hero --
-     pedido do Paulo em 14/09/2026: sobem pra faixa azul escura do topo,
-     do lado direito, em vez de ficarem num bloco separado mais abaixo. ---- */
-  .hero-saldo-bloco { text-align: center; padding: 0 24px; }
-  .hero-saldo-linha { display: flex; align-items: baseline; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
-  .hero-saldo-titulo { font-weight: 800; font-size: clamp(22px, 2.6vw, 32px); line-height: 1.12; letter-spacing: -0.01em; color: #fff; margin: 0; }
-  .hero-saldo-valor { font-weight: 800; font-size: clamp(22px, 2.6vw, 32px); color: #fff; margin: 0; }
-  /* ---------- Botões do hero (Comprar horas / Reservar consultórios /
-     Meus dados) -- pedido do Paulo em 23/09/2026 (item 1): os 3 com
-     EXATAMENTE o mesmo formato/cor/tamanho (antes "Reservar" era um
-     botão branco sólido e os outros dois eram contornados, transparentes
-     -- os 3 agora usam essa única classe). Cor "verde claro" pedida no
-     mesmo request (item 2) -- mesmo tom usado no botão "+ Comprar horas"
-     do board mais abaixo (.btn-cyan, var(--cyan)), aqui um pouco mais
-     forte (--verde) pra ter contraste suficiente sobre o fundo azul
-     escuro do hero. ---- */
-  .hero-botoes-linha { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-  .btn-hero-verde {
-    background: var(--verde); color: #fff; border: 1px solid var(--verde); padding: 12px 22px; border-radius: 7px;
-    font-family: var(--display); font-weight: 800; font-size: 15.5px; cursor: pointer; text-decoration: none;
-    display: inline-block; text-align: center; transition: background 0.15s;
-  }
-  .btn-hero-verde:hover { background: #0C8B87; }
-  .btn-lifedoctor { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-  .btn-lifedoctor img { height: 22px; width: auto; background: #fff; border-radius: 4px; padding: 2px 4px; display: block; }
-
   /* ---------- total (padrão "área do cliente") ---------- */
   .total { font-weight: 800; font-size: 38px; color: var(--ink); font-family: var(--display); line-height: 1.1; margin: 4px 0 2px; }
   .muted-cell { font-size: 14px; color: var(--ink-muted); line-height: 1.55; }
@@ -110,28 +51,14 @@
   .aviso-cadastro-pendente a { color: #8A5A00; font-weight: 700; text-decoration: underline; }
 
   /* ---------- BOARD / CELL SYSTEM ---------- */
-  .board { background: linear-gradient(165deg, var(--panel) 0%, var(--panel-2) 100%); border: 1px solid var(--line-strong); border-radius: 10px; overflow: hidden; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(14,42,58,0.05); }
-  .board-top { display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--ink-faint); }
-  .board-top .puck { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
-  .board-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
-  @media (max-width: 860px) { .board-grid { grid-template-columns: 1fr; } }
-  .cell { background: var(--panel); padding: 24px; display: flex; flex-direction: column; }
-  .cell-label { font-weight: 700; font-size: 13px; letter-spacing: 0.03em; color: var(--ink-faint); text-transform: uppercase; margin-bottom: 16px; }
 
   /* Gauge (saldo em horas) */
-  .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 6px 0 4px; }
-  .gauge { width: 128px; height: 128px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative;
            background: conic-gradient(var(--cyan) 0deg var(--gauge-deg), rgba(14,165,160,0.12) var(--gauge-deg) 360deg); }
-  .gauge::before { content: ''; position: absolute; width: 96px; height: 96px; border-radius: 50%; background: var(--panel); }
-  .gauge-val { position: relative; font-weight: 800; font-size: 20px; color: var(--cyan); }
-  .gauge-unit { position: relative; font-size: 12px; color: var(--ink-muted); margin-top: -2px; }
-  .gauge-caption { font-size: 13.5px; color: var(--ink-muted); margin-top: 14px; }
 
   .kv { display: flex; justify-content: space-between; font-size: 14.5px; padding: 9px 0; border-top: 1px solid var(--line); }
   .kv span:first-child { color: var(--ink-muted); }
   .kv span:last-child { color: var(--ink); font-weight: 600; }
 
-  .btn-cyan { background: var(--cyan); color: #fff; border: none; padding: 11px 18px; border-radius: 7px; font-family: var(--display); font-weight: 700; font-size: 14.5px; cursor: pointer; width: 100%; }
   .btn-ghost { background: transparent; color: var(--ink-muted); border: 1px solid var(--line-strong); padding: 10px 16px; border-radius: 7px; font-family: var(--display); font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
   .btn-ghost:hover { color: var(--ink); border-color: var(--cyan); }
   .btn-coral-outline { background: transparent; color: var(--coral); border: 1px solid var(--coral-soft); padding: 9px 14px; border-radius: 7px; font-family: var(--display); font-weight: 600; font-size: 14px; cursor: pointer; }
@@ -166,35 +93,6 @@
   .valor-negativo { color: var(--coral); font-weight: 600; }
   .vazio { color: var(--ink-faint); font-size: 14px; padding: 12px 0; }
 
-  /* ---------- Minha agenda (inline no topo do painel) ---------- */
-  .status-tag { display:inline-block; font-size: 12.5px; font-weight:700; padding:3px 10px; border-radius:20px; }
-  .status-tag.cancelada { background: var(--coral-soft); color: var(--coral); }
-  /* Item 6 (pedido do Paulo em 21/09/2026): aviso quando foi o
-     administrador da Lifemax (não o próprio médico) quem agendou ou
-     cancelou um horário pela Agenda Horistas. */
-  .aviso-admin { display:block; margin-top:3px; font-size: 12px; font-weight:600; color: var(--teal); }
-  .aviso-admin.cancelamento { color: var(--coral); }
-  .btn-cancelar { background: #000; color: #fff; border:1px solid #000; border-radius:6px; padding:4px 9px; font-family: var(--display); font-weight:600; font-size: 12px; cursor:pointer; }
-  .btn-cancelar:disabled { opacity:0.5; cursor:not-allowed; }
-  .aviso-linha-12h { color: var(--coral); font-size: 12px; font-weight:600; margin-top:4px; max-width:180px; }
-  /* Pedido do Paulo em 24/09/2026: horários do dia atual (hoje) destacados
-     com fundo verde claro em "Minha agenda", pra facilitar a visualização
-     dos horários que o profissional tem no dia de hoje. */
-  #corpo-tabela-agenda tr.linha-hoje { background: #E3F6E5; }
-  /* Pedido do Paulo em 24/09/2026: aumentar as fontes de "Minha agenda"
-     pra melhorar a visualização pelo celular -- só essa seção, não mexe
-     nas outras tabelas do painel (Histórico etc). */
-  #minha-agenda table { font-size: 16px; }
-  #minha-agenda th { font-size: 13.5px; }
-  #minha-agenda td { padding: 12px 9px; }
-  #minha-agenda .status-tag { font-size: 13.5px; }
-  #minha-agenda .aviso-admin { font-size: 13px; }
-  #minha-agenda .btn-cancelar { font-size: 13.5px; padding: 6px 11px; }
-  #minha-agenda .aviso-linha-12h { font-size: 13px; }
-  #minha-agenda .muted-cell { font-size: 15px; }
-  .painel-topo { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
-  .painel-topo h2 { margin-bottom:0; }
-  .botoes-agenda { display:flex; gap:8px; flex-wrap:wrap; }
   .btn-ghost.pequeno { padding:8px 12px; font-size: 13.5px; }
   /* Botões "azul da faixa escura" -- pedido do Paulo em 11/09/2026: mesma
      cor de fundo do topo da página (var(--navy)), letras brancas -- pros
@@ -203,10 +101,6 @@
   .btn-navy { background: var(--navy); color: #fff; border: 1px solid var(--navy); padding: 10px 16px; border-radius: 7px; font-family: var(--display); font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; transition: background 0.15s; }
   .btn-navy:hover { background: var(--navy-soft); color: #fff; }
   .btn-navy.grande { padding: 15px 28px; font-size: 15.5px; font-weight: 800; }
-  /* Botão "Enviar e-mail de confirmação" no fim de cada agendamento (22/10/2026) */
-  .btn-email-confirmacao { display:block; margin-top:8px; background: var(--cyan); color:#fff; border:none; border-radius:7px;
-    padding: 7px 12px; font-family: var(--display); font-weight:700; font-size: 13px; cursor:pointer; }
-  .btn-email-confirmacao:hover { background:#0C8B87; }
   /* Botões da tela "Enviar e-mail de confirmação": mesmo tamanho */
   .btn-modal-padrao { flex:1 1 0; min-width:130px; height:42px; background: var(--cyan); color:#fff; border:none; border-radius:7px;
     font-family: var(--display); font-weight:700; font-size:14px; cursor:pointer; }
@@ -244,16 +138,145 @@
   .status-aguardando { color: var(--ink-muted); font-size: 14px; }
   .status-pago { color: var(--cyan); font-weight: 700; }
 
-  /* ---- celular ---- */
-  @media (max-width: 640px) {
-    .hero-topo { padding: 14px 16px 16px; flex-wrap: wrap; gap: 8px; row-gap: 4px; }
-    .hero { padding: 0 0 28px; }
-    .container { padding: 22px 16px 60px; }
-    .painel, .cell { padding: 16px; }
-    .board-top { padding: 12px 16px; }
-    table { font-size: 13px; }
-    .painel { overflow-x: auto; }
-    .valores-rapidos { justify-content: flex-start; }
+
+  /* =====================================================================
+     NOVO PADRÃO VISUAL (22/10/2026) -- igual ao layout de referência do
+     Paulo (celular) e o mesmo padrão no computador: faixa azul com logo,
+     cartão branco de saldo, cartões rápidos, Minha agenda em cartões,
+     Visão geral da conta e barra de navegação inferior.
+     ===================================================================== */
+  :root { --teal:#0EA5A0; --teal-dark:#0C8B87; --navy-card:#0B3A57; --mint:#D8F1EF; --card-line:#E1EAEE; }
+  body { padding-bottom: 96px; }
+  .ic { width: 1em; height: 1em; display: inline-block; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
+
+  /* ---- Faixa azul do topo ---- */
+  .hero { background: linear-gradient(180deg, #0A3650 0%, #0B4A5F 60%, #0C5867 100%); border-radius: 0 0 34px 34px; padding: 0 0 78px; }
+  .hero-topo { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 14px; max-width: 1040px; margin: 0 auto; padding: 22px 18px 0; }
+  .brand-logo { height: 54px; width: auto; display: block; background: #fff; border-radius: 16px; padding: 10px 14px; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+  .hero-titulo .eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: .05em; color: #34D2CC; text-transform: uppercase; margin-bottom: 2px; }
+  .hero-titulo h1 { font-weight: 800; font-size: clamp(26px, 6.4vw, 40px); line-height: 1.08; letter-spacing: -0.01em; color: #fff; }
+  .hero-titulo .lead { color: rgba(234,242,245,.9); font-size: clamp(13.5px, 3.4vw, 16px); line-height: 1.45; margin-top: 8px; max-width: 520px; }
+  .sair { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; }
+  .sair .circ { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,.14); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+
+  /* ---- Cartão branco de saldo (sobrepõe a faixa azul) ---- */
+  .saldo-card { position: relative; max-width: 1004px; margin: -58px 12px 0; background: #fff; border-radius: 24px; padding: 18px;
+    box-shadow: 0 10px 30px rgba(10,50,80,.14); display: grid; grid-template-columns: auto 1fr minmax(150px, 215px); align-items: center; gap: 14px; }
+  .topo-wrap { max-width: 1040px; margin: 0 auto; padding: 0 0; }
+  .saldo-ic { width: 62px; height: 62px; border-radius: 50%; background: #E3F5F3; display: flex; align-items: center; justify-content: center; color: var(--teal); font-size: 34px; }
+  .saldo-txt .t { font-size: 15.5px; color: var(--ink-muted); font-weight: 500; }
+  .saldo-txt .v { font-size: clamp(36px, 10vw, 50px); font-weight: 800; line-height: 1; color: var(--ink); letter-spacing: -0.02em; }
+  .saldo-botoes { display: flex; flex-direction: column; gap: 10px; }
+  .btn-pad { box-sizing: border-box; height: 48px; width: 100%; border: 0; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-family: var(--display); font-weight: 700; font-size: 16px; cursor: pointer; text-decoration: none; padding: 0 12px; white-space: nowrap; }
+  .btn-pad .ic { font-size: 20px; }
+  .btn-pad.verde { background: var(--teal); color: #fff; }
+  .btn-pad.verde:hover { background: var(--teal-dark); }
+  .btn-pad.menta { background: var(--mint); color: #0B7F7B; }
+  .btn-pad.menta:hover { background: #C7EAE7; }
+
+  /* ---- Cartões rápidos ---- */
+  html, body { overflow-x: hidden; }
+  .painel table { display: block; overflow-x: auto; max-width: 100%; }
+  .cards-rapidos { max-width: 1004px; margin: 14px 12px 0; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+  .card-rapido { display: flex; align-items: center; gap: 12px; border-radius: 20px; padding: 16px 14px; text-decoration: none; min-height: 84px; }
+  .card-rapido .ico { width: 52px; height: 52px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+  .card-rapido .tx { flex: 1; min-width: 0; font-weight: 800; font-size: 17px; line-height: 1.2; }
+  .card-rapido .tx small { display: block; font-weight: 500; font-size: 13.5px; margin-top: 3px; }
+  .card-rapido .seta { font-size: 22px; flex-shrink: 0; }
+  .card-rapido.navy { background: linear-gradient(135deg, #0B3F5E, #0A3048); color: #fff; box-shadow: 0 6px 16px rgba(10,50,80,.22); }
+  .card-rapido.navy .ico { background: rgba(255,255,255,.14); color: #fff; }
+  .card-rapido.claro { background: #EDF4FA; border: 1px solid #D8E7F3; color: #0B2F4A; }
+  .card-rapido.claro .ico { background: linear-gradient(135deg, #2B6FD6, #1B4FA8); color: #fff; }
+  .card-rapido.claro .tx small { color: #4D6A80; }
+
+  .container { max-width: 1040px; margin: 0 auto; padding: 18px 12px 40px; }
+  .flash { border-radius: 14px; }
+  .aviso-cadastro-pendente { border-radius: 14px; }
+
+  /* ---- Painéis (cartões brancos arredondados) ---- */
+  .painel { background: #fff; border: 1px solid var(--card-line); border-radius: 22px; padding: 18px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(10,50,80,.06); overflow-x: auto; }
+  .painel h2 { font-weight: 800; font-size: 20px; color: var(--ink); margin-bottom: 14px; }
+  .painel-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .painel-topo h2 { margin-bottom: 0; }
+  .btn-toggle-verde { background: var(--teal); color: #fff; border: none; padding: 9px 18px; border-radius: 12px; font-family: var(--display); font-weight: 700; font-size: 14px; cursor: pointer; }
+  .btn-toggle-verde:hover { background: var(--teal-dark); }
+
+  /* ---- Minha agenda ---- */
+  .ag-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .ag-topo h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: clamp(22px, 5.6vw, 28px); font-weight: 800; }
+  .ag-topo h2 .ic { font-size: 30px; color: var(--navy); }
+  .ver-todos { background: none; border: 0; color: var(--teal); font-family: var(--display); font-weight: 700; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; }
+  .btn-cadastrar { width: 100%; height: 54px; font-size: 17px; border-radius: 16px; margin-bottom: 14px; }
+  .ag-busca { position: relative; margin-bottom: 14px; }
+  .ag-busca .ic { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 22px; color: #6B8493; }
+  .ag-busca input { width: 100%; height: 52px; padding: 0 14px 0 50px; border-radius: 15px; border: 1px solid #DCE6EA; background: #F3F7F9; font-size: 16px; font-family: var(--display); }
+  .ag-abas { display: grid; grid-template-columns: 1.7fr 1fr 1fr 1fr; gap: 4px; background: #E8EEF2; border-radius: 15px; padding: 4px; margin-bottom: 14px; }
+  .ag-aba { height: 44px; border: 0; background: transparent; border-radius: 12px; font-family: var(--display); font-weight: 700; font-size: 14px; color: #3C5667; cursor: pointer; padding: 0 4px; white-space: nowrap; }
+  .ag-aba.ativa { background: #0B3A57; color: #fff; }
+  .ag-lista { display: flex; flex-direction: column; gap: 10px; }
+  .ag-card { position: relative; display: grid; grid-template-columns: 74px 1fr minmax(150px, auto) 26px; align-items: center; border-radius: 18px; padding: 12px 8px 12px 14px;
+    border: 1px solid; gap: 0; }
+  .ag-card.confirmada { background: #EAF6EF; border-color: #CDE8D8; }
+  .ag-card.cancelada { background: #FDEEEC; border-color: #F5D0C9; }
+  .ag-card.hoje { box-shadow: 0 0 0 2px var(--teal); }
+  .ag-data { text-align: left; padding-right: 10px; line-height: 1.15; }
+  .ag-dia { display: block; font-size: 32px; font-weight: 800; color: #0E9A94; }
+  .ag-card.cancelada .ag-dia { color: #D1452B; }
+  .ag-mes, .ag-ano { display: block; font-size: 14.5px; color: #5F7683; font-weight: 500; }
+  .ag-info { border-left: 1px solid rgba(14,42,58,.14); padding: 4px 12px; min-width: 0; }
+  .ag-hora { font-size: clamp(17px, 4.6vw, 21px); font-weight: 800; color: var(--ink); white-space: nowrap; }
+  .ag-cons { font-size: 15.5px; color: #5A7380; margin-top: 4px; }
+  .ag-aviso { font-size: 12.5px; font-weight: 600; color: var(--teal-dark); margin-top: 3px; }
+  .ag-acoes { border-left: 1px solid rgba(14,42,58,.14); padding: 4px 8px 4px 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 14px 6px 9px; font-size: 14.5px; font-weight: 700; }
+  .pill .ic { font-size: 18px; stroke-width: 2.4; }
+  .pill.ok { background: #D2EFDC; color: #1C8A4B; }
+  .pill.no { background: #FADAD3; color: #C8452D; }
+  .link-email { background: none; border: 0; padding: 0; font-family: var(--display); font-weight: 600; font-size: 15.5px; color: #12354C; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+  .link-email .ic { font-size: 20px; }
+  .ag-cancel-nota { font-size: 14px; font-weight: 600; color: #C8452D; line-height: 1.3; }
+  .menu-mais { position: relative; align-self: start; }
+  .btn-mais { background: none; border: 0; cursor: pointer; font-size: 24px; color: #12354C; padding: 2px; }
+  .menu-mais-lista { display: none; position: absolute; right: 0; top: 30px; z-index: 20; background: #fff; border: 1px solid var(--card-line); border-radius: 12px; box-shadow: 0 8px 24px rgba(10,50,80,.2); padding: 6px; min-width: 170px; }
+  .menu-mais.aberto .menu-mais-lista { display: block; }
+  .btn-cancelar { width: 100%; background: none; border: 0; text-align: left; color: #C8452D; font-family: var(--display); font-weight: 700; font-size: 15px; padding: 10px 12px; cursor: pointer; border-radius: 8px; }
+  .btn-cancelar:hover { background: #FDEEEC; }
+  .btn-cancelar:disabled { opacity: .5; cursor: default; }
+  .ag-vazio { color: var(--ink-faint); padding: 14px 4px; text-align: center; }
+
+  /* ---- Visão geral da conta ---- */
+  .visao-topo { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-weight: 800; font-size: 19px; }
+  .visao-topo .ic { font-size: 28px; color: var(--teal); }
+  .visao-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mini { display: flex; align-items: center; gap: 12px; border: 1px solid var(--card-line); border-radius: 18px; padding: 14px; background: #fff; text-decoration: none; color: inherit; cursor: pointer; text-align: left; font-family: var(--display); }
+  .mini .ico { width: 54px; height: 54px; border-radius: 50%; background: #E3F5F3; color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+  .mini .l { font-size: 14px; color: var(--ink-muted); line-height: 1.3; }
+  .mini .v { font-size: 38px; font-weight: 800; line-height: 1.05; }
+  .mini .t { font-weight: 800; font-size: 17px; }
+  .mini .seta { margin-left: auto; font-size: 22px; }
+  .visao-aviso { margin-top: 12px; }
+
+  /* ---- Barra de navegação inferior ---- */
+  .nav-inf { position: fixed; left: 0; right: 0; bottom: 0; z-index: 90; background: #fff; border-top: 1px solid var(--card-line);
+    display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 6px calc(8px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 18px rgba(10,50,80,.08); }
+  .nav-inf a { display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; color: #51697A; font-size: 13px; font-weight: 600; position: relative; padding-bottom: 8px; }
+  .nav-inf a .ic { font-size: 28px; }
+  .nav-inf a.ativo { color: var(--teal); }
+  .nav-inf a.ativo::after { content: ''; position: absolute; bottom: 0; width: 60px; height: 3px; border-radius: 3px; background: var(--teal); }
+  @media (min-width: 900px) {
+    .nav-inf { left: 50%; right: auto; bottom: 16px; transform: translateX(-50%); width: 560px; border: 1px solid var(--card-line); border-radius: 22px; }
+    .saldo-card, .cards-rapidos { margin-left: auto; margin-right: auto; }
+  }
+  @media (max-width: 420px) {
+    .ag-card { grid-template-columns: 62px 1fr minmax(128px, auto) 22px; padding-left: 10px; }
+    .ag-dia { font-size: 28px; }
+    .saldo-card { grid-template-columns: auto 1fr 148px; gap: 10px; padding: 14px; }
+    .saldo-ic { width: 52px; height: 52px; font-size: 28px; }
+    .btn-pad { font-size: 14.5px; height: 46px; padding: 0 6px; gap: 5px; }
+    .card-rapido { padding: 12px 10px; gap: 9px; } .card-rapido .ico { width: 44px; height: 44px; font-size: 24px; } .card-rapido .tx { font-size: 14.5px; } .card-rapido .tx small { font-size: 12px; } .card-rapido .seta { font-size: 18px; margin-left: -2px; }
+    .link-email { font-size: 14px; }
+    .mini .v { font-size: 32px; }
   }
   .btn-comprar-pacote { background: var(--verde); color: #fff; border: 0; border-radius: 7px; padding: 7px 16px; font-family: var(--display); font-weight: 700; font-size: 13px; cursor: pointer; }
   .btn-comprar-pacote:hover { filter: brightness(0.93); }
@@ -290,38 +313,52 @@ if ("serviceWorker" in navigator) {
 })();
 </script>
 
-<section class="hero">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-cart" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 7H6"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+<symbol id="i-userplus" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 12-4.9"/><path d="M19 8v6M16 11h6"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="2.8"/><path d="M17 14.5a6 6 0 0 1 5 5.5"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M16 8l4 4-4 4M20 12H9"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></symbol>
+<symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+</defs></svg>
+<section class="hero" id="topo">
   <div class="hero-topo">
     <div class="brand"><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
     <div class="hero-titulo">
       <div class="eyebrow">Área do cliente</div>
-      <h1>Seu painel Lifemax.</h1>
-      <p class="lead">Acompanhe sua contratação, seu saldo de créditos e suas reservas.</p>
+      <h1>Bem-vindo, {{ medico.nome.split(' ')[0] }}!</h1>
+      <p class="lead">Acompanhe sua contratação, seu saldo de horas e suas reservas.</p>
     </div>
-    <div class="hero-topo-direita">
-      <div class="hero-nome">Bem-vindo, {{ medico.nome }}</div>
-      <a class="sair" href="{{ url_for('auth.logout') }}">Sair</a>
-    </div>
-  </div>
-  <div class="hero-saldo-bloco">
-    <div class="hero-saldo-linha">
-      <span class="hero-saldo-titulo">Saldo de horas</span>
-      <span class="hero-saldo-valor">{{ saldo_horas }}h</span>
-    </div>
-    <div class="hero-botoes-linha">
-      <button type="button" class="btn-hero-verde" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
-      <a class="btn-hero-verde" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}">Meus dados</a>
-      <a class="btn-hero-verde" href="{{ url_for('turnos.pagina_turnos') }}">Reservar consultórios</a>
-      {# Pedido do Paulo em 19/10/2026: botão "LifeDoctor" com a logo do
-         site, abre o cadastro gratuito em outra aba. A logo vem direto do
-         lifedoctor.com.br; se não carregar, some e fica só o texto. #}
-      <a class="btn-hero-verde btn-lifedoctor" href="https://www.lifedoctor.com.br/primeiro-acesso" target="_blank" rel="noopener">
-        <img src="https://www.lifedoctor.com.br/static/lifedoctor/logo-lifedoctor.png" alt="" onerror="this.remove()">
-        LifeDoctor
-      </a>
-    </div>
+    <a class="sair" href="{{ url_for('auth.logout') }}"><span class="circ"><svg class="ic "><use href="#i-logout"/></svg></span>Sair</a>
   </div>
 </section>
+<div class="saldo-card">
+  <div class="saldo-ic"><svg class="ic "><use href="#i-clock"/></svg></div>
+  <div class="saldo-txt"><div class="t">Saldo de horas</div><div class="v">{{ saldo_horas }}h</div></div>
+  <div class="saldo-botoes">
+    <button type="button" class="btn-pad verde" onclick="abrirModalCompra('horas')"><svg class="ic "><use href="#i-cart"/></svg> + Comprar horas</button>
+    <a class="btn-pad menta" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}"><svg class="ic "><use href="#i-user"/></svg> Meus dados</a>
+  </div>
+</div>
+<div class="cards-rapidos">
+  <a class="card-rapido navy" href="{{ url_for('turnos.pagina_turnos') }}">
+    <span class="ico"><svg class="ic "><use href="#i-cal"/></svg></span><span class="tx">Reservar consultórios</span><svg class="ic seta"><use href="#i-chev"/></svg>
+  </a>
+  {# Pedido do Paulo em 19/10/2026: abre o cadastro gratuito do LifeDoctor em outra aba. #}
+  <a class="card-rapido claro" href="https://www.lifedoctor.com.br/primeiro-acesso" target="_blank" rel="noopener">
+    <span class="ico"><svg class="ic "><use href="#i-plus"/></svg></span><span class="tx">LifeDoctor<small>Acessar plataforma</small></span><svg class="ic seta"><use href="#i-chev"/></svg>
+  </a>
+</div>
 
 <div class="container">
   {% with mensagens = get_flashed_messages(with_categories=true) %}
@@ -344,90 +381,73 @@ if ("serviceWorker" in navigator) {
   </div>
   {% endif %}
 
-  {# "Minha agenda" -- pedido do Paulo em 11/09/2026: fica logo no início
-     do painel (primeiro bloco da tela, antes até do "Status da
-     contratação" e do board de saldos), direto aqui, sem precisar de um
-     botão pra abrir uma tela separada (a rota /painel/agenda que existia
-     antes agora só redireciona pra cá). #}
+  {# "Minha agenda" -- cartões no padrão visual de 22/10/2026. #}
   <div class="painel" id="minha-agenda">
-    <div class="painel-topo">
-      <h2>📅 Minha agenda</h2>
-      <div class="botoes-agenda">
-        <button type="button" class="btn-navy" onclick="abrirModalPaciente()">+ Cadastre o seu paciente</button>
-        <a class="btn-navy" href="{{ url_for('medico_painel.pagina_pacientes_cadastrados') }}">Pacientes cadastrados</a>
-        <button type="button" class="btn-toggle-verde" id="btn-toggle-agenda" onclick="alternarAgenda()">Ocultar</button>
-      </div>
+    <div class="ag-topo">
+      <h2><svg class="ic "><use href="#i-cal"/></svg> Minha agenda</h2>
+      <button type="button" class="ver-todos" onclick="agendaVerTodos()">Ver todos <svg class="ic "><use href="#i-chev"/></svg></button>
     </div>
-    <div id="bloco-agenda">
+    <button type="button" class="btn-pad verde btn-cadastrar" onclick="abrirModalPaciente()"><svg class="ic "><use href="#i-userplus"/></svg> + Cadastrar o seu paciente</button>
     {% if reservas %}
-    <table>
-      <thead><tr><th>Data</th><th>Horário</th><th>Consultório</th><th>Ações</th></tr></thead>
-      <tbody id="corpo-tabela-agenda">
-        {% for r in reservas %}
-        {% set hora_inicio_real = (r.hora_inicio[:5] if r.tipo_reserva == 'hora' else {'manha': '08:00', 'tarde': '13:00', 'noite': '17:30'}.get(r.periodo, '08:00')) %}
-        <tr data-reserva-id="{{ r.id }}" data-data-iso="{{ r.data }}" data-hora-inicio="{{ hora_inicio_real }}">
-          <td>
-            {{ r.data[8:10] }}/{{ r.data[5:7] }}/{{ r.data[0:4] }}
-            {% if r.criado_por_admin %}<span class="aviso-admin">Agendado pelo administrador Lifemax</span>{% endif %}
-          </td>
-          <td>
-            {% if r.tipo_reserva == 'hora' %}
-              {{ (r.hora_inicio or '')[:5] }} – {{ (r.hora_fim or '')[:5] }}
-            {% else %}
-              {{ {'manha': 'Manhã (08:00–12:00)', 'tarde': 'Tarde (13:00–17:00)', 'noite': 'Noite (17:30–20:30)'}.get(r.periodo, r.periodo) }}
-            {% endif %}
-          </td>
-          <td>{{ r.consultorios.nome if r.consultorios else '—' }}</td>
-          <td>
-            {% if r.status == 'cancelada' %}
-              <span class="status-tag cancelada">Cancelada</span>
-              {% if r.cancelado_por_admin %}<span class="aviso-admin cancelamento">Cancelado pelo administrador Lifemax</span>{% endif %}
-            {% else %}
-              <button class="btn-cancelar" onclick="cancelarReserva(this)">Cancelar</button>
-            {% endif %}
-            {% if r.status != 'cancelada' %}
-            <button type="button" class="btn-email-confirmacao" onclick="abrirModalEmail('{{ r.id }}')">✉ Enviar e-mail de confirmação</button>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-      <div class="vazio">Você ainda não fez nenhuma reserva.</div>
-    {% endif %}
+    <div class="ag-busca"><svg class="ic "><use href="#i-search"/></svg><input type="search" id="ag-busca" placeholder="Buscar por data ou consultório..." autocomplete="off" oninput="filtrarAgenda()"></div>
+    <div class="ag-abas" id="ag-abas">
+      <button type="button" class="ag-aba ativa" data-filtro="proximas" onclick="agendaAba(this)">Próximas consultas</button>
+      <button type="button" class="ag-aba" data-filtro="hoje" onclick="agendaAba(this)">Hoje</button>
+      <button type="button" class="ag-aba" data-filtro="semana" onclick="agendaAba(this)">Semana</button>
+      <button type="button" class="ag-aba" data-filtro="mes" onclick="agendaAba(this)">Mês</button>
     </div>
+    <div class="ag-lista" id="ag-lista">
+      {% set meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] %}
+      {% for r in reservas %}
+      {% set hora_inicio_real = (r.hora_inicio[:5] if r.tipo_reserva == 'hora' else {'manha': '08:00', 'tarde': '13:00', 'noite': '17:30'}.get(r.periodo, '08:00')) %}
+      {% set cancelada = (r.status == 'cancelada') %}
+      <article class="ag-card {{ 'cancelada' if cancelada else 'confirmada' }}" data-reserva-id="{{ r.id }}" data-data-iso="{{ r.data }}" data-hora-inicio="{{ hora_inicio_real }}">
+        <div class="ag-data"><span class="ag-dia">{{ r.data[8:10] }}</span><span class="ag-mes">{{ meses[r.data[5:7]|int - 1] }}</span><span class="ag-ano">{{ r.data[0:4] }}</span></div>
+        <div class="ag-info">
+          <div class="ag-hora">{% if r.tipo_reserva == 'hora' %}{{ (r.hora_inicio or '')[:5] }} – {{ (r.hora_fim or '')[:5] }}{% else %}{{ {'manha': 'Manhã (08:00–12:00)', 'tarde': 'Tarde (13:00–17:00)', 'noite': 'Noite (17:30–20:30)'}.get(r.periodo, r.periodo) }}{% endif %}</div>
+          <div class="ag-cons">{{ r.consultorios.nome if r.consultorios else '—' }}</div>
+          {% if r.criado_por_admin and not cancelada %}<div class="ag-aviso">Agendado pela administração Lifemax</div>{% endif %}
+        </div>
+        <div class="ag-acoes">
+          {% if cancelada %}
+            <span class="pill no"><svg class="ic "><use href="#i-x"/></svg> Cancelada</span>
+            {% if r.cancelado_por_admin %}<span class="ag-cancel-nota">Cancelado por administração Lifemax</span>{% endif %}
+          {% else %}
+            <span class="pill ok"><svg class="ic "><use href="#i-check"/></svg> Confirmada</span>
+            <button type="button" class="link-email" onclick="abrirModalEmail('{{ r.id }}')"><svg class="ic "><use href="#i-mail"/></svg> Enviar e-mail</button>
+          {% endif %}
+        </div>
+        {% if not cancelada %}
+        <div class="menu-mais">
+          <button type="button" class="btn-mais" aria-label="Mais opções" onclick="alternarMenuMais(this)">&#8942;</button>
+          <div class="menu-mais-lista"><button type="button" class="btn-cancelar" onclick="cancelarReserva(this)">Cancelar reserva</button></div>
+        </div>
+        {% endif %}
+      </article>
+      {% endfor %}
+      <div class="ag-vazio" id="ag-vazio" style="display:none;">Nenhuma consulta nesse filtro.</div>
+    </div>
+    {% else %}
+      <div class="vazio ag-vazio">Você ainda não fez nenhuma reserva.</div>
+    {% endif %}
   </div>
 
-  {# Bloco "Status da contratação" (Olá, {nome} + tag Ativo/Aguardando
-     liberação) removido a pedido do Paulo em 24/09/2026 (item 3). #}
-
-  {# Botão "Reservar consultórios" -- pedido do Paulo em 14/09/2026: subiu
-     de vez pra faixa azul escura do topo (hero), junto com "Saldo de
-     horas" -- ver bloco .hero-saldo-bloco logo acima no <section class="hero">.
-     O bloco separado que ficava aqui (com o texto "Pronto para reservar
-     mais um horário?") foi removido. #}
-
-
-  <div class="board">
-    <div class="board-top"><span class="puck"></span>Visão geral da conta</div>
-    <div class="board-grid">
-      <div class="cell">
-        <div class="cell-label">Saldo para reserva de salas</div>
-        <div class="total">{{ saldo_horas }}h</div>
-        <button class="btn-cyan" style="margin-top:auto;" onclick="abrirModalCompra('horas')">+ Comprar horas</button>
-        {% if saldo_horas < horas_minimas %}
-          <div class="aviso-saldo">⚠️ Saldo insuficiente para a reserva mínima de {{ horas_minimas }}h — compre mais horas para reservar.</div>
-        {% endif %}
+  <div class="painel" id="visao-geral">
+    <div class="visao-topo"><svg class="ic "><use href="#i-chart"/></svg> Visão geral da conta</div>
+    <div class="visao-grid">
+      <div class="mini" style="cursor:default;">
+        <span class="ico"><svg class="ic "><use href="#i-clock"/></svg></span>
+        <div><div class="l">Saldo para<br>reserva de salas</div><div class="v">{{ saldo_horas }}h</div></div>
       </div>
-
-      <div class="cell">
-        <div class="cell-label">Meu perfil</div>
-        <p class="muted-cell" style="margin-bottom:14px;">Seus dados de contato, endereço e informações de
-          atendimento (CRM, CPF/CNPJ, valor da consulta, convênios) ficam em uma tela só.</p>
-        <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}" class="btn-ghost" style="width:100%; margin-top:auto;">✎ Meus dados</a>
-      </div>
+      <button type="button" class="mini" onclick="abrirHistorico()">
+        <span class="ico"><svg class="ic "><use href="#i-doc"/></svg></span>
+        <div><div class="t">Histórico de uso</div><div class="l">Consulte todas as suas reservas</div></div>
+        <svg class="ic seta"><use href="#i-chev"/></svg>
+      </button>
     </div>
+    {% if saldo_horas < horas_minimas %}
+    <div class="aviso-saldo visao-aviso">⚠️ Saldo insuficiente para a reserva mínima de {{ horas_minimas }}h — compre mais horas para reservar.</div>
+    {% endif %}
   </div>
   {# As seções "Agenda" (Google Agenda) e "Ferramentas" (Agenda de Pacientes,
      Prontuários, Assistente de IA, Contabilidade) foram removidas desta tela
@@ -488,7 +508,7 @@ if ("serviceWorker" in navigator) {
 
   {# Bloco "Minhas notas fiscais" removido a pedido do Paulo em 15/09/2026. #}
 
-  <div class="painel">
+  <div class="painel" id="painel-historico">
     <div class="painel-topo">
       <h2>Histórico</h2>
       <button type="button" class="btn-toggle-verde" id="btn-toggle-historico" onclick="alternarHistorico()">Exibir</button>
@@ -528,6 +548,12 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
+<nav class="nav-inf" aria-label="Navegação">
+  <a href="#topo" class="ativo"><svg class="ic "><use href="#i-home"/></svg>Início</a>
+  <a href="#minha-agenda"><svg class="ic "><use href="#i-cal"/></svg>Agenda</a>
+  <a href="{{ url_for('medico_painel.pagina_pacientes_cadastrados') }}"><svg class="ic "><use href="#i-users"/></svg>Pacientes</a>
+  <a href="{{ url_for('medico_painel.pagina_dados_pessoais') }}"><svg class="ic "><use href="#i-user"/></svg>Meu perfil</a>
+</nav>
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal" id="modal-conteudo" style="max-width:480px;">
 
@@ -780,7 +806,7 @@ async function salvarPaciente() {
 // ---------- E-mail de agendamento pro paciente (pedido do Paulo em 11/09/2026) ----------
 
 async function cancelarReserva(botao) {
-  const linha = botao.closest('tr');
+  const linha = botao.closest('.ag-card');
   const reservaId = linha.dataset.reservaId;
   const dataIso = linha.dataset.dataIso;
   const horaInicio = linha.dataset.horaInicio;
@@ -806,22 +832,24 @@ async function cancelarReserva(botao) {
     if (!resp.ok) {
       alert(resultado.erro || 'Erro ao cancelar.');
       botao.disabled = false;
-      botao.textContent = 'Cancelar';
+      botao.textContent = 'Cancelar reserva';
       return;
     }
 
-    const celulaAcao = botao.parentElement;
-    celulaAcao.innerHTML = '<span class="status-tag cancelada">Cancelada</span>';
+    linha.classList.remove('confirmada'); linha.classList.add('cancelada');
+    const acoes = linha.querySelector('.ag-acoes');
+    acoes.innerHTML = '<span class="pill no"><svg class="ic"><use href="#i-x"/></svg> Cancelada</span>';
     if (!resultado.reembolsado) {
-      const aviso = document.createElement('div');
-      aviso.className = 'aviso-linha-12h';
+      const aviso = document.createElement('span');
+      aviso.className = 'ag-cancel-nota';
       aviso.textContent = 'Cancelado com menos de 12h: sem reembolso.';
-      celulaAcao.appendChild(aviso);
+      acoes.appendChild(aviso);
     }
+    const menu = linha.querySelector('.menu-mais'); if (menu) menu.remove();
   } catch (e) {
     alert('Erro de conexão ao cancelar.');
     botao.disabled = false;
-    botao.textContent = 'Cancelar';
+    botao.textContent = 'Cancelar reserva';
   }
 }
 </script>
@@ -883,30 +911,60 @@ function alternarHistorico() {
   btn.textContent = oculto ? 'Ocultar' : 'Exibir';
 }
 
-// Botão "Ocultar/Exibir" da Minha Agenda -- pedido do Paulo em
-// 23/09/2026 (item 2). Diferente do Histórico, a agenda começa VISÍVEL
-// (é a informação mais importante ao abrir a página), então o botão
-// nasce com o texto "Ocultar".
-function alternarAgenda() {
-  const bloco = document.getElementById('bloco-agenda');
-  const btn = document.getElementById('btn-toggle-agenda');
-  const oculto = bloco.style.display === 'none';
-  bloco.style.display = oculto ? '' : 'none';
-  btn.textContent = oculto ? 'Ocultar' : 'Exibir';
+// ---- Minha agenda: abas, busca, "Ver todos", menu ⋮ (padrão de 22/10/2026) ----
+let agendaFiltro = 'proximas';
+function _hojeIso() {
+  const h = new Date();
+  return h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0');
 }
-
-// Pedido do Paulo em 24/09/2026: destacar (fundo verde claro) os horários
-// de "Minha agenda" que são do dia de hoje, pra facilitar a visualização.
-function _marcarLinhasDeHoje() {
-  const corpo = document.getElementById('corpo-tabela-agenda');
-  if (!corpo) return;
-  const hoje = new Date();
-  const hojeIso = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
-  corpo.querySelectorAll('tr[data-data-iso]').forEach(function (tr) {
-    tr.classList.toggle('linha-hoje', tr.getAttribute('data-data-iso') === hojeIso);
+function _somaDiasIso(iso, n) {
+  const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function filtrarAgenda() {
+  const lista = document.getElementById('ag-lista');
+  if (!lista) return;
+  const hoje = _hojeIso(), fimSemana = _somaDiasIso(hoje, 6), mes = hoje.slice(0, 7);
+  const q = ((document.getElementById('ag-busca') || {}).value || '').trim().toLowerCase();
+  let visiveis = 0;
+  lista.querySelectorAll('.ag-card').forEach(card => {
+    const d = card.dataset.dataIso;
+    let ok = true;
+    if (agendaFiltro === 'proximas') ok = d >= hoje;
+    else if (agendaFiltro === 'hoje') ok = d === hoje;
+    else if (agendaFiltro === 'semana') ok = d >= hoje && d <= fimSemana;
+    else if (agendaFiltro === 'mes') ok = d.slice(0, 7) === mes;
+    if (ok && q) ok = (card.textContent + ' ' + d.split('-').reverse().join('/')).toLowerCase().includes(q);
+    card.style.display = ok ? '' : 'none';
+    card.classList.toggle('hoje', d === hoje);
+    if (ok) visiveis++;
   });
+  document.getElementById('ag-vazio').style.display = visiveis ? 'none' : 'block';
 }
-document.addEventListener('DOMContentLoaded', _marcarLinhasDeHoje);
+function agendaAba(btn) {
+  agendaFiltro = btn.dataset.filtro;
+  document.querySelectorAll('#ag-abas .ag-aba').forEach(b => b.classList.toggle('ativa', b === btn));
+  filtrarAgenda();
+}
+function agendaVerTodos() {
+  agendaFiltro = 'todas';
+  document.querySelectorAll('#ag-abas .ag-aba').forEach(b => b.classList.remove('ativa'));
+  const busca = document.getElementById('ag-busca'); if (busca) busca.value = '';
+  filtrarAgenda();
+}
+function alternarMenuMais(btn) {
+  const menu = btn.closest('.menu-mais');
+  const abrir = !menu.classList.contains('aberto');
+  document.querySelectorAll('.menu-mais.aberto').forEach(m => m.classList.remove('aberto'));
+  if (abrir) menu.classList.add('aberto');
+}
+document.addEventListener('click', (e) => { if (!e.target.closest('.menu-mais')) document.querySelectorAll('.menu-mais.aberto').forEach(m => m.classList.remove('aberto')); });
+function abrirHistorico() {
+  const bloco = document.getElementById('bloco-historico');
+  if (bloco.style.display === 'none') alternarHistorico();
+  document.getElementById('painel-historico').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+document.addEventListener('DOMContentLoaded', filtrarAgenda);
 
 function abrirModalCompra(destino) {
   // restaura o formulario original do zero toda vez que o modal abre --

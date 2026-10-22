@@ -178,6 +178,13 @@
   /* ---- Cartões rápidos ---- */
   html, body { overflow-x: hidden; }
   .painel table { display: block; overflow-x: auto; max-width: 100%; }
+  /* tabela de opções cabe inteira na tela do celular: o botão Comprar nunca fica escondido */
+  .painel table.tab-opcoes { display: table; width: 100%; table-layout: fixed; }
+  .tab-opcoes th, .tab-opcoes td { white-space: normal; word-break: break-word; vertical-align: middle; }
+  .tab-opcoes th:nth-child(1), .tab-opcoes td:nth-child(1) { width: 11%; }
+  .tab-opcoes th:nth-child(5), .tab-opcoes td:nth-child(5) { width: 27%; }
+  .tab-opcoes .btn-comprar-pacote { width: 100%; padding-left: 4px; padding-right: 4px; }
+  @media (max-width: 480px) { .tab-opcoes th, .tab-opcoes td { padding: 8px 3px; font-size: 12px; } .tab-opcoes th { font-size: 10px; } .tab-opcoes .btn-comprar-pacote { font-size: 12.5px; } }
   .cards-rapidos { max-width: 1004px; margin: 14px 12px 0; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
   .card-rapido { display: flex; align-items: center; gap: 12px; border-radius: 20px; padding: 16px 14px; text-decoration: none; min-height: 84px; }
   .card-rapido .ico { width: 52px; height: 52px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
@@ -458,10 +465,10 @@ if ("serviceWorker" in navigator) {
      tela aqui para conectar/desconectar. #}
 
   <div class="painel">
-    <h2>Venda de horas avulsas</h2>
-    <table>
+    <h2>Opções para contratação</h2>
+    <table class="tab-opcoes">
       <thead>
-        <tr><th>Quantidade horas</th><th>Valor hora avulsa</th><th>Total</th><th>Parcelamento</th><th></th></tr>
+        <tr><th></th><th>Valor hora avulsa</th><th>Total</th><th>Condição</th><th></th></tr>
       </thead>
       <tbody>
         {% for p in pacotes_horas %}
@@ -1014,7 +1021,7 @@ function mudarParcelasConf() {
     Confirma que é esse o saldo que você quer adicionar?`;
 }
 
-// Botão "Comprar" da tabela "Venda de horas avulsas": abre o modal já com o
+// Botão "Comprar" da tabela "Opções para contratação": abre o modal já com o
 // pacote escolhido e valor preenchido, direto na tela de forma de pagamento
 // (PIX ou cartão, com parcelas quando o pacote permite).
 function comprarPacote(horas) {

@@ -109,6 +109,8 @@
   .bloco-consultorio-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; flex-wrap: wrap; }
   .bloco-consultorio-nome { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 30px; color: #0B3A57; display: flex; align-items: center; gap: 10px; padding-right: 10px; border-right: 1px solid var(--line); }
   .bloco-consultorio-nome .ic { font-size: 30px; color: #5E7A89; }
+  /* setas + mês dentro de cada consultório: só no celular */
+  .nav-mes-bloco { display: none; }
   .bloco-acoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; flex: 1; min-width: 260px; }
   .bloco-acoes .btn-modo { width: 100%; height: 42px; font-size: 14.5px; padding: 0 6px; white-space: nowrap; }
   .btn-modo.foto { background: var(--teal-soft); border: 1.5px solid #BFDCDA; color: #0B3A57; }
@@ -227,6 +229,11 @@
     .mes-ano-atual { font-size: 17px; gap: 6px; } .mes-ano-atual .ic { font-size: 22px; }
     .legenda { font-size: 12.5px; gap: 6px 10px; } .dot { width: 15px; height: 15px; }
     .bloco-consultorio-nome { font-size: 28px; }
+    .bloco-consultorio-header { flex-wrap: wrap; gap: 8px 8px; }
+    .bloco-consultorio-nome { font-size: 26px; padding-right: 8px; }
+    .nav-mes-bloco { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex: 1; min-width: 0; }
+    .mes-bloco { flex: 1; text-align: center; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: #0B3A57; text-transform: capitalize; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .btn-seta-mini { cursor: pointer; background: var(--teal); color: #fff; border: 0; width: 38px; height: 38px; border-radius: 50%; font-size: 20px; font-weight: 800; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 8px rgba(14,165,160,.4); }
     .bloco-acoes { min-width: 100%; }
     .bloco-acoes .btn-modo { font-size: 13.5px; gap: 4px; }
     /* grade cabe inteira na largura do celular (7 colunas, sem rolagem lateral), como na foto */
@@ -644,6 +651,11 @@ function renderizarGrade() {
     return `<div class="bloco-consultorio${mc ? ' modo-' + mc : ''}" data-consultorio-id="${consultorio.id}">
       <div class="bloco-consultorio-header">
         <div class="bloco-consultorio-nome"><svg class="ic"><use href="#i-bld"/></svg>${consultorio.nome}</div>
+        <div class="nav-mes-bloco">
+          <button type="button" class="btn-seta-mini" onclick="document.getElementById('btn-anterior').click()" title="Semana anterior" aria-label="Semana anterior">&larr;</button>
+          <span class="mes-bloco">${document.getElementById('mes-ano-atual').textContent}</span>
+          <button type="button" class="btn-seta-mini" onclick="document.getElementById('btn-proxima').click()" title="Próxima semana" aria-label="Próxima semana">&rarr;</button>
+        </div>
         <div class="bloco-acoes">
           <button type="button" class="btn-modo foto pequeno" onclick="abrirFotoConsultorio('${consultorio.id}')"><svg class="ic"><use href="#i-cam"/></svg> Ver foto</button>
           <button type="button" class="btn-modo reservar pequeno${modoConsultorio === consultorio.id && modoAtual === 'reservar' ? ' ativo' : ''}" onclick="alternarModo('reservar', '${consultorio.id}')"><svg class="ic"><use href="#i-calplus"/></svg> Reservar</button>

@@ -396,7 +396,7 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 ## Atualização 22/10/2026 — Painel do médico
 - "Minha agenda": removidos a coluna Paciente, "Incluir/alterar paciente" e "E-mail de agendamento" (e as rotas/serviços ligados a eles). Novo botão "Enviar e-mail de confirmação" em cada agendamento: mensagem padrão (Rua Gonçalves Dias, 82 + sala + data/horário), botão "Paciente" (lista de pacientes cadastrados, e-mail puxado do cadastro) e "Enviar email". Rotas: GET /api/reservas/<id>/confirmacao-previa, POST /api/reservas/<id>/enviar-confirmacao.
 - Cadastro rápido de paciente: só nome, telefone e e-mail (nova coluna `pacientes.telefone` — `sql/migration_paciente_telefone.sql`).
-- Venda de horas avulsas: botão "Comprar" por pacote (abre a compra com valor preenchido; PIX ou cartão parcelado via Asaas).
+- Opções para contratação (antes "Venda de horas avulsas"; colunas: horas sem título, Valor hora avulsa, Total, Condição): botão "Comprar" por pacote (abre a compra com valor preenchido; PIX ou cartão parcelado via Asaas).
 - Verde padrão dos botões: #0EA5A0 (hover #0C8B87). Regra única de celular em /static/css/base-mobile.css.
 
 
@@ -417,3 +417,4 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - **Grade de turnos:** removidos os botões Reservar/Cancelar do alto da página (ficam só em cada consultório); avisos de reserva agora numa faixa flutuante no topo da tela; setas de semana maiores (54 px), verde-água com seta branca; **reserva otimista** — o horário aparece reservado no instante do clique e é confirmado/desfeito conforme a resposta do servidor (`clicarSlotLivre`).
 - **Painel:** removida a busca da agenda (`#ag-busca`); cartão LifeDoctor agora usa o logo oficial (`static/images/lifedoctor-logo.png`, fundo transparente).
 - **Meus dados e Pacientes:** novo padrão visual compartilhado — `static/css/padrao-medico.css`, `templates/_topo_medico.html` (topo com logo e Sair) e `templates/_nav_medico.html` (menu inferior). Em Meus dados, sair/menu continuam salvando antes de navegar.
+- (v50) Grade de turnos, **só no celular**: dentro de cada consultório, ao lado do número da sala, aparece o mês em exibição com seta ← à esquerda e → à direita; as setas acionam os mesmos botões do alto da página (trocam a semana de todos os consultórios).

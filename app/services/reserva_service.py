@@ -656,6 +656,8 @@ def montar_confirmacao_consulta(reserva_id: str, medico_id: str, nome_paciente: 
     medico = db.get_medico_by_id(medico_id)
     consultorio = db.get_consultorio_by_id(reserva["consultorio_id"])
     sala = consultorio["nome"] if consultorio else "Consultório"
+    if consultorio and not sala.strip().lower().startswith("sala"):
+        sala = f"Sala {sala.strip()}"
     d = str(reserva["data"])[:10]
     data_br = f"{d[8:10]}/{d[5:7]}/{d[0:4]}"
     if reserva.get("tipo_reserva") == "hora" and reserva.get("hora_inicio"):
@@ -676,7 +678,7 @@ def montar_confirmacao_consulta(reserva_id: str, medico_id: str, nome_paciente: 
     return {"assunto": f"Confirmação de consulta — {data_br}", "mensagem": mensagem}
 
 
-def enviar_confirmacao_consulta(reserva_id: str, medico_id: str, paciente_id: str) -> dict:
+def enviar_confirmacao_consulta(reserva_id: str, medico_id: str, paciente_id: str, mensagem: str | None = None) -> dict:
     from app.services import pacientes_service
     if not paciente_id:
         raise ValueError("Escolha o paciente.")
@@ -686,6 +688,10 @@ def enviar_confirmacao_consulta(reserva_id: str, medico_id: str, paciente_id: st
     if not paciente.get("email"):
         raise ValueError(f'O paciente "{paciente["nome_completo"]}" não tem e-mail cadastrado.')
     conteudo = montar_confirmacao_consulta(reserva_id, medico_id, paciente["nome_completo"])
+    # "Editar mensagem": o médico pode trocar o texto padrão.
+    texto = (mensagem or "").strip() or conteudo["mensagem"]
+    if len(texto) > 3000:
+        raise ValueError("A mensagem está muito longa (máximo de 3000 caracteres).")
     enviado = email_service.notificar_confirmacao_consulta(
-        destinatario=paciente["email"], assunto=conteudo["assunto"], mensagem=conteudo["mensagem"])
+        destinatario=paciente["email"], assunto=conteudo["assunto"], mensagem=texto)
     return {"enviado": enviado, "email": paciente["email"]}

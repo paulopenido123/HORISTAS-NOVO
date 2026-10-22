@@ -47,7 +47,7 @@ def painel():
                             pacotes_horas=pacotes_horas,
                             notas_fiscais=notas_fiscais, modulos=modulos,
                             reservas=reservas, pacientes=pacientes,
-                            pacientes_json=[{"id": p["id"], "nome": p["nome_completo"], "email": p.get("email") or ""}
+                            pacientes_json=[{"id": p["id"], "nome": p["nome_completo"], "email": p.get("email") or "", "telefone": p.get("telefone") or ""}
                                             for p in pacientes],
                             campos_faltando=campos_faltando)
 
@@ -279,7 +279,8 @@ def enviar_confirmacao(reserva_id):
     body = request.get_json(force=True)
     try:
         resultado = reserva_service.enviar_confirmacao_consulta(
-            reserva_id, medico_logado_id(), (body.get("paciente_id") or "").strip())
+            reserva_id, medico_logado_id(), (body.get("paciente_id") or "").strip(),
+            mensagem=body.get("mensagem"))
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
     if not resultado["enviado"]:

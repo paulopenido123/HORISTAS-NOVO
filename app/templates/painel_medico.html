@@ -207,6 +207,14 @@
   .btn-email-confirmacao { display:block; margin-top:8px; background: var(--cyan); color:#fff; border:none; border-radius:7px;
     padding: 7px 12px; font-family: var(--display); font-weight:700; font-size: 13px; cursor:pointer; }
   .btn-email-confirmacao:hover { background:#0C8B87; }
+  /* Botões da tela "Enviar e-mail de confirmação": mesmo tamanho */
+  .btn-modal-padrao { flex:1 1 0; min-width:130px; height:42px; background: var(--cyan); color:#fff; border:none; border-radius:7px;
+    font-family: var(--display); font-weight:700; font-size:14px; cursor:pointer; }
+  .btn-modal-padrao:hover { background:#0C8B87; }
+  .btn-modal-padrao:disabled { opacity:.6; cursor:default; }
+  .btn-editar-pac { background: var(--cyan); color:#fff; border:none; border-radius:6px; padding:6px 14px; font-family: var(--display);
+    font-weight:700; font-size:12.5px; cursor:pointer; }
+  .btn-editar-pac:hover { background:#0C8B87; }
 
   .precos-info { font-size: 14.5px; color: var(--ink-muted); }
   .precos-info strong { color: var(--ink); }
@@ -567,71 +575,135 @@ if ("serviceWorker" in navigator) {
   <div class="modal" style="max-width:520px; text-align:left;">
     <h3 style="margin-bottom:10px;">Enviar e-mail de confirmação</h3>
     <div id="erro-email" class="flash erro" style="display:none;"></div>
-    <div id="email-mensagem" style="white-space:pre-wrap; background:var(--panel-2); border-radius:8px; padding:14px; font-size:14px; line-height:1.6; margin-bottom:14px;">Carregando...</div>
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-      <button type="button" class="btn-toggle-verde" onclick="alternarListaPacientesEmail()">Paciente</button>
-      <span id="email-paciente-escolhido" class="muted-cell">Nenhum paciente escolhido</span>
+    <div id="email-mensagem" style="white-space:pre-wrap; background:var(--panel-2); border-radius:8px; padding:14px; font-size:14px; line-height:1.6; margin-bottom:12px;">Carregando...</div>
+    <textarea id="email-mensagem-edicao" rows="9" maxlength="3000" style="display:none; width:100%; border:1px solid var(--line-strong); border-radius:8px; padding:12px; font-family:var(--display); font-size:14px; line-height:1.6; margin-bottom:12px;"></textarea>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+      <button type="button" class="btn-modal-padrao" id="btn-editar-mensagem" onclick="alternarEdicaoMensagem()">Editar mensagem</button>
+      <button type="button" class="btn-modal-padrao" onclick="alternarListaPacientesEmail()">Paciente</button>
+      <button type="button" class="btn-modal-padrao" id="btn-enviar-email-conf" onclick="enviarEmailConfirmacao()">Enviar email</button>
     </div>
-    <div id="email-lista-pacientes" style="display:none; max-height:180px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; margin-bottom:12px;"></div>
-    <div style="display:flex; gap:10px;">
-      <button type="button" class="btn-toggle-verde" id="btn-enviar-email-conf" style="padding:11px 24px;" onclick="enviarEmailConfirmacao()">Enviar email</button>
-      <button type="button" class="btn-fechar" onclick="fecharModalEmail()">Cancelar</button>
-    </div>
+    <div id="email-paciente-escolhido" class="muted-cell" style="margin-bottom:10px;">Nenhum paciente escolhido</div>
+    <div id="email-lista-pacientes" style="display:none; max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:8px; margin-bottom:12px;"></div>
+    <button type="button" class="btn-fechar" onclick="fecharModalEmail()">Cancelar</button>
   </div>
 </div>
 
 <script>
-const PACIENTES_EMAIL = {{ pacientes_json | tojson }};
-let estadoEmail = { reservaId: null, pacienteId: null };
+let PACIENTES_EMAIL = {{ pacientes_json | tojson }};
+let estadoEmail = { reservaId: null, pacienteId: null, editandoMsg: false, msgAuto: '', msgMudou: false, editandoPaciente: null };
+
+function _el(id) { return document.getElementById(id); }
 
 async function _carregarMensagemEmail() {
-  const el = document.getElementById('email-mensagem');
   const q = estadoEmail.pacienteId ? '?paciente_id=' + encodeURIComponent(estadoEmail.pacienteId) : '';
   try {
     const resp = await fetch(`/api/reservas/${estadoEmail.reservaId}/confirmacao-previa${q}`);
     const dados = await resp.json();
-    el.textContent = resp.ok ? dados.mensagem : (dados.erro || 'Não foi possível montar a mensagem.');
-  } catch (e) { el.textContent = 'Erro de conexão.'; }
+    const texto = resp.ok ? dados.mensagem : (dados.erro || 'Não foi possível montar a mensagem.');
+    estadoEmail.msgAuto = texto;
+    // não sobrescreve o que o médico já alterou à mão
+    if (!estadoEmail.msgMudou) { _el('email-mensagem').textContent = texto; _el('email-mensagem-edicao').value = texto; }
+  } catch (e) { _el('email-mensagem').textContent = 'Erro de conexão.'; }
+}
+
+function alternarEdicaoMensagem() {
+  estadoEmail.editandoMsg = !estadoEmail.editandoMsg;
+  const ta = _el('email-mensagem-edicao'), vis = _el('email-mensagem');
+  if (estadoEmail.editandoMsg) { ta.value = estadoEmail.msgMudou ? ta.value : estadoEmail.msgAuto; ta.style.display = 'block'; vis.style.display = 'none'; ta.focus(); }
+  else { vis.textContent = ta.value; ta.style.display = 'none'; vis.style.display = 'block'; }
+  _el('btn-editar-mensagem').textContent = estadoEmail.editandoMsg ? 'Concluir edição' : 'Editar mensagem';
+}
+
+function _renderListaPacientes() {
+  const lista = _el('email-lista-pacientes');
+  lista.innerHTML = '';
+  if (!PACIENTES_EMAIL.length) {
+    lista.innerHTML = '<p class="muted-cell" style="padding:12px;">Você ainda não tem pacientes cadastrados. Use o botão "Cadastre o seu paciente".</p>';
+    return;
+  }
+  PACIENTES_EMAIL.forEach((p) => {
+    const linha = document.createElement('div');
+    linha.style.cssText = 'border-bottom:1px solid var(--line);';
+    const topo = document.createElement('div');
+    topo.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px;';
+    const info = document.createElement('div');
+    info.style.cssText = 'cursor:pointer; flex:1; font-size:14px;';
+    info.innerHTML = '<strong></strong><br><span class="muted-cell"></span>';
+    info.querySelector('strong').textContent = p.nome;
+    info.querySelector('span').textContent = (p.email || 'sem e-mail cadastrado') + (p.telefone ? ' · ' + p.telefone : '');
+    info.onclick = () => escolherPacienteEmail(p);
+    const bt = document.createElement('button');
+    bt.type = 'button'; bt.className = 'btn-editar-pac'; bt.textContent = 'Editar';
+    bt.onclick = (ev) => { ev.stopPropagation(); estadoEmail.editandoPaciente = (estadoEmail.editandoPaciente === p.id ? null : p.id); _renderListaPacientes(); };
+    topo.appendChild(info); topo.appendChild(bt); linha.appendChild(topo);
+    if (estadoEmail.editandoPaciente === p.id) {
+      const f = document.createElement('div');
+      f.style.cssText = 'padding:4px 12px 12px; display:flex; flex-direction:column; gap:8px; background:var(--panel-2);';
+      f.innerHTML = '<input type="text" class="ed-nome" placeholder="Nome do paciente"><input type="text" class="ed-tel" placeholder="Telefone" inputmode="tel"><input type="email" class="ed-email" placeholder="E-mail"><div class="ed-erro" style="color:var(--coral); font-size:12.5px; display:none;"></div><div><button type="button" class="btn-editar-pac salvar">Salvar</button></div>';
+      f.querySelector('.ed-nome').value = p.nome; f.querySelector('.ed-tel').value = p.telefone || ''; f.querySelector('.ed-email').value = p.email || '';
+      f.querySelector('.salvar').onclick = () => salvarEdicaoPaciente(p, f);
+      linha.appendChild(f);
+    }
+    lista.appendChild(linha);
+  });
+}
+
+async function salvarEdicaoPaciente(p, f) {
+  const erro = f.querySelector('.ed-erro'); erro.style.display = 'none';
+  const dados = { nome_completo: f.querySelector('.ed-nome').value.trim(), telefone: f.querySelector('.ed-tel').value.trim(), email: f.querySelector('.ed-email').value.trim() };
+  if (!dados.nome_completo) { erro.textContent = 'Informe o nome do paciente.'; erro.style.display = 'block'; return; }
+  try {
+    const resp = await fetch(`/api/pacientes/${p.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
+    const r = await resp.json();
+    if (!resp.ok) { erro.textContent = r.erro || 'Não foi possível salvar.'; erro.style.display = 'block'; return; }
+    p.nome = dados.nome_completo; p.telefone = dados.telefone; p.email = dados.email;
+    estadoEmail.editandoPaciente = null;
+    _renderListaPacientes();
+    if (estadoEmail.pacienteId === p.id) { _atualizarRotuloPaciente(p); _carregarMensagemEmail(); }
+  } catch (e) { erro.textContent = 'Erro de conexão.'; erro.style.display = 'block'; }
+}
+
+function _atualizarRotuloPaciente(p) {
+  _el('email-paciente-escolhido').textContent = 'Paciente: ' + p.nome + ' — ' + (p.email || 'sem e-mail cadastrado');
 }
 
 function abrirModalEmail(reservaId) {
-  estadoEmail = { reservaId: reservaId, pacienteId: null };
-  document.getElementById('erro-email').style.display = 'none';
-  document.getElementById('email-paciente-escolhido').textContent = 'Nenhum paciente escolhido';
-  document.getElementById('email-lista-pacientes').style.display = 'none';
-  const lista = document.getElementById('email-lista-pacientes');
-  lista.innerHTML = PACIENTES_EMAIL.length
-    ? PACIENTES_EMAIL.map(p => `<div class="opcao-paciente-email" data-id="${p.id}" style="padding:9px 12px; cursor:pointer; border-bottom:1px solid var(--line); font-size:14px;"><strong></strong><br><span class="muted-cell"></span></div>`).join('')
-    : '<p class="muted-cell" style="padding:12px;">Você ainda não tem pacientes cadastrados. Use o botão "Cadastre o seu paciente".</p>';
-  lista.querySelectorAll('.opcao-paciente-email').forEach((el, i) => {
-    el.querySelector('strong').textContent = PACIENTES_EMAIL[i].nome;
-    el.querySelector('span').textContent = PACIENTES_EMAIL[i].email || 'sem e-mail cadastrado';
-    el.onclick = () => escolherPacienteEmail(PACIENTES_EMAIL[i]);
-  });
-  document.getElementById('modal-overlay-email').classList.add('aberto');
+  estadoEmail = { reservaId: reservaId, pacienteId: null, editandoMsg: false, msgAuto: '', msgMudou: false, editandoPaciente: null };
+  _el('erro-email').style.display = 'none';
+  _el('email-paciente-escolhido').textContent = 'Nenhum paciente escolhido';
+  _el('email-lista-pacientes').style.display = 'none';
+  _el('email-mensagem-edicao').style.display = 'none';
+  _el('email-mensagem').style.display = 'block';
+  _el('btn-editar-mensagem').textContent = 'Editar mensagem';
+  _el('email-mensagem').textContent = 'Carregando...';
+  _renderListaPacientes();
+  _el('modal-overlay-email').classList.add('aberto');
   _carregarMensagemEmail();
 }
-function fecharModalEmail() { document.getElementById('modal-overlay-email').classList.remove('aberto'); }
+function fecharModalEmail() { _el('modal-overlay-email').classList.remove('aberto'); }
 function alternarListaPacientesEmail() {
-  const l = document.getElementById('email-lista-pacientes');
+  const l = _el('email-lista-pacientes');
   l.style.display = l.style.display === 'none' ? 'block' : 'none';
 }
 function escolherPacienteEmail(p) {
   estadoEmail.pacienteId = p.id;
-  document.getElementById('email-paciente-escolhido').textContent = p.nome + ' — ' + (p.email || 'sem e-mail cadastrado');
-  document.getElementById('email-lista-pacientes').style.display = 'none';
+  _atualizarRotuloPaciente(p);
+  _el('email-lista-pacientes').style.display = 'none';
   _carregarMensagemEmail();
 }
+_el('email-mensagem-edicao').addEventListener('input', () => { estadoEmail.msgMudou = true; });
+
 async function enviarEmailConfirmacao() {
-  const erroEl = document.getElementById('erro-email');
+  const erroEl = _el('erro-email');
   erroEl.style.display = 'none';
   if (!estadoEmail.pacienteId) { erroEl.textContent = 'Escolha o paciente no botão "Paciente".'; erroEl.style.display = 'block'; return; }
-  const btn = document.getElementById('btn-enviar-email-conf');
+  const btn = _el('btn-enviar-email-conf');
   btn.disabled = true; btn.textContent = 'Enviando...';
+  const corpo = { paciente_id: estadoEmail.pacienteId };
+  if (estadoEmail.msgMudou) corpo.mensagem = _el('email-mensagem-edicao').value;
   try {
     const resp = await fetch(`/api/reservas/${estadoEmail.reservaId}/enviar-confirmacao`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paciente_id: estadoEmail.pacienteId }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo),
     });
     const dados = await resp.json();
     if (!resp.ok) { erroEl.textContent = dados.erro || 'Não foi possível enviar.'; erroEl.style.display = 'block'; return; }

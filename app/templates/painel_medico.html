@@ -621,6 +621,8 @@ if ("serviceWorker" in navigator) {
     <div id="erro-email" class="flash erro" style="display:none;"></div>
     <div id="email-mensagem" style="white-space:pre-wrap; background:var(--panel-2); border-radius:8px; padding:14px; font-size:14px; line-height:1.6; margin-bottom:12px;">Carregando...</div>
     <textarea id="email-mensagem-edicao" rows="9" maxlength="3000" style="display:none; width:100%; border:1px solid var(--line-strong); border-radius:8px; padding:12px; font-family:var(--display); font-size:14px; line-height:1.6; margin-bottom:12px;"></textarea>
+    <label for="email-horario" style="display:block; font-size:13px; font-weight:700; color:var(--ink-muted); margin-bottom:4px;">Horário (opcional)</label>
+    <input type="text" id="email-horario" maxlength="40"  placeholder="Ex: 14:00 às 15:00" autocomplete="off" style="text-align:left; width:100%; border:1px solid var(--line-strong); border-radius:8px; padding:10px 12px; font-family:var(--display); font-size:14px; margin-bottom:12px;">
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
       <button type="button" class="btn-modal-padrao" id="btn-editar-mensagem" onclick="alternarEdicaoMensagem()">Editar mensagem</button>
       <button type="button" class="btn-modal-padrao" onclick="alternarListaPacientesEmail()">Paciente</button>
@@ -639,7 +641,7 @@ let estadoEmail = { reservaId: null, pacienteId: null, editandoMsg: false, msgAu
 function _el(id) { return document.getElementById(id); }
 
 async function _carregarMensagemEmail() {
-  const q = estadoEmail.pacienteId ? '?paciente_id=' + encodeURIComponent(estadoEmail.pacienteId) : '';
+  const q = '?paciente_id=' + encodeURIComponent(estadoEmail.pacienteId || '') + '&horario=' + encodeURIComponent(_el('email-horario').value);
   try {
     const resp = await fetch(`/api/reservas/${estadoEmail.reservaId}/confirmacao-previa${q}`);
     const dados = await resp.json();
@@ -714,6 +716,7 @@ function _atualizarRotuloPaciente(p) {
 function abrirModalEmail(reservaId) {
   estadoEmail = { reservaId: reservaId, pacienteId: null, editandoMsg: false, msgAuto: '', msgMudou: false, editandoPaciente: null };
   _el('erro-email').style.display = 'none';
+  _el('email-horario').value = '';
   _el('email-paciente-escolhido').textContent = 'Nenhum paciente escolhido';
   _el('email-lista-pacientes').style.display = 'none';
   _el('email-mensagem-edicao').style.display = 'none';
@@ -736,6 +739,10 @@ function escolherPacienteEmail(p) {
   _carregarMensagemEmail();
 }
 _el('email-mensagem-edicao').addEventListener('input', () => { estadoEmail.msgMudou = true; });
+let _tHorarioEmail = null;
+_el('email-horario').addEventListener('input', () => {   // atualiza a prévia (se o texto não foi editado à mão)
+  clearTimeout(_tHorarioEmail); _tHorarioEmail = setTimeout(_carregarMensagemEmail, 350);
+});
 
 async function enviarEmailConfirmacao() {
   const erroEl = _el('erro-email');
@@ -743,7 +750,7 @@ async function enviarEmailConfirmacao() {
   if (!estadoEmail.pacienteId) { erroEl.textContent = 'Escolha o paciente no botão "Paciente".'; erroEl.style.display = 'block'; return; }
   const btn = _el('btn-enviar-email-conf');
   btn.disabled = true; btn.textContent = 'Enviando...';
-  const corpo = { paciente_id: estadoEmail.pacienteId };
+  const corpo = { paciente_id: estadoEmail.pacienteId, horario: _el('email-horario').value };
   if (estadoEmail.msgMudou) corpo.mensagem = _el('email-mensagem-edicao').value;
   try {
     const resp = await fetch(`/api/reservas/${estadoEmail.reservaId}/enviar-confirmacao`, {

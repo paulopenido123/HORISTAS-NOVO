@@ -463,3 +463,8 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 
 ## v67 — Primeiro acesso pede e-mail
 - Tela do link de primeiro acesso (redefinir_senha.html / auth.redefinir_senha): o campo obrigatório é o E-mail (usado para entrar); o telefone não é mais pedido nem alterado (continua o cadastrado). E-mail já usado por outro profissional é recusado.
+- Manual: botão "← Voltar" no topo (volta à página anterior; sem origem, vai ao painel).
+
+## v69 — E-mail de confirmação com horário opcional; /primeiro-acesso por e-mail
+- Agenda > "Enviar e-mail": a mensagem NÃO inclui mais o horário automático; novo campo "Horário (opcional)" (texto livre, até 40 caracteres) — se preenchido, entra a linha "Horário: ..." depois da data (prévia atualiza ao digitar). Manual atualizado.
+- /primeiro-acesso (página pública): agora pede o E-MAIL (não mais o telefone). Acha o cadastro pelo e-mail e cria a senha. O auto-cadastro por telefone foi desativado (e-mail não encontrado → orientação para falar com a Lifemax); removido o aviso de novo cadastro aos admins, que só existia nesse fluxo.

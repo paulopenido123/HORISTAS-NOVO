@@ -635,7 +635,6 @@ def _pos_reserva(medico_id: str, consultorio_id: str, reserva: dict):
 # cadastrados por ele e o e-mail do paciente é puxado do cadastro.
 
 ENDERECO_CONFIRMACAO = "Rua Gonçalves Dias, 82"
-_FAIXA_TURNO = {"manha": ("08:00", "12:00"), "tarde": ("13:00", "17:00"), "noite": ("17:30", "20:30")}
 
 
 def _reserva_do_medico(reserva_id: str, medico_id: str) -> dict:
@@ -649,7 +648,13 @@ def _reserva_do_medico(reserva_id: str, medico_id: str) -> dict:
     return reserva
 
 
-def montar_confirmacao_consulta(reserva_id: str, medico_id: str, nome_paciente: str | None = None) -> dict:
+def _limpar_horario(horario: str | None) -> str:
+    """Horário digitado pelo médico no e-mail de confirmação (campo opcional, texto livre)."""
+    return " ".join((horario or "").split())[:40]
+
+
+def montar_confirmacao_consulta(reserva_id: str, medico_id: str, nome_paciente: str | None = None,
+                                horario: str | None = None) -> dict:
     """Devolve {assunto, mensagem} -- a MESMA mensagem que aparece na tela
     de prévia e que vai por e-mail (um lugar só, pra não divergir)."""
     reserva = _reserva_do_medico(reserva_id, medico_id)
@@ -660,25 +665,22 @@ def montar_confirmacao_consulta(reserva_id: str, medico_id: str, nome_paciente: 
         sala = f"Sala {sala.strip()}"
     d = str(reserva["data"])[:10]
     data_br = f"{d[8:10]}/{d[5:7]}/{d[0:4]}"
-    if reserva.get("tipo_reserva") == "hora" and reserva.get("hora_inicio"):
-        horario = f"{str(reserva['hora_inicio'])[:5]} às {str(reserva.get('hora_fim') or '')[:5]}".rstrip(" às")
-    else:
-        ini, fim = _FAIXA_TURNO.get(reserva.get("periodo"), ("", ""))
-        horario = f"{ini} às {fim}" if ini else "a combinar"
     nome_medico = medico["nome"] if medico else ""
+    horario = _limpar_horario(horario)
     saudacao = f"Olá, {nome_paciente}!" if nome_paciente else "Olá!"
     mensagem = (
         f"{saudacao}\n\n"
         f"Sua consulta com {nome_medico} está confirmada.\n\n"
         f"Data: {data_br}\n"
-        f"Horário: {horario}\n"
+        + (f"Horário: {horario}\n" if horario else "") +
         f"Endereço: {ENDERECO_CONFIRMACAO} — {sala}\n\n"
         f"Qualquer dúvida, fale com o seu médico."
     )
     return {"assunto": f"Confirmação de consulta — {data_br}", "mensagem": mensagem}
 
 
-def enviar_confirmacao_consulta(reserva_id: str, medico_id: str, paciente_id: str, mensagem: str | None = None) -> dict:
+def enviar_confirmacao_consulta(reserva_id: str, medico_id: str, paciente_id: str, mensagem: str | None = None,
+                                horario: str | None = None) -> dict:
     from app.services import pacientes_service
     if not paciente_id:
         raise ValueError("Escolha o paciente.")
@@ -687,7 +689,7 @@ def enviar_confirmacao_consulta(reserva_id: str, medico_id: str, paciente_id: st
         raise ValueError("Paciente não encontrado.")
     if not paciente.get("email"):
         raise ValueError(f'O paciente "{paciente["nome_completo"]}" não tem e-mail cadastrado.')
-    conteudo = montar_confirmacao_consulta(reserva_id, medico_id, paciente["nome_completo"])
+    conteudo = montar_confirmacao_consulta(reserva_id, medico_id, paciente["nome_completo"], horario)
     # "Editar mensagem": o médico pode trocar o texto padrão.
     texto = (mensagem or "").strip() or conteudo["mensagem"]
     if len(texto) > 3000:

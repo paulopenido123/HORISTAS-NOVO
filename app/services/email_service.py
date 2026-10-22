@@ -345,23 +345,6 @@ def notificar_confirmar_email(nome: str, link_confirmar: str, destinatario: str)
     return enviar_email([destinatario], assunto, corpo_html)
 
 
-def notificar_admin_novo_cadastro_pendente(nome_medico: str, telefone: str, destinatarios: list[str]) -> bool:
-    """Item 2: aviso por e-mail ao(s) admin(s) (ADMIN_EMAIL) quando um
-    médico se autocadastra pelo site (/primeiro-acesso) e fica
-    aguardando liberação em Clientes."""
-    assunto = f"Novo cadastro aguardando liberação: {nome_medico}"
-    corpo_html = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 480px;">
-        <h2 style="color: #1a3c5e;">Novo médico aguardando liberação</h2>
-        <p><strong>{_esc(nome_medico)}</strong> ({_esc(telefone)}) acabou de se cadastrar sozinho pelo site.</p>
-        <p>Ele já consegue entrar e comprar horas, mas fica bloqueado de reservar consultório até
-        você liberar o acesso em <strong>Clientes</strong> (botão "Liberar acesso").</p>
-        <p style="color: #888; font-size: 12px; margin-top: 20px;">
-            Notificação automática — Sistema Lifemax
-        </p>
-    </div>
-    """
-    return enviar_email(destinatarios, assunto, corpo_html)
 
 
 def notificar_acesso_liberado(nome: str, destinatario: str) -> bool:

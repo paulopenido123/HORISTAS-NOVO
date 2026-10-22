@@ -277,7 +277,7 @@ def atualizar_paciente(paciente_id):
 def confirmacao_previa(reserva_id):
     """Mensagem padrão do e-mail de confirmação (tela "Enviar e-mail de
     confirmação" da Minha agenda). `paciente_id` opcional: só personaliza a
-    saudação com o nome."""
+    saudação com o nome; `horario` opcional: texto digitado pelo médico."""
     nome = None
     paciente_id = (request.args.get("paciente_id") or "").strip()
     if paciente_id:
@@ -285,7 +285,8 @@ def confirmacao_previa(reserva_id):
         if p and p["medico_id"] == medico_logado_id():
             nome = p["nome_completo"]
     try:
-        return jsonify(reserva_service.montar_confirmacao_consulta(reserva_id, medico_logado_id(), nome))
+        return jsonify(reserva_service.montar_confirmacao_consulta(
+            reserva_id, medico_logado_id(), nome, request.args.get("horario")))
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
 
@@ -297,7 +298,7 @@ def enviar_confirmacao(reserva_id):
     try:
         resultado = reserva_service.enviar_confirmacao_consulta(
             reserva_id, medico_logado_id(), (body.get("paciente_id") or "").strip(),
-            mensagem=body.get("mensagem"))
+            mensagem=body.get("mensagem"), horario=body.get("horario"))
     except ValueError as e:
         return jsonify({"erro": str(e)}), 400
     if not resultado["enviado"]:

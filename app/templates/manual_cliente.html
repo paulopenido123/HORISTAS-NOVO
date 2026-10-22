@@ -22,12 +22,14 @@
   table { width:100%; border-collapse:collapse; margin:8px 0; }
   th, td { text-align:left; padding:9px 8px; border-bottom:1px solid #E1EAEE; font-size:14.5px; }
   th { font-size:12px; text-transform:uppercase; color:#6B8493; }
+  .voltar-manual { display:inline-flex; align-items:center; text-decoration:none; background:#fff; color:#1F3A4D; font-family:var(--display); font-weight:800; font-size:14.5px; padding:10px 18px; border-radius:14px; box-shadow:0 4px 16px rgba(11,58,87,.08); }
   .baixar { display:inline-block; margin-top:6px; background:#D8F1EF; color:#0B6E6A; font-weight:800; text-decoration:none; padding:10px 16px; border-radius:12px; font-size:14px; }
 </style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="/static/css/padrao-medico.css"><link rel="stylesheet" href="/static/css/manual-botao.css"></head>
 <body>
 {% with eyebrow='Área do cliente', titulo='Manual do cliente', subtitulo='Guia rápido para acessar seu painel, consultar seu saldo e realizar suas reservas.' %}{% include '_topo_medico.html' %}{% endwith %}
 
 <div class="container">
+  <div class="acao-topo" style="justify-content:flex-start"><a class="voltar-manual" id="link-voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar</a></div>
   <div class="card">
     <h2>Bem-vindo(a) à Área do Cliente Lifemax!</h2>
     <p>Neste manual você encontra as orientações básicas para utilizar o seu painel Lifemax. Pelo painel, você pode acompanhar seu saldo de horas, realizar reservas, cadastrar pacientes e consultar suas informações.</p>
@@ -51,6 +53,7 @@
     <div class="opcao"><strong>Meus dados:</strong> consulte ou atualize seus dados cadastrais.</div>
     <div class="opcao"><strong>+ Cadastrar o seu paciente:</strong> cadastre os dados do paciente que será atendido.</div>
     <div class="opcao"><strong>Pacientes:</strong> consulte os pacientes já cadastrados em sua conta.</div>
+    <div class="opcao"><strong>Enviar e-mail ao paciente:</strong> em cada reserva da agenda, o botão “Enviar e-mail” abre a confirmação de consulta. Escolha o paciente no botão “Paciente” e, se quiser, preencha o campo “Horário (opcional)”: o horário só aparece no e-mail se você o digitar. Também é possível ajustar o texto em “Editar mensagem”.</div>
     <div class="opcao"><strong>Minha agenda:</strong> veja suas reservas e acompanhe seus atendimentos. Nos três pontinhos (⋮) de cada reserva você confere a reserva confirmada (sala e endereço) ou cancela a reserva.</div>
   </div>
 
@@ -92,4 +95,10 @@
 </div>
 
 {% with ativo='' %}{% include '_nav_medico.html' %}{% endwith %}
+<script>
+// Volta para a página de onde o cliente veio (se for do próprio sistema); senão, para o painel.
+document.getElementById('link-voltar').addEventListener('click', function (e) {
+  try { if (document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1) { e.preventDefault(); history.back(); } } catch (_) {}
+});
+</script>
 </body></html>

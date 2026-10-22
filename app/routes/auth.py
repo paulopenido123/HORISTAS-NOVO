@@ -16,108 +16,46 @@ auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/primeiro-acesso", methods=["GET", "POST"])
 def primeiro_acesso():
+    """Primeiro acesso por E-MAIL (22/10/2026, pedido do Paulo -- antes era por telefone):
+    o profissional digita o e-mail que a Lifemax tem cadastrado e cria a senha.
+    O auto-cadastro por telefone foi desativado: quem não é encontrado é orientado a falar com a Lifemax."""
     erro = None
-    etapa = "telefone"
+    etapa = "email"
     medico = None
-    telefone_digitado = ""
+    email_digitado = (request.form.get("email", "") or "").strip().lower()
+
+    def _sem_senha(lista):
+        return [m for m in lista if not creditos_db.medico_tem_senha(m)]
 
     if request.method == "POST":
-        etapa_enviada = request.form.get("etapa", "telefone")
-        telefone_digitado = telefone_utils.normalizar_telefone(request.form.get("telefone", "")) or ""
+        etapa_enviada = request.form.get("etapa", "email")
+        encontrados = db.listar_medicos_por_email(email_digitado) if "@" in email_digitado else []
+        pendentes = _sem_senha(encontrados)
 
-        if etapa_enviada == "telefone":
-            medico = db.get_medico_by_telefone(telefone_digitado) if telefone_digitado else None
-
-            if medico is None:
-                # Telefone novo -> auto-cadastro (o próprio médico cria o
-                # cadastro dele, sem precisar que o admin faça isso antes)
-                etapa = "cadastro"
-            elif creditos_db.medico_tem_senha(medico):
-                erro = "Esse telefone já tem senha cadastrada. Use a tela de login."
-            else:
-                etapa = "senha"
-
-        elif etapa_enviada == "cadastro":
-            nome = request.form.get("nome", "").strip()
-            especialidade = request.form.get("especialidade", "").strip()
+        if not encontrados:
+            erro = ("Não encontramos esse e-mail. Confira se é o mesmo e-mail informado à Lifemax ou fale com a "
+                    "equipe pelos telefones (31) 99754-6473 ou (31) 97207-8423.")
+        elif not pendentes:
+            erro = "Esse e-mail já tem senha cadastrada. Use a tela de login."
+        elif etapa_enviada == "email":
+            medico = pendentes[0]
+            etapa = "senha"
+        else:
+            medico = pendentes[0]
             senha = request.form.get("senha", "")
             confirmar = request.form.get("confirmar_senha", "")
-
-            if not telefone_digitado.isdigit():
-                erro = "Telefone deve conter só números, com DDI e DDD (ex: 5531999999999)."
-                etapa = "cadastro"
-            elif not nome:
-                erro = "Digite seu nome completo."
-                etapa = "cadastro"
-            elif len(senha) < 6:
+            etapa = "senha"
+            if len(senha) < 6:
                 erro = "A senha precisa ter pelo menos 6 caracteres."
-                etapa = "cadastro"
             elif senha != confirmar:
                 erro = "As senhas não coincidem."
-                etapa = "cadastro"
-            elif db.get_medico_by_telefone(telefone_digitado) is not None:
-                # alguem cadastrou esse telefone nesse meio-tempo (raro, mas possível)
-                erro = "Esse telefone já foi cadastrado. Tente fazer login."
-                etapa = "telefone"
             else:
-                # autorizado=True (default) -- pedido do Paulo em
-                # 23/09/2026 (itens 1 e 2): médico novo NÃO espera mais
-                # liberação manual do admin pra poder reservar. Assim que
-                # aceita o contrato, compra horas e completa o cadastro
-                # (telefone, e-mail, especialidade, CPF, data de
-                # nascimento e endereço -- ver reserva_service.
-                # _CAMPOS_OBRIGATORIOS_PARA_RESERVAR), já pode reservar
-                # consultório sozinho. O bloqueio manual (autorizado=False)
-                # continua existindo em reserva_service.NaoAutorizadoError,
-                # mas agora só como uma exceção rara que o admin aciona
-                # manualmente em /admin/clientes (ex: suspender um médico
-                # problemático), não mais o fluxo padrão de todo cadastro novo.
-                novo_medico = db.criar_medico(nome, telefone_digitado, especialidade)
-                creditos_db.definir_senha_medico(novo_medico["id"], auth_service.gerar_hash_senha(senha))
-                auth_service.login_medico(novo_medico["id"])
-
-                from app.services import notificacoes_operacionais_service as notif_op
-                notif_op.avisar_admins(
-                    f"👋 Novo médico se cadastrou pelo site: {nome} ({telefone_digitado}). "
-                    f"O assistente de WhatsApp dele só é liberado depois do primeiro pagamento."
-                )
-
-                # Item 2 (pedido do Paulo em 11/09/2026): aviso por
-                # E-MAIL pro(s) admin(s) além do WhatsApp acima -- mesmo
-                # padrão gracioso de sempre (se ADMIN_EMAIL/SMTP não
-                # estiverem configurados, só não manda, não quebra o
-                # cadastro do médico).
-                from app.config import Config
-                destinatarios_admin = [e.strip() for e in (Config.ADMIN_EMAIL or "").split(",") if e.strip()]
-                if destinatarios_admin:
-                    from app.services import email_service
-                    email_service.notificar_admin_novo_cadastro_pendente(nome, telefone_digitado, destinatarios_admin)
-
+                creditos_db.definir_senha_medico(medico["id"], auth_service.gerar_hash_senha(senha))
+                auth_service.login_medico(medico["id"])
                 return redirect(url_for("medico_painel.painel"))
 
-        elif etapa_enviada == "senha":
-            medico = db.get_medico_by_telefone(telefone_digitado)
-            if medico is None:
-                erro = "Telefone não encontrado."
-                etapa = "telefone"
-            elif creditos_db.medico_tem_senha(medico):
-                erro = "Esse telefone já tem senha cadastrada. Use a tela de login."
-            else:
-                senha = request.form.get("senha", "")
-                confirmar = request.form.get("confirmar_senha", "")
-                if len(senha) < 6:
-                    erro = "A senha precisa ter pelo menos 6 caracteres."
-                    etapa = "senha"
-                elif senha != confirmar:
-                    erro = "As senhas não coincidem."
-                    etapa = "senha"
-                else:
-                    creditos_db.definir_senha_medico(medico["id"], auth_service.gerar_hash_senha(senha))
-                    auth_service.login_medico(medico["id"])
-                    return redirect(url_for("medico_painel.painel"))
-
     return render_template("primeiro_acesso.html", erro=erro, etapa=etapa,
-                            medico=medico, telefone_digitado=telefone_digitado)
+                            medico=medico, email_digitado=email_digitado)
 
 
 @auth_bp.route("/confirmar-email/<token>")

@@ -62,6 +62,15 @@ def admin_logado() -> bool:
     return ua.contar_ativos() == 0
 
 
+def requer_login_medico(view_func):
+    @wraps(view_func)
+    def wrapper(*args, **kwargs):
+        if not medico_logado_id():
+            return redirect(url_for("auth.login", next=request.path))
+        return view_func(*args, **kwargs)
+    return wrapper
+
+
 def requer_admin(view_func):
     @wraps(view_func)
     def wrapper(*args, **kwargs):

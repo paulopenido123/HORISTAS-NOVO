@@ -161,28 +161,45 @@ def notificar_acesso_admin(nome: str, link_criar_senha: str, destinatario: str) 
     return enviar_email([destinatario], assunto, corpo_html)
 
 
+def _carregar_manual_cliente() -> tuple | None:
+    """Manual do cliente em PDF (static/docs) -- vai em anexo no e-mail do link de acesso."""
+    import os
+    caminho = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "docs", "Manual_do_Cliente_Lifemax.pdf")
+    try:
+        with open(caminho, "rb") as f:
+            return ("Manual_do_Cliente_Lifemax.pdf", f.read(), "application/pdf")
+    except OSError:
+        return None
+
+
 def notificar_primeiro_acesso(nome: str, link_criar_senha: str, destinatario: str) -> bool:
-    assunto = "Seu acesso ao sistema Lifemax está pronto"
+    assunto = "Seu acesso ao novo sistema da Lifemax"
     corpo_html = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 480px;">
-        <h2 style="color: #1a3c5e;">Bem-vindo(a) ao sistema Lifemax</h2>
-        <p>Olá, {_esc(nome)}! Seu cadastro já está pronto no sistema da Lifemax — falta só você criar sua senha
-        de acesso pra entrar pela primeira vez.</p>
+    <div style="font-family: Arial, sans-serif; max-width: 520px; color:#222; line-height:1.5;">
+        <p>Olá, {_esc(nome)}!</p>
+        <p>Informamos que estamos realizando a migração do sistema atual para uma nova plataforma de gestão de
+        horas avulsas da Lifemax.</p>
+        <p>Você está recebendo um link de acesso para entrar no novo sistema e completar seus dados cadastrais.</p>
+        <p>O objetivo dessa mudança é melhorar a experiência de utilização, facilitando a compra de horas, a
+        realização de reservas e o acompanhamento do saldo disponível.</p>
         <p>
             <a href="{link_criar_senha}" style="background:#1a3c5e; color:white; padding:10px 18px;
                border-radius:6px; text-decoration:none; display:inline-block;">
-               Criar minha senha de acesso
+               Acessar o novo sistema e criar minha senha
             </a>
         </p>
-        <p style="color: #888; font-size: 12px;">Guarde este e-mail: o link não expira e pode ser usado de novo se você precisar cadastrar uma nova senha.
-        Depois de criar a senha, você já entra direto no seu painel — use esse mesmo e-mail ou o telefone
-        cadastrado na próxima vez.</p>
+        <p>Pedimos, por gentileza, que conclua seu cadastro assim que possível. Segue em anexo o manual do cliente
+        com o passo a passo de utilização.</p>
+        <p>Agradecemos pela compreensão e estamos à disposição para esclarecer eventuais dúvidas!</p>
+        <p>Atenciosamente,<br><strong>Equipe Lifemax</strong></p>
         <p style="color: #888; font-size: 12px; margin-top: 20px;">
-            Notificação automática — Sistema Lifemax
+            Guarde este e-mail: o link não expira e pode ser usado de novo se você precisar cadastrar uma nova senha.
+            Depois de criar a senha, use esse mesmo e-mail ou o telefone cadastrado para entrar.
         </p>
     </div>
     """
-    return enviar_email([destinatario], assunto, corpo_html)
+    manual = _carregar_manual_cliente()
+    return enviar_email([destinatario], assunto, corpo_html, anexos=[manual] if manual else None)
 
 
 def notificar_confirmacao_avaliacao(medico_nome: str, nota: int, link_confirmacao: str,

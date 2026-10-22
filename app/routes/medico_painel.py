@@ -49,7 +49,15 @@ def painel():
                             reservas=reservas, pacientes=pacientes,
                             pacientes_json=[{"id": p["id"], "nome": p["nome_completo"], "email": p.get("email") or "", "telefone": p.get("telefone") or ""}
                                             for p in pacientes],
-                            campos_faltando=campos_faltando)
+                            campos_faltando=campos_faltando,
+                            endereco_lifemax=_endereco_lifemax())
+
+
+def _endereco_lifemax() -> str:
+    """Endereço exibido em "Reserva confirmada": o padrão cadastrado em Admin > Horas,
+    ou Rua Gonçalves Dias, 82 enquanto ele não estiver configurado."""
+    e = creditos_db.endereco_padrao_formatado()
+    return "Rua Gonçalves Dias, 82" if e == "Endereço não configurado" else e
 
 
 def _resolver_pacote_salas(body: dict):
@@ -215,6 +223,15 @@ def pagina_minha_agenda():
     essa rota só como redirecionamento (algum favorito/link antigo pode
     apontar pra cá), em vez de simplesmente derrubar a URL com um 404."""
     return redirect(url_for("medico_painel.painel"))
+
+
+@medico_painel_bp.route("/manual")
+@requer_login_medico
+def manual():
+    """Botão "Manual" (sob o logo): manual do cliente como página. Os pacotes de horas vêm do
+    banco, então a tabela de preços nunca fica desatualizada. Ao mudar o sistema, atualizar
+    também templates/manual_cliente.html (e o PDF static/docs, enviado no e-mail de acesso)."""
+    return render_template("manual_cliente.html", pacotes_horas=creditos_db.listar_pacotes_horas())
 
 
 @medico_painel_bp.route("/painel/pacientes")

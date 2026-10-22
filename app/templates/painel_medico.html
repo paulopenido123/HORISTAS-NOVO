@@ -243,11 +243,23 @@
   .ag-cancel-nota { font-size: 14px; font-weight: 600; color: #C8452D; line-height: 1.3; }
   .menu-mais { position: relative; align-self: start; }
   .btn-mais { background: none; border: 0; cursor: pointer; font-size: 24px; color: #12354C; padding: 2px; }
-  .menu-mais-lista { display: none; position: absolute; right: 0; top: 30px; z-index: 20; background: #fff; border: 1px solid var(--card-line); border-radius: 12px; box-shadow: 0 8px 24px rgba(10,50,80,.2); padding: 6px; min-width: 170px; }
+  .menu-mais-lista { display: none; position: absolute; right: 0; top: 30px; z-index: 20; background: #fff; border: 1px solid var(--card-line); border-radius: 12px; box-shadow: 0 8px 24px rgba(10,50,80,.2); padding: 6px; min-width: 230px; }
   .menu-mais.aberto .menu-mais-lista { display: block; }
   .btn-cancelar { width: 100%; background: none; border: 0; text-align: left; color: #C8452D; font-family: var(--display); font-weight: 700; font-size: 15px; padding: 10px 12px; cursor: pointer; border-radius: 8px; }
   .btn-cancelar:hover { background: #FDEEEC; }
   .btn-cancelar:disabled { opacity: .5; cursor: default; }
+  .btn-confirmada { width: 100%; background: none; border: 0; text-align: left; color: #1C8A4B; font-family: var(--display); font-weight: 700; font-size: 15px; padding: 10px 12px; cursor: pointer; border-radius: 8px; }
+  .btn-confirmada:hover { background: #EAF6EF; }
+  .det-reserva { display: none; margin: 0 6px 6px; padding: 8px 10px; background: #EAF6EF; border-radius: 8px; color: #1C5A38; font-size: 13.5px; line-height: 1.4; }
+  .det-reserva.aberto { display: block; }
+  .det-reserva strong { font-family: var(--display); }
+  .pill.so-icone { padding: 5px; gap: 0; } .pill.so-icone .ic { font-size: 22px; }
+  /* celular: ações (status / e-mail) descem para uma linha própria -- evita sobrepor o horário */
+  @media (max-width: 520px) {
+    .ag-card { grid-template-columns: 62px 1fr 26px; padding-left: 10px; row-gap: 8px; }
+    .ag-card .ag-data { grid-column: 1; grid-row: 1; } .ag-card .ag-info { grid-column: 2; grid-row: 1; } .ag-card .menu-mais { grid-column: 3; grid-row: 1; }
+    .ag-card .ag-acoes { grid-column: 2 / 4; grid-row: 2; border-left: 0; padding: 0 0 0 12px; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  }
   .ag-vazio { color: var(--ink-faint); padding: 14px 4px; text-align: center; }
 
   /* ---- Visão geral da conta ---- */
@@ -274,7 +286,6 @@
     .saldo-card, .cards-rapidos { margin-left: auto; margin-right: auto; }
   }
   @media (max-width: 420px) {
-    .ag-card { grid-template-columns: 62px 1fr minmax(128px, auto) 22px; padding-left: 10px; }
     .ag-dia { font-size: 28px; }
     .saldo-card { grid-template-columns: auto 1fr 148px; gap: 10px; padding: 14px; }
     .saldo-ic { width: 52px; height: 52px; font-size: 28px; }
@@ -300,7 +311,7 @@ if ("serviceWorker" in navigator) {
 }
 </script>
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link rel="stylesheet" href="/static/css/base-mobile.css"></head>
+<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="{{ url_for('static', filename='css/manual-botao.css') }}"></head>
 <body>
 <script>
 (function() {
@@ -337,7 +348,7 @@ if ("serviceWorker" in navigator) {
 </defs></svg>
 <section class="hero" id="topo">
   <div class="hero-topo">
-    <div class="brand"><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
+    <div class="brand logo-col"><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"><a class="btn-manual" href="{{ url_for('medico_painel.manual') }}">Manual</a></div>
     <div class="hero-titulo">
       <div class="eyebrow">Área do cliente</div>
       <h1>Bem-vindo, {{ medico.nome.split(' ')[0] }}!</h1>
@@ -408,7 +419,7 @@ if ("serviceWorker" in navigator) {
         <div class="ag-data"><span class="ag-dia">{{ r.data[8:10] }}</span><span class="ag-mes">{{ meses[r.data[5:7]|int - 1] }}</span><span class="ag-ano">{{ r.data[0:4] }}</span></div>
         <div class="ag-info">
           <div class="ag-hora">{% if r.tipo_reserva == 'hora' %}{{ (r.hora_inicio or '')[:5] }} – {{ (r.hora_fim or '')[:5] }}{% else %}{{ {'manha': 'Manhã (08:00–12:00)', 'tarde': 'Tarde (13:00–17:00)', 'noite': 'Noite (17:30–20:30)'}.get(r.periodo, r.periodo) }}{% endif %}</div>
-          <div class="ag-cons">{{ r.consultorios.nome if r.consultorios else '—' }}</div>
+          <div class="ag-cons">{% if r.consultorios %}SL {{ r.consultorios.nome }}{% else %}—{% endif %}</div>
           {% if r.criado_por_admin and not cancelada %}<div class="ag-aviso">Agendado pela administração Lifemax</div>{% endif %}
         </div>
         <div class="ag-acoes">
@@ -416,14 +427,18 @@ if ("serviceWorker" in navigator) {
             <span class="pill no"><svg class="ic "><use href="#i-x"/></svg> Cancelada</span>
             {% if r.cancelado_por_admin %}<span class="ag-cancel-nota">Cancelado por administração Lifemax</span>{% endif %}
           {% else %}
-            <span class="pill ok"><svg class="ic "><use href="#i-check"/></svg> Confirmada</span>
+            <span class="pill ok so-icone" title="Confirmada" role="img" aria-label="Confirmada"><svg class="ic "><use href="#i-check"/></svg></span>
             <button type="button" class="link-email" onclick="abrirModalEmail('{{ r.id }}')"><svg class="ic "><use href="#i-mail"/></svg> Enviar e-mail</button>
           {% endif %}
         </div>
         {% if not cancelada %}
         <div class="menu-mais">
           <button type="button" class="btn-mais" aria-label="Mais opções" onclick="alternarMenuMais(this)">&#8942;</button>
-          <div class="menu-mais-lista"><button type="button" class="btn-cancelar" onclick="cancelarReserva(this)">Cancelar reserva</button></div>
+          <div class="menu-mais-lista">
+            <button type="button" class="btn-confirmada" onclick="this.nextElementSibling.classList.toggle('aberto')">Reserva confirmada</button>
+            <div class="det-reserva"><strong>SL {{ r.consultorios.nome if r.consultorios else '—' }}</strong><br>{{ endereco_lifemax }}</div>
+            <button type="button" class="btn-cancelar" onclick="cancelarReserva(this)">Cancelar reserva</button>
+          </div>
         </div>
         {% endif %}
       </article>

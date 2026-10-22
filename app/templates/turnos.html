@@ -246,7 +246,7 @@
   }
 </style>
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link rel="stylesheet" href="/static/css/base-mobile.css"></head>
+<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="{{ url_for('static', filename='css/manual-botao.css') }}"></head>
 <body>
 <script>
 (function() {
@@ -278,7 +278,7 @@
 
 <header class="hero">
   <div class="hero-topo">
-    <div><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
+    <div class="logo-col"><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"><a class="btn-manual" href="{{ url_for('medico_painel.manual') }}">Manual</a></div>
     <div class="hero-titulo">
       <div class="eyebrow">Grade de turnos</div>
       <h1>Lifemax</h1>

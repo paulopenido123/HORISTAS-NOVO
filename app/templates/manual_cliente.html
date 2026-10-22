@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual do cliente — Lifemax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#F5F8F9; --ink:#10222E; --ink-muted:#55707C; --teal:#0EA5A0; --display:'Manrope',sans-serif; --serif:'Inter',-apple-system,sans-serif; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--ink); font-family:var(--serif); }
+  .card { background:#fff; padding:22px 20px; margin-bottom:14px; }
+  .card h2 { font-family:var(--display); color:#0B3A57; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
+  .num { display:inline-flex; width:30px; height:30px; border-radius:50%; background:#0EA5A0; color:#fff; align-items:center; justify-content:center; font-size:15px; font-weight:800; flex-shrink:0; }
+  .card p, .card li { font-size:15.5px; line-height:1.6; color:#2B4352; margin-bottom:8px; }
+  .card ul { padding-left:20px; }
+  .opcao { background:#F2F8F8; border-left:5px solid #0EA5A0; border-radius:12px; padding:10px 14px; margin-bottom:10px; }
+  .opcao strong { font-family:var(--display); color:#0B3A57; }
+  .destaque { background:#FFF6E0; border-left:5px solid #E0A100; border-radius:12px; padding:10px 14px; margin:10px 0; }
+  table { width:100%; border-collapse:collapse; margin:8px 0; }
+  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid #E1EAEE; font-size:14.5px; }
+  th { font-size:12px; text-transform:uppercase; color:#6B8493; }
+  .baixar { display:inline-block; margin-top:6px; background:#D8F1EF; color:#0B6E6A; font-weight:800; text-decoration:none; padding:10px 16px; border-radius:12px; font-size:14px; }
+</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="/static/css/padrao-medico.css"><link rel="stylesheet" href="/static/css/manual-botao.css"></head>
+<body>
+{% with eyebrow='Área do cliente', titulo='Manual do cliente', subtitulo='Guia rápido para acessar seu painel, consultar seu saldo e realizar suas reservas.' %}{% include '_topo_medico.html' %}{% endwith %}
+
+<div class="container">
+  <div class="card">
+    <h2>Bem-vindo(a) à Área do Cliente Lifemax!</h2>
+    <p>Neste manual você encontra as orientações básicas para utilizar o seu painel Lifemax. Pelo painel, você pode acompanhar seu saldo de horas, realizar reservas, cadastrar pacientes e consultar suas informações.</p>
+    <a class="baixar" href="{{ url_for('static', filename='docs/Manual_do_Cliente_Lifemax.pdf') }}" target="_blank" rel="noopener">Baixar manual em PDF</a>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">1</span> Acesse seu painel</h2>
+    <p>Após entrar no sistema (com seu e-mail ou telefone e a senha), você é direcionado(a) para a Área do Cliente. Na tela inicial ficam as principais informações e funções da sua conta.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span> Saldo de horas</h2>
+    <p>Na parte superior do painel fica o seu saldo de horas disponível. Ele varia conforme a conta e é atualizado a cada compra, reserva ou cancelamento.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span> Principais opções do painel</h2>
+    <div class="opcao"><strong>+ Comprar horas:</strong> adquira novas horas, conforme as condições disponíveis para sua conta.</div>
+    <div class="opcao"><strong>Reservar consultórios:</strong> consulte os horários disponíveis e faça sua reserva. Para reservar, use o botão “Reservar” da sala desejada e selecione o horário. Para cancelar, use o botão “Cancelar” e selecione o horário que deseja cancelar.</div>
+    <div class="opcao"><strong>Meus dados:</strong> consulte ou atualize seus dados cadastrais.</div>
+    <div class="opcao"><strong>+ Cadastrar o seu paciente:</strong> cadastre os dados do paciente que será atendido.</div>
+    <div class="opcao"><strong>Pacientes:</strong> consulte os pacientes já cadastrados em sua conta.</div>
+    <div class="opcao"><strong>Minha agenda:</strong> veja suas reservas e acompanhe seus atendimentos. Nos três pontinhos (⋮) de cada reserva você confere a reserva confirmada (sala e endereço) ou cancela a reserva.</div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">4</span> Reservas e cancelamentos</h2>
+    <p>Ao realizar uma reserva, confira sempre o consultório, a data e o horário antes de finalizar.</p>
+    <div class="destaque"><p><strong>Para que uma reserva não seja contabilizada, o cancelamento deve ser feito com antecedência mínima de 12 horas, conforme as regras da Lifemax.</strong></p></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">5</span> Como comprar horas</h2>
+    <p>Na tela inicial, clique em “+ Comprar horas”. Escolha o pacote desejado e clique em “Continuar”.</p>
+    {% if pacotes_horas %}
+    <table>
+      <thead><tr><th>Pacote</th><th>Valor por hora</th><th>Valor total</th><th>Condição</th></tr></thead>
+      <tbody>
+      {% for p in pacotes_horas %}
+        <tr><td>{{ p.horas }} horas</td><td>R$ {{ ('%.2f'|format(p.valor_hora)).replace('.', ',') }}/h</td><td>R$ {{ ('{:,.2f}'.format(p.valor_total)).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td><td>{{ 'À vista' if p.max_parcelas <= 1 else 'Até ' ~ p.max_parcelas ~ 'x' }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    <p>Quanto maior o pacote adquirido de uma vez, menor é o valor por hora.</p>
+    <div class="destaque"><p><strong>Importante:</strong> o crédito adquirido é destinado exclusivamente à reserva de consultórios.</p></div>
+    <p>Para concluir, siga as etapas apresentadas pelo sistema. Para sair sem prosseguir, clique em “Cancelar”.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">6</span> Dicas importantes</h2>
+    <ul>
+      <li>Confira seu saldo antes de realizar novas reservas.</li>
+      <li>Verifique cuidadosamente data, horário e consultório antes de confirmar.</li>
+      <li>Mantenha seus dados cadastrais atualizados.</li>
+      <li>Cadastre os pacientes antes do atendimento, quando necessário.</li>
+      <li>Acompanhe sua agenda para conferir suas reservas.</li>
+      <li>Em caso de dúvida, entre em contato com a equipe Lifemax.</li>
+    </ul>
+  </div>
+</div>
+
+{% with ativo='' %}{% include '_nav_medico.html' %}{% endwith %}
+</body></html>

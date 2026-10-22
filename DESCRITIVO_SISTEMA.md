@@ -455,3 +455,8 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 
 ## v64 — Página Horas simplificada
 - /admin/horas mostra só "Horas na praça" (soma do saldo em horas de todos os profissionais, agora) + endereço padrão. Removidos filtro por mês, horas vendidas/utilizadas (mês e total) e "na praça (mês)". `creditos_service.estatisticas_horas` foi substituída por `horas_na_praca_total()`.
+
+## v66 — Agenda, e-mail de acesso e Manual
+- Painel > Minha agenda: status "Confirmada" vira só o ícone; no celular a linha de ações desce para baixo do horário (sem sobreposição); sala exibida como "SL 402"; menu ⋮ com "Reserva confirmada" (verde; mostra SL + endereço — o padrão de Admin > Horas, ou "Rua Gonçalves Dias, 82" se vazio) e "Cancelar reserva" (vermelho).
+- E-mail do link de acesso (notificar_primeiro_acesso): novo texto de migração + manual em PDF anexo (static/docs/Manual_do_Cliente_Lifemax.pdf).
+- Botão "Manual" sob o logo (topo do painel, turnos, dados, pacientes) → /manual (templates/manual_cliente.html; tabela de pacotes vem do banco). **Regra: ao alterar o sistema, atualizar manual_cliente.html (e o PDF, se mudar o que é enviado).**

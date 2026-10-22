@@ -195,8 +195,10 @@ def google_login_ativo() -> bool:
 
 
 def _google_redirect_uri() -> str:
-    uri = os.getenv("GOOGLE_LOGIN_REDIRECT_URI")
-    if uri:
+    # A variável só vale se apontar para ESTE site e para a rota de retorno certa
+    # (evita herdar um endereço de outro serviço, como o do lifemax-assistant).
+    uri = (os.getenv("GOOGLE_LOGIN_REDIRECT_URI") or "").strip()
+    if uri and uri.split("?")[0].endswith("/login/google/retorno") and request.host in uri:
         return uri
     uri = url_for("auth.login_google_retorno", _external=True)
     if uri.startswith("http://") and "localhost" not in uri and "127.0.0.1" not in uri:

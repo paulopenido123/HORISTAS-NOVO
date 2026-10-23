@@ -61,13 +61,17 @@ def api_grade():
     grade = db.grade_de_turnos(data_inicio.isoformat(), data_fim.isoformat())
 
     # Privacidade -- pedido do Paulo em 14/09/2026: o médico pode ver que
-    # um horário está ocupado, mas NUNCA o nome de outro profissional
-    # (só o dele mesmo). Quem vê todos os nomes é só o administrador, na
+    # um horário está ocupado e ver só o primeiro nome de quem reservou
+    # (nome completo só o dele mesmo). Quem vê todos os nomes é só o administrador, na
     # tela "Visualizar agenda" da Matriz (app/routes/admin.py api_matriz_grade).
     medico_id_atual = medico_logado_id()
+    # Atualização de 23/10/2026: em vez de "Reservado" puro, a grade mostra
+    # só o PRIMEIRO NOME de quem reservou (nunca sobrenome nem outros dados).
     for r in grade.get("reservas", []):
         if r.get("medico_id") != medico_id_atual:
-            r["medicos"] = None
+            nome = ((r.get("medicos") or {}).get("nome") or "").strip()
+            primeiro = nome.split()[0] if nome else ""
+            r["medicos"] = {"nome": primeiro} if primeiro else None
 
     grade["data_inicio"] = data_inicio.isoformat()
     grade["data_fim"] = data_fim.isoformat()

@@ -480,6 +480,9 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v78 — Legibilidade do modal "Ver foto"
+- Bloco "Descrição" com fundo verde bem claro (#EAF7F5), borda suave, sombra e texto azul-marinho legível; "Sem foto cadastrada" também com fundo claro. Causa: `--bege` em turnos.html é azul escuro. Arquivo: app/templates/turnos.html.
+
 ## v77 — Primeiro nome nos horários reservados
 - Grade de Turnos (médicos logados): horário ocupado por outro profissional mostra só o PRIMEIRO NOME (antes "Reservado"); o próprio médico segue vendo "Você". Sobrenome e demais dados nunca saem da API (`/api/turnos/grade` devolve só `{nome: primeiro}`). Sem nome → continua "Reservado". Horários bloqueados pelo admin seguem "Reservado".
 - Admin/secretária (Visualizar agenda / Matriz) inalterados: nome completo e demais dados.

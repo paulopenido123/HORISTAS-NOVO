@@ -72,6 +72,7 @@ def confirmar_pagamento_e_creditar(asaas_payment_id: str) -> bool:
                 horas=horas_pacote,
                 forma_pagamento=pagamento.get("forma_pagamento") or "PIX",
                 destinatario=medico_recibo["email"],
+                codigo_pagamento=asaas_payment_id,
             )
     except Exception as e:
         print(f"[webhooks_asaas] Erro ao mandar recibo por e-mail: {e}")

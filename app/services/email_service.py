@@ -25,9 +25,25 @@ from app.config import Config
 _esc = html.escape
 
 
+# Aviso padrão de e-mail automático -- pedido do Paulo em 23/10/2026: TODO
+# e-mail enviado pelo sistema deve avisar que é automático e que ninguém
+# deve escrever pra esse endereço, só usar os canais da Lifemax. Fica aqui,
+# em enviar_email, pra valer pra todos os e-mails (inclusive os futuros).
+_MARCA_RODAPE_AUTOMATICO = "email-automatico-lifemax"
+RODAPE_EMAIL_AUTOMATICO = (
+    f'<div data-marca="{_MARCA_RODAPE_AUTOMATICO}" style="font-family: Arial, sans-serif; max-width: 480px; '
+    'margin-top: 18px; padding-top: 10px; border-top: 1px solid #e3ebef; color: #777; font-size: 12px; line-height: 1.5;">'
+    '<strong>Este é um e-mail automático.</strong> Por favor, não responda a esta mensagem nem envie '
+    'mensagens para este endereço, pois ele não é monitorado. Para dúvidas ou solicitações, utilize os '
+    'canais de comunicação da Lifemax.'
+    '</div>'
+)
+
+
 def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
                   anexos: list[tuple] | None = None,
-                  imagens_inline: list[tuple] | None = None) -> bool:
+                  imagens_inline: list[tuple] | None = None,
+                  rodape_automatico: bool = True) -> bool:
     """
     Envia um email para uma lista de destinatários.
     Retorna True se enviou com sucesso, False se as credenciais SMTP
@@ -54,6 +70,9 @@ def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
     if not destinatarios:
         print("[email] Nenhum destinatário cadastrado — pulando envio.")
         return False
+
+    if rodape_automatico and _MARCA_RODAPE_AUTOMATICO not in corpo_html:
+        corpo_html = corpo_html + RODAPE_EMAIL_AUTOMATICO
 
     msg = MIMEMultipart("mixed")
     msg["Subject"] = assunto
@@ -366,25 +385,36 @@ def notificar_acesso_liberado(nome: str, destinatario: str) -> bool:
 
 
 def notificar_recibo_compra_horas(nome: str, valor: float, horas: float | None,
-                                   forma_pagamento: str, destinatario: str) -> bool:
-    """Item 4: recibo por e-mail toda vez que uma compra de horas é
-    confirmada (PIX ou cartão) -- ver webhooks_asaas.confirmar_pagamento_e_creditar."""
-    linha_horas = f"<tr><td style='padding:6px 0; color:#555;'>Horas:</td><td style='padding:6px 0; font-weight:bold;'>{horas}h</td></tr>" if horas else ""
-    assunto = "Recibo de pagamento — Sistema Lifemax"
+                                   forma_pagamento: str, destinatario: str,
+                                   codigo_pagamento: str | None = None) -> bool:
+    """Recibo por e-mail toda vez que uma compra de horas é confirmada
+    (PIX ou cartão) -- ver webhooks_asaas.confirmar_pagamento_e_creditar.
+    Pedido do Paulo em 23/10/2026: um recibo para CADA valor pago, com
+    data/hora e código do pagamento."""
+    from datetime import datetime
+    try:
+        from zoneinfo import ZoneInfo
+        agora = datetime.now(ZoneInfo("America/Sao_Paulo"))
+    except Exception:
+        agora = datetime.now()
+    data_txt = agora.strftime("%d/%m/%Y às %H:%M")
+    valor_txt = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    linha = lambda r, v: (f"<tr><td style='padding:6px 0; color:#555;'>{r}</td>"
+                          f"<td style='padding:6px 0; font-weight:bold;'>{v}</td></tr>")
+    linhas = linha("Data do pagamento:", data_txt)
+    if horas:
+        linhas += linha("Horas adquiridas:", f"{horas}h")
+    linhas += linha("Valor pago:", f"R$ {valor_txt}")
+    linhas += linha("Forma de pagamento:", _esc(forma_pagamento))
+    if codigo_pagamento:
+        linhas += linha("Código do pagamento:", _esc(str(codigo_pagamento)))
+    assunto = "Recibo de pagamento — Lifemax"
     corpo_html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px;">
-        <h2 style="color: #1a3c5e;">Pagamento confirmado</h2>
+        <h2 style="color: #1a3c5e;">Recibo de pagamento</h2>
         <p>Olá, {_esc(nome)}! Confirmamos o recebimento do seu pagamento. Segue o recibo:</p>
-        <table style="width: 100%; border-collapse: collapse;">
-            <tr><td style="padding:6px 0; color:#555;">Valor:</td>
-                <td style="padding:6px 0; font-weight:bold;">R$ {valor:.2f}</td></tr>
-            {linha_horas}
-            <tr><td style="padding:6px 0; color:#555;">Forma de pagamento:</td>
-                <td style="padding:6px 0; font-weight:bold;">{_esc(forma_pagamento)}</td></tr>
-        </table>
-        <p style="color: #888; font-size: 12px; margin-top: 20px;">
-            Notificação automática — Sistema Lifemax
-        </p>
+        <table style="width: 100%; border-collapse: collapse;">{linhas}</table>
+        <p style="color: #555; font-size: 13px; margin-top: 14px;">As horas já estão disponíveis no seu saldo.</p>
     </div>
     """
     return enviar_email([destinatario], assunto, corpo_html)
@@ -480,4 +510,5 @@ def notificar_confirmacao_consulta(destinatario: str, assunto: str, mensagem: st
         '<p style="color: #888; font-size: 12px; margin-top: 20px;">Lifemax Consultórios</p>'
         '</div>'
     )
-    return enviar_email([destinatario], assunto, corpo_html)
+    # paciente fala com o médico (dados dele estão na mensagem), não com a Lifemax
+    return enviar_email([destinatario], assunto, corpo_html, rodape_automatico=False)

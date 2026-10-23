@@ -480,6 +480,11 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v76 — Recibo automático e aviso de e-mail automático
+- Recibo de pagamento: a cada compra de horas confirmada (PIX/cartão, via webhook Asaas ou consulta manual) o médico recebe e-mail com data/hora, horas, valor, forma e código do pagamento. Idempotente (pagamento já pago não reenvia). Só é enviado se o médico tiver e-mail cadastrado.
+- Rodapé padrão em TODOS os e-mails (`email_service.enviar_email`, `RODAPE_EMAIL_AUTOMATICO`): informa que é automático, que não se deve responder/escrever para o endereço e que se usem os canais da Lifemax. Exceção: confirmação de consulta ao paciente (`rodape_automatico=False`), pois o paciente fala com o médico.
+- Arquivos: app/services/email_service.py, app/routes/webhooks_asaas.py.
+
 ## v75 — Descrição do consultório em "Ver foto"
 - Grade de Turnos (médico): o modal "Ver foto" mostra, abaixo das fotos, um bloco com o rótulo "Descrição" e o texto cadastrado em Admin > Consultórios (admin ou secretária). Quebras de linha preservadas.
 - Se a descrição estiver vazia (ou só espaços), o bloco não aparece.

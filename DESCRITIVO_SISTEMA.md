@@ -480,6 +480,13 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v79 — Login mais rápido e horários vagos destacados
+- Painel do médico (`/painel`, destino do login): as ~10 consultas ao banco agora rodam em paralelo (ThreadPoolExecutor, 4 trabalhadores) em vez de uma após a outra.
+- Tela de login (GET): acorda o banco e abre conexão em segundo plano (`pg_query.aquecer_banco`) enquanto a pessoa digita. Pool de conexões: min 2 / máx 25, com keepalive.
+- Hash de senha NÃO foi enfraquecido (scrypt do Werkzeug mantido).
+- Grade de Turnos: horário vago ganhou contorno verde discreto (#5DBFA9) e sombra leve; destaque mais forte ao passar o mouse. O contorno do modo "Reservar" continua.
+- Arquivos: routes/medico_painel.py, routes/auth.py, services/pg_query.py, templates/turnos.html.
+
 ## v78 — Legibilidade do modal "Ver foto"
 - Bloco "Descrição" com fundo verde bem claro (#EAF7F5), borda suave, sombra e texto azul-marinho legível; "Sem foto cadastrada" também com fundo claro. Causa: `--bege` em turnos.html é azul escuro. Arquivo: app/templates/turnos.html.
 

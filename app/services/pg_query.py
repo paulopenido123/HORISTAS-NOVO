@@ -52,10 +52,25 @@ def _get_pool():
                         "É a connection string do seu banco Neon."
                     )
                 _pool = psycopg2.pool.ThreadedConnectionPool(
-                    minconn=1, maxconn=10, dsn=Config.DATABASE_URL,
+                    minconn=2, maxconn=25, dsn=Config.DATABASE_URL,
+                    keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=3,
                     cursor_factory=psycopg2.extras.RealDictCursor,
                 )
     return _pool
+
+
+def aquecer_banco():
+    """Acorda o banco (Neon pode estar suspenso) e já abre uma conexão no
+    pool. Chamada em segundo plano quando a tela de login é aberta: enquanto
+    a pessoa digita e-mail e senha, a primeira ida ao banco já acontece, e o
+    clique em "Entrar" não paga o "despertar" (25/10/2026)."""
+    try:
+        with _ConnCtx() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1")
+            conn.rollback()
+    except Exception as e:
+        print(f"[pg_query] aquecimento do banco falhou (sem impacto): {e}")
 
 
 class _ConnCtx:

@@ -140,6 +140,11 @@ def login():
             destino = request.args.get("next") or url_for("medico_painel.painel")
             return redirect(destino)
 
+    # Velocidade do login: ao abrir a tela, acorda o banco em segundo plano.
+    if request.method == "GET":
+        import threading
+        from app.services import pg_query
+        threading.Thread(target=pg_query.aquecer_banco, daemon=True).start()
     return render_template("login.html", erro=erro)
 
 

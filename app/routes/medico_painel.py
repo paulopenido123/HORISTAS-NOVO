@@ -2,6 +2,7 @@
 Painel pessoal do médico (autenticado): ver saldo, histórico de
 transações, e comprar créditos gerando um PIX via Asaas.
 """
+from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, render_template, jsonify, request, session, redirect, url_for
 from app.services import supabase_client as db
 from app.services import creditos_service as creditos_db
@@ -20,26 +21,35 @@ medico_painel_bp = Blueprint("medico_painel", __name__)
 @requer_termo_aceito
 def painel():
     medico = db.get_medico_by_id(medico_logado_id())
-    saldo = creditos_db.obter_saldo(medico["id"])
-    saldo_horas = creditos_db.saldo_em_horas_medico(medico["id"])
-    transacoes = creditos_db.listar_transacoes_medico(medico["id"])
-    precos = creditos_db.obter_precos()
+    mid = medico["id"]
+    # Velocidade (25/10/2026): estas consultas são independentes entre si.
+    # Feitas uma depois da outra, cada ida ao banco (Neon, na nuvem) somava
+    # sua latência e deixava o painel lento logo após o login; agora rodam
+    # em paralelo (pool de conexões já comporta -- ver pg_query._get_pool).
+    # Se uma falhar, o erro volta normalmente (.result()), igual a antes.
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        f_saldo = ex.submit(creditos_db.obter_saldo, mid)
+        f_horas = ex.submit(creditos_db.saldo_em_horas_medico, mid)
+        f_trans = ex.submit(creditos_db.listar_transacoes_medico, mid)
+        f_precos = ex.submit(creditos_db.obter_precos)
+        f_pacotes = ex.submit(creditos_db.listar_pacotes_horas)
+        f_notas = ex.submit(creditos_db.listar_pagamentos_com_nota_medico, mid)
+        f_modulos = ex.submit(modulos_service.listar_modulos_visiveis, medico)
+        f_reservas = ex.submit(db.listar_reservas_medico, mid)
+        f_pacientes = ex.submit(pacientes_service.listar_pacientes_medico, mid)
+        f_endereco = ex.submit(_endereco_lifemax)
+        saldo = f_saldo.result()
+        saldo_horas = f_horas.result()
+        transacoes = f_trans.result()
+        precos = f_precos.result()
+        pacotes_horas = f_pacotes.result()
+        notas_fiscais = f_notas.result()
+        modulos = f_modulos.result()
+        reservas = f_reservas.result()
+        pacientes = f_pacientes.result()
+        endereco_lifemax = f_endereco.result()
     horas_minimas = int(precos.get("horas_minimas", 1))
     preco_minimo = creditos_db.calcular_preco_horas(horas_minimas)
-    pacotes_horas = creditos_db.listar_pacotes_horas()
-    notas_fiscais = creditos_db.listar_pagamentos_com_nota_medico(medico["id"])
-    modulos = modulos_service.listar_modulos_visiveis(medico)
-    # "Minha agenda" -- pedido do Paulo em 11/09/2026: deixou de ser uma
-    # tela separada (/painel/agenda, atrás de um botão) e passou a
-    # aparecer direto aqui no topo do painel, logo no início, antes do
-    # board de saldos. `pacientes` é a lista (só cadastro, sem senha) que
-    # alimenta o botão "Paciente" do e-mail de confirmação de cada linha da
-    # agenda e também o botão "Pacientes cadastrados".
-    reservas = db.listar_reservas_medico(medico["id"])
-    pacientes = pacientes_service.listar_pacientes_medico(medico["id"])
-    # Pedido do Paulo em 23/09/2026 (item 2): avisa no painel quais dados
-    # ainda faltam pra poder reservar -- mesma lista de campos que
-    # reserva_service._checar_pode_alugar_avulso exige.
     campos_faltando = reserva_service._campos_pessoais_faltando(medico)
     return render_template("painel_medico.html", medico=medico, saldo=saldo, saldo_horas=saldo_horas,
                             transacoes=transacoes, precos=precos,
@@ -50,7 +60,7 @@ def painel():
                             pacientes_json=[{"id": p["id"], "nome": p["nome_completo"], "email": p.get("email") or "", "telefone": p.get("telefone") or ""}
                                             for p in pacientes],
                             campos_faltando=campos_faltando,
-                            endereco_lifemax=_endereco_lifemax())
+                            endereco_lifemax=endereco_lifemax)
 
 
 def _endereco_lifemax() -> str:

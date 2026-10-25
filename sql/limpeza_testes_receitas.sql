@@ -16,17 +16,19 @@
 --     Se vier outra quantidade, NÃO rode o passo 2 e me avise.
 --  2) Rode o PASSO 2. Deve mostrar: pagamentos_apagados = 3 e
 --     transacoes_apagadas = 1. (Se o passo 1 não deu 3, o passo 2 não apaga nada.)
+-- Se o passo 1 der ERRO de coluna inexistente ou vier VAZIO, confira no Neon se está
+-- no projeto/banco/branch correto (o mesmo do site horistas-novo) antes de qualquer coisa.
 -- Este script é de uso único; não rode o passo 2 duas vezes.
 -- =====================================================================
 
 -- PASSO 1 -- conferir (não altera nada)
-select p.id, m.nome, p.valor, p.horas_pacote, p.status,
+select p.id, m.nome, p.valor, p.status,
        (coalesce(p.pago_em, p.criado_em) at time zone 'America/Sao_Paulo') as quando
 from pagamentos_pix p join medicos m on m.id = p.medico_id
 where p.status = 'pago'
   and m.nome ilike 'paulo%'
   and (
-        (p.valor = 390 and p.horas_pacote = 6
+        (p.valor = 390
           and (coalesce(p.pago_em, p.criado_em) at time zone 'America/Sao_Paulo')::date = date '2026-10-22')
      or (p.valor = 20
           and (coalesce(p.pago_em, p.criado_em) at time zone 'America/Sao_Paulo')::date in (date '2026-09-23', date '2026-09-11'))
@@ -35,12 +37,12 @@ order by quando desc;
 
 -- PASSO 2 -- apagar (só roda se o passo 1 tiver achado exatamente 3)
 with alvo as (
-  select p.id, p.horas_pacote
+  select p.id, p.valor
   from pagamentos_pix p join medicos m on m.id = p.medico_id
   where p.status = 'pago'
     and m.nome ilike 'paulo%'
     and (
-          (p.valor = 390 and p.horas_pacote = 6
+          (p.valor = 390
             and (coalesce(p.pago_em, p.criado_em) at time zone 'America/Sao_Paulo')::date = date '2026-10-22')
        or (p.valor = 20
             and (coalesce(p.pago_em, p.criado_em) at time zone 'America/Sao_Paulo')::date in (date '2026-09-23', date '2026-09-11'))
@@ -49,8 +51,8 @@ with alvo as (
 trava as (select 1 as ok where (select count(*) from alvo) = 3),
 t as (
   delete from creditos_transacoes
-  where tipo = 'compra' and quantidade_horas = 6
-    and pagamento_id in (select id from alvo where horas_pacote = 6)
+  where tipo = 'compra'
+    and pagamento_id in (select id from alvo where valor = 390)
     and exists (select 1 from trava)
   returning id
 ),

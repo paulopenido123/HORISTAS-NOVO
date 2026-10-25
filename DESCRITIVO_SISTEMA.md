@@ -482,6 +482,7 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 
 ## v81 — Backup/restauração e limpeza de pagamentos de teste
 - Admin > "Backup" (menu + atalho no Dashboard; só Administrador; protegido pela senha master, 15 min): (1) "Baixar backup agora" gera `backup_lifemax_AAAA-MM-DD_HH-MM.json.gz` com TODAS as tabelas do schema public (médicos, reservas, pagamentos, consultórios, valores, usuários admin, fotos no banco...). (2) "Restaurar backup": envia o arquivo, exige digitar RESTAURAR + confirmação; modo mesclar (upsert pela chave primária, nada é apagado), numa única transação (falhou = nada muda).
+- Tipos especiais: colunas de intervalo (tstzrange etc.) são salvas como texto e voltam ao tipo certo; qualquer tipo desconhecido vira texto em vez de derrubar o backup.
 - Arquivos: services/backup_service.py (novo), routes/admin.py (`/admin/backup`, `/backup/baixar`, `/backup/restaurar`), templates/admin_backup.html (novo), admin_usuarios_master.html (título parametrizável).
 - sql/limpeza_testes_receitas.sql: uso único, apaga 3 pagamentos de teste (22/10 R$390; 23/09 e 11/09 R$20) de Receitas e a transação da compra de 6h de 22/10 (Horas vendidas de outubro 30 → 24). Identifica por nome/valor/data (não depende da coluna horas_pacote). Trava: só apaga se achar exatamente 3. Não altera saldo de ninguém.
 

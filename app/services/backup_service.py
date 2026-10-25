@@ -77,6 +77,20 @@ def _para_json(v):
         return {_MARCA_B64: base64.b64encode(bytes(v)).decode("ascii")}
     if isinstance(v, datetime.timedelta):
         return str(v)
+    # Colunas de intervalo (tstzrange/daterange/int4range... -- ex.: exclusão
+    # de reservas sobrepostas): vira o literal de texto do Postgres, que ele
+    # mesmo aceita de volta na restauração (ex.: '["2026-11-01T08:00:00+00:00","2026-11-01T09:00:00+00:00")').
+    if hasattr(v, "lower") and hasattr(v, "upper") and hasattr(v, "isempty") and not isinstance(v, str):
+        if v.isempty:
+            return "empty"
+        lim = lambda x: "" if x is None else '"' + (x.isoformat() if hasattr(x, "isoformat") else str(x)) + '"'
+        return f"{v._bounds[0]}{lim(v.lower)},{lim(v.upper)}{v._bounds[1]}"
+    if isinstance(v, (set, frozenset)):
+        return sorted(_para_json(x) for x in v)
+    if isinstance(v, (list, tuple)):
+        return [_para_json(x) for x in v]
+    if isinstance(v, dict):
+        return {k: _para_json(x) for k, x in v.items()}
     return v
 
 
@@ -96,7 +110,7 @@ def gerar_backup() -> tuple[bytes, dict]:
         "gerado_em": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "resumo": resumo, "tabelas": dados,
     }
-    bruto = json.dumps(pacote, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    bruto = json.dumps(pacote, ensure_ascii=False, separators=(",", ":"), default=str).encode("utf-8")
     saida = io.BytesIO()
     with gzip.GzipFile(fileobj=saida, mode="wb", compresslevel=6) as gz:
         gz.write(bruto)

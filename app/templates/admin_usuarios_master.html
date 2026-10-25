@@ -16,6 +16,6 @@ button{width:100%;height:54px;border:0;border-radius:14px;background:#0EA5A0;col
 button:hover{background:#0C8B87}
 .erro{background:#FDECEA;color:#C62A1B;padding:12px 14px;border-radius:14px;margin-bottom:16px;font-size:14px;font-weight:600}
 </style><link rel="stylesheet" href="/static/css/base-mobile.css"></head><body>
-<header class="hero"><img class="logo" src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax"><div class="eyebrow">Administrador</div><h1>Usuários</h1><p>Área protegida. Digite o código master.</p></header>
+<header class="hero"><img class="logo" src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax"><div class="eyebrow">Administrador</div><h1>{{ titulo_gate or 'Usuários' }}</h1><p>Área protegida. Digite o código master.</p></header>
 <div class="card">{% if erro %}<div class="erro">{{ erro }}</div>{% endif %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="master">Código senha master</label><input id="master" type="password" name="master" autocomplete="off" required autofocus><button>Acessar</button></form><p style="text-align:center;margin:16px 0 0"><a href="{{ url_for('admin.dashboard') }}" style="color:#0EA5A0;font-weight:700;text-decoration:none">← Voltar ao painel</a></p></div>
 </body></html>

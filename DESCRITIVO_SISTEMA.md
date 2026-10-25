@@ -480,6 +480,18 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v81 — Backup/restauração e limpeza de pagamentos de teste
+- Admin > "Backup" (menu + atalho no Dashboard; só Administrador; protegido pela senha master, 15 min): (1) "Baixar backup agora" gera `backup_lifemax_AAAA-MM-DD_HH-MM.json.gz` com TODAS as tabelas do schema public (médicos, reservas, pagamentos, consultórios, valores, usuários admin, fotos no banco...). (2) "Restaurar backup": envia o arquivo, exige digitar RESTAURAR + confirmação; modo mesclar (upsert pela chave primária, nada é apagado), numa única transação (falhou = nada muda).
+- Arquivos: services/backup_service.py (novo), routes/admin.py (`/admin/backup`, `/backup/baixar`, `/backup/restaurar`), templates/admin_backup.html (novo), admin_usuarios_master.html (título parametrizável).
+- sql/limpeza_testes_receitas.sql: uso único, apaga 3 pagamentos de teste (22/10 R$390; 23/09 e 11/09 R$20) de Receitas e a transação da compra de 6h de 22/10 (Horas vendidas de outubro 30 → 24). Trava: só apaga se achar exatamente 3. Não altera saldo de ninguém.
+
+## v80 — Admin: "Alterar valores"
+- Novo botão "Alterar valores" no menu do admin (e atalho no Dashboard), só para perfil Administrador (secretária não vê nem acessa — 403). Rota `/admin/valores` (GET/POST).
+- A página lista as opções de "Opções para contratação" (tabela `pacotes_horas_avulsas`: 6h/12h/24h/48h): um campo de valor por hora para cada opção, total calculado (horas × valor/hora) ao vivo, botão "Publicar novos valores" com confirmação.
+- Validação (`creditos_service.validar_novos_valores_pacotes`): valor > 0 e ≤ R$ 10.000, aceita vírgula/ponto, pacote maior nunca com valor/hora maior que o menor. Gravação em `atualizar_valores_pacotes` (valor_hora, valor_total, atualizado_em).
+- Efeito: painel do médico, janela de compra, manual do cliente e preço de reserva (valor/hora do MENOR pacote) passam a usar os novos valores imediatamente. Pagamentos já gerados mantêm o valor cobrado.
+- Sem migração de banco. Arquivos: routes/admin.py, services/creditos_service.py, templates/admin_valores.html, _admin_topo.html, admin_dashboard.html.
+
 ## v79 — Login mais rápido e horários vagos destacados
 - Painel do médico (`/painel`, destino do login): as ~10 consultas ao banco agora rodam em paralelo (ThreadPoolExecutor, 4 trabalhadores) em vez de uma após a outra.
 - Tela de login (GET): acorda o banco e abre conexão em segundo plano (`pg_query.aquecer_banco`) enquanto a pessoa digita. Pool de conexões: min 2 / máx 25, com keepalive.

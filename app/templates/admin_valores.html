@@ -1,0 +1,41 @@
+<!doctype html><html lang="pt-BR"><head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Alterar valores — Lifemax Admin</title><style>body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}.wrap{max-width:900px;margin:auto;padding:20px 16px}.card{background:#fff;border:1px solid #e3ebef;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 4px 16px rgba(11,58,87,.08)}input{box-sizing:border-box;padding:11px;border:1px solid #d8e3e7;border-radius:10px;font-size:15px;width:140px}input:focus{outline:2px solid #0EA5A0;border-color:#0EA5A0}button{padding:12px 20px;border:0;border-radius:10px;background:#0EA5A0;color:#fff;font-weight:700;font-size:14px;cursor:pointer}button:hover{background:#0C8B87}.muted{color:#62788A;font-size:13px;line-height:1.5}.flash{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:14px;font-weight:600}.flash.ok{background:#E3F7EE;color:#0B7B45}.flash.erro{background:#FBEAE6;color:#B33}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid #e3ebef;font-size:14px}th{font-size:12px;color:#6B8493;text-transform:uppercase}.rs{display:inline-flex;align-items:center;gap:6px}.aviso{background:#FFF4E5;border:1px solid #F2C27A;color:#7A4B00;border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.5;margin-top:14px}form{margin:0}</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head><body>
+{% with titulo='Alterar valores', subtitulo='Opções para contratação do painel dos médicos', ativo='valores' %}{% include '_admin_topo.html' %}{% endwith %}
+<div class="wrap">
+  {% with mensagens = get_flashed_messages(with_categories=true) %}{% for categoria, texto in mensagens %}<div class="flash {{ categoria }}">{{ texto }}</div>{% endfor %}{% endwith %}
+  <div class="card">
+    <h2 style="margin:0 0 6px">Opções para contratação</h2>
+    <p class="muted" style="margin:0 0 14px">Informe o <strong>valor por hora</strong> de cada opção. O total é calculado automaticamente (horas × valor por hora). Quanto mais horas, menor deve ser o valor por hora.</p>
+    <form method="post" id="form-valores">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <table class="cartoes">
+        <thead><tr><th>Opção</th><th>Valor hora avulsa</th><th>Total</th><th>Condição</th></tr></thead>
+        <tbody>
+        {% for p in pacotes %}
+          <tr>
+            <td data-label="Opção"><strong>{{ p.horas }}h</strong></td>
+            <td data-label="Valor hora avulsa"><span class="rs">R$ <input name="valor_{{ p.horas }}" data-horas="{{ p.horas }}" inputmode="decimal" required value="{{ digitados.get(p.horas, '%.2f'|format(p.valor_hora)|replace('.', ',')) }}" aria-label="Valor por hora do pacote de {{ p.horas }}h"></span></td>
+            <td data-label="Total"><strong id="total-{{ p.horas }}">R$ {{ '%.2f'|format(p.valor_total)|replace('.', ',') }}</strong></td>
+            <td data-label="Condição">{% if p.max_parcelas > 1 %}até {{ p.max_parcelas }}x no cartão{% else %}sem parcelamento{% endif %}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="muted">Nenhuma opção cadastrada.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% if pacotes %}
+      <div class="aviso"><strong>Atenção:</strong> o valor por hora da <strong>menor opção ({{ pacotes[0].horas }}h)</strong> também é o preço cobrado do saldo em cada reserva feita pelo médico. Compras já iniciadas mantêm o valor com que foram geradas.</div>
+      <div style="margin-top:16px"><button type="submit">Publicar novos valores</button></div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+<script>
+function _num(v){v=(v||'').replace(/R\$|\s/g,'');if(v.indexOf(',')>-1)v=v.replace(/\./g,'').replace(',','.');return parseFloat(v);}
+function _fmt(n){return 'R$ '+n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');}
+document.querySelectorAll('input[data-horas]').forEach(function(i){
+  i.addEventListener('input',function(){var n=_num(i.value),t=document.getElementById('total-'+i.dataset.horas);t.textContent=isNaN(n)?'—':_fmt(n*parseInt(i.dataset.horas,10));});
+});
+document.getElementById('form-valores').addEventListener('submit',function(e){
+  if(!confirm('Publicar os novos valores? Eles passam a valer imediatamente no painel dos médicos.')) e.preventDefault();
+});
+</script></body></html>

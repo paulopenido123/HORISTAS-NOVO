@@ -1,0 +1,25 @@
+<!doctype html><html lang="pt-BR"><head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Backup — Lifemax Admin</title><style>body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}.wrap{max-width:900px;margin:auto;padding:20px 16px}.card{background:#fff;border:1px solid #e3ebef;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 4px 16px rgba(11,58,87,.08)}input[type=text],input[type=file]{box-sizing:border-box;padding:11px;border:1px solid #d8e3e7;border-radius:10px;font-size:15px;width:100%;margin:6px 0 12px;background:#fff}button{padding:12px 20px;border:0;border-radius:10px;background:#0EA5A0;color:#fff;font-weight:700;font-size:14px;cursor:pointer}button:hover{background:#0C8B87}button.perigo{background:#c95050}button.perigo:hover{background:#a63f3f}.muted{color:#62788A;font-size:13px;line-height:1.55}.flash{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:14px;font-weight:600}.flash.ok{background:#E3F7EE;color:#0B7B45}.flash.erro{background:#FBEAE6;color:#B33}.aviso{background:#FFF4E5;border:1px solid #F2C27A;color:#7A4B00;border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.5;margin:12px 0}h2{margin:0 0 6px}form{margin:0}</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head><body>
+{% with titulo='Backup', subtitulo='Salvar e restaurar todas as informações do sistema', ativo='backup' %}{% include '_admin_topo.html' %}{% endwith %}
+<div class="wrap">
+  {% with mensagens = get_flashed_messages(with_categories=true) %}{% for categoria, texto in mensagens %}<div class="flash {{ categoria }}">{{ texto }}</div>{% endfor %}{% endwith %}
+  <div class="card">
+    <h2>1. Fazer backup</h2>
+    <p class="muted">Baixa um arquivo com <strong>todas</strong> as informações do sistema: clientes (médicos), reservas, pagamentos, consultórios, valores, usuários do admin e demais cadastros. Guarde o arquivo em local seguro (ex.: Google Drive pessoal).</p>
+    <div class="aviso">O arquivo contém dados pessoais e senhas criptografadas. Não envie por e-mail nem compartilhe.</div>
+    <form method="post" action="{{ url_for('admin.backup_baixar') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Baixar backup agora</button></form>
+  </div>
+  <div class="card">
+    <h2>2. Restaurar backup</h2>
+    <p class="muted">Envie um arquivo de backup gerado aqui. Cada registro do arquivo é gravado de volta; se já existir, é <strong>substituído pelo valor do backup</strong>. Nada é apagado: o que foi criado depois do backup continua no sistema. Se algo falhar, nada é alterado.</p>
+    <form method="post" action="{{ url_for('admin.backup_restaurar') }}" enctype="multipart/form-data" id="form-restaurar">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="muted" for="arquivo">Arquivo de backup (.json.gz)</label>
+      <input type="file" id="arquivo" name="arquivo" accept=".gz,.json,application/gzip,application/json" required>
+      <label class="muted" for="confirmacao">Para confirmar, digite <strong>RESTAURAR</strong></label>
+      <input type="text" id="confirmacao" name="confirmacao" autocomplete="off" required>
+      <button type="submit" class="perigo">Restaurar backup</button>
+    </form>
+  </div>
+</div>
+<script>document.getElementById('form-restaurar').addEventListener('submit',function(e){if(!confirm('Restaurar este backup? Registros existentes serão substituídos pelos valores do arquivo.'))e.preventDefault();});</script>
+</body></html>

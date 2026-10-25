@@ -1444,6 +1444,108 @@ def usuarios():
                            meu_id=session.get('admin_usuario_id'), tabela_ok=usuarios_admin.tabela_ok())
 
 
+def _gate_master(titulo):
+    """Tela da senha master (mesma de Usuários, vale 15 min). Devolve a
+    resposta a exibir enquanto não liberado, ou None se já liberado."""
+    if _master_liberado():
+        return None
+    erro = None
+    if request.method == 'POST' and request.form.get('master') is not None:
+        from app.config import Config
+        senha = request.form.get('master', '')
+        if senha and secrets.compare_digest(senha, Config.ADMIN_MASTER_PASSWORD or ''):
+            session['admin_master_ate'] = datetime.now(timezone.utc).timestamp() + _MASTER_MINUTOS * 60
+            return redirect(request.path)
+        erro = 'Senha master incorreta.'
+    return render_template('admin_usuarios_master.html', erro=erro, titulo_gate=titulo)
+
+
+@admin_bp.route('/backup', methods=['GET', 'POST'])
+@_admin_total
+@limiter.limit("6 per minute", methods=["POST"])
+def backup():
+    """Painel de Backup (pedido do Paulo em 25/10/2026): baixar um arquivo com
+    TODOS os dados e restaurar a partir de um arquivo. Protegido pela senha master."""
+    gate = _gate_master('Backup')
+    if gate is not None:
+        return gate
+    return render_template('admin_backup.html')
+
+
+@admin_bp.route('/backup/baixar', methods=['POST'])
+@_admin_total
+@limiter.limit("6 per minute")
+def backup_baixar():
+    from app.services import backup_service
+    if not _master_liberado():
+        return redirect(url_for('admin.backup'))
+    try:
+        arquivo, resumo = backup_service.gerar_backup()
+    except Exception as e:
+        flash(f'Não foi possível gerar o backup: {e}', 'erro')
+        return redirect(url_for('admin.backup'))
+    from flask import Response
+    nome = f"backup_lifemax_{datetime.now(timezone(timedelta(hours=-3))).strftime('%Y-%m-%d_%H-%M')}.json.gz"
+    print(f"[admin] backup gerado por admin_usuario_id={session.get('admin_usuario_id')}: {sum(resumo.values())} linhas em {len(resumo)} tabelas")
+    return Response(arquivo, mimetype='application/gzip',
+                    headers={'Content-Disposition': f'attachment; filename={nome}'})
+
+
+@admin_bp.route('/backup/restaurar', methods=['POST'])
+@_admin_total
+@limiter.limit("3 per minute")
+def backup_restaurar():
+    from app.services import backup_service
+    if not _master_liberado():
+        return redirect(url_for('admin.backup'))
+    if (request.form.get('confirmacao') or '').strip().upper() != 'RESTAURAR':
+        flash('Para restaurar, digite RESTAURAR no campo de confirmação.', 'erro')
+        return redirect(url_for('admin.backup'))
+    arq = request.files.get('arquivo')
+    if not arq or not arq.filename:
+        flash('Escolha o arquivo de backup.', 'erro')
+        return redirect(url_for('admin.backup'))
+    try:
+        pacote = backup_service.ler_arquivo(arq.read())
+        gravadas = backup_service.restaurar_backup(pacote)
+        print(f"[admin] backup RESTAURADO por admin_usuario_id={session.get('admin_usuario_id')}: {sum(gravadas.values())} linhas")
+        flash(f"Backup restaurado: {sum(gravadas.values())} registros em {len([t for t, n in gravadas.items() if n])} tabelas "
+              f"(arquivo gerado em {str(pacote.get('gerado_em', ''))[:16].replace('T', ' ')} UTC).", 'ok')
+    except ValueError as e:
+        flash(str(e), 'erro')
+    return redirect(url_for('admin.backup'))
+
+
+@admin_bp.route('/valores', methods=['GET', 'POST'])
+@_admin_total
+def valores():
+    """"Alterar valores" (pedido do Paulo em 25/10/2026): o admin edita o
+    valor/hora de cada opção do quadro "Opções para contratação" do painel
+    do médico (tabela pacotes_horas_avulsas) e publica."""
+    pacotes = creditos_db.listar_pacotes_horas()
+    digitados = {}
+    if request.method == 'POST':
+        novos = {}
+        for p in pacotes:
+            bruto = (request.form.get(f"valor_{p['horas']}") or '').strip().replace('R$', '').replace(' ', '')
+            if ',' in bruto:
+                bruto = bruto.replace('.', '').replace(',', '.')
+            try:
+                novos[int(p['horas'])] = float(bruto)
+            except ValueError:
+                novos[int(p['horas'])] = None
+            digitados[int(p['horas'])] = request.form.get(f"valor_{p['horas']}") or ''
+        validos, erro = creditos_db.validar_novos_valores_pacotes(pacotes, novos)
+        if erro:
+            flash(erro, 'erro')
+        else:
+            creditos_db.atualizar_valores_pacotes(validos)
+            print(f"[admin] valores dos pacotes alterados por admin_usuario_id={session.get('admin_usuario_id')}: {validos}")
+            flash('Novos valores publicados! Já aparecem no painel dos médicos.', 'ok')
+            return redirect(url_for('admin.valores'))
+    return render_template('admin_valores.html', pacotes=pacotes, digitados=digitados)
+
+
 @admin_bp.route('/usuarios/novo', methods=['POST'])
 @_admin_total
 def usuarios_novo():

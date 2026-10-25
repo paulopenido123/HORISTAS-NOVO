@@ -100,8 +100,10 @@
       <a class="atalho navy" href="{{ url_for('admin.clientes') }}"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span>Clientes</a>
       {% if admin_total %}
       <a class="atalho" href="{{ url_for('admin.horas') }}"><span class="ico"><svg class="ic"><use href="#i-clock"/></svg></span>Horas</a>
+      <a class="atalho" href="{{ url_for('admin.valores') }}"><span class="ico"><svg class="ic"><use href="#i-chart"/></svg></span>Alterar valores</a>
       <a class="atalho" href="{{ url_for('admin.relatorios') }}"><span class="ico"><svg class="ic"><use href="#i-chart"/></svg></span>Relatórios</a>
       <a class="atalho" href="{{ url_for('admin.usuarios') }}"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span>Usuários</a>
+      <a class="atalho" href="{{ url_for('admin.backup') }}"><span class="ico"><svg class="ic"><use href="#i-check"/></svg></span>Backup</a>
       {% endif %}
     </div>
   </div>

@@ -131,6 +131,44 @@ def listar_pacotes_horas() -> list[dict]:
     return resp.data
 
 
+def validar_novos_valores_pacotes(pacotes: list[dict], novos: dict) -> tuple[dict, str | None]:
+    """Valida os valores/hora digitados pelo admin em "Alterar valores".
+    `novos` = {horas(int): valor_hora(float)}. Devolve ({horas: valor_hora
+    arredondado}, erro_ou_None). Regras: todo pacote precisa de um valor
+    maior que zero (máx. R$ 10.000/h) e, como a tela do médico promete
+    "quanto mais horas, menor o preço por hora", um pacote maior nunca
+    pode ter valor/hora MAIOR que o de um pacote menor."""
+    resultado = {}
+    for p in pacotes:
+        h = int(p["horas"])
+        if h not in novos:
+            return {}, f"Informe o valor do pacote de {h}h."
+        v = novos[h]
+        if v is None or v <= 0 or v > 10000:
+            return {}, f"Valor inválido no pacote de {h}h: informe um valor maior que zero."
+        resultado[h] = round(float(v), 2)
+    ordem = sorted(resultado)
+    for menor, maior in zip(ordem, ordem[1:]):
+        if resultado[maior] > resultado[menor]:
+            return {}, (f"O pacote de {maior}h não pode ter valor por hora maior que o de {menor}h "
+                        f"(quanto mais horas, menor o preço por hora).")
+    return resultado, None
+
+
+def atualizar_valores_pacotes(novos: dict) -> None:
+    """Grava (já validados) os novos valores/hora dos pacotes. O total de
+    cada pacote é sempre horas x valor/hora. Pagamentos JÁ criados mantêm o
+    valor com que foram cobrados (guardado em pagamentos_pix)."""
+    from app.services.supabase_client import agora_iso
+    client = get_client()
+    for horas, valor_hora in novos.items():
+        client.table("pacotes_horas_avulsas").update({
+            "valor_hora": valor_hora,
+            "valor_total": round(horas * valor_hora, 2),
+            "atualizado_em": agora_iso(),
+        }).eq("horas", horas).eq("ativo", True).execute()
+
+
 def obter_pacote_por_horas(horas: int) -> dict | None:
     resp = (
         get_client().table("pacotes_horas_avulsas").select("*")

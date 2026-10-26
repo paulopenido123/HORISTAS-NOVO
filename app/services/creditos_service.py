@@ -238,7 +238,7 @@ def tryout_restante(medico_id: str) -> int:
 def registrar_transacao(medico_id: str, tipo: str, valor: float, descricao: str,
                          reserva_id: str | None = None, pagamento_id: str | None = None,
                          quantidade_horas: int | None = None, categoria: str = "horas",
-                         carteira: str = "salas") -> dict:
+                         carteira: str = "salas", criado_por: str | None = None) -> dict:
     """
     Registra uma transação e atualiza o saldo do médico de forma
     consistente. tipo: 'compra' | 'consumo' | 'ajuste'.
@@ -268,22 +268,31 @@ def registrar_transacao(medico_id: str, tipo: str, valor: float, descricao: str,
         update_medico[campo_alerta] = False
     client.table("medicos").update(update_medico).eq("id", medico_id).execute()
 
-    transacao = (
-        client.table("creditos_transacoes")
-        .insert({
-            "medico_id": medico_id,
-            "tipo": tipo,
-            "valor": valor,
-            "saldo_apos": novo_saldo,
-            "descricao": descricao,
-            "reserva_id": reserva_id,
-            "pagamento_id": pagamento_id,
-            "quantidade_horas": quantidade_horas,
-            "categoria": categoria,
-            "carteira": carteira,
-        })
-        .execute()
-    )
+    linha = {
+        "medico_id": medico_id,
+        "tipo": tipo,
+        "valor": valor,
+        "saldo_apos": novo_saldo,
+        "descricao": descricao,
+        "reserva_id": reserva_id,
+        "pagamento_id": pagamento_id,
+        "quantidade_horas": quantidade_horas,
+        "categoria": categoria,
+        "carteira": carteira,
+    }
+    if criado_por:
+        # nome do usuário do admin que fez a alteração manual (coluna criada em
+        # sql/migration_transacoes_usuario.sql); se a migração ainda não rodou,
+        # grava a transação sem o nome em vez de falhar.
+        try:
+            transacao = client.table("creditos_transacoes").insert(dict(linha, criado_por=criado_por)).execute()
+        except Exception as e:
+            if getattr(e, "pgcode", None) != "42703":
+                raise
+            print("[creditos] coluna criado_por ausente -- rode sql/migration_transacoes_usuario.sql")
+            transacao = client.table("creditos_transacoes").insert(linha).execute()
+    else:
+        transacao = client.table("creditos_transacoes").insert(linha).execute()
     return {"saldo_novo": novo_saldo, "transacao": transacao.data[0]}
 
 

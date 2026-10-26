@@ -2567,3 +2567,6 @@ alter table medicos alter column telefone drop not null;
 alter table usuarios_admin add column if not exists perfil text not null default 'admin';
 alter table usuarios_admin drop constraint if exists usuarios_admin_perfil_check;
 alter table usuarios_admin add constraint usuarios_admin_perfil_check check (perfil in ('admin', 'secretaria'));
+
+-- migration_transacoes_usuario.sql
+alter table creditos_transacoes add column if not exists criado_por text;

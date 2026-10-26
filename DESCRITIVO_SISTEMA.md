@@ -480,6 +480,12 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v89 — Relatórios > Transações com filtros e ordenação
+- Filtros: período (data), Consultório (das reservas ligadas à transação), Usuário (quem fez: um usuário do admin/secretária numa alteração de saldo, ou "o próprio cliente"), Médico (cliente) e Operação (Compra de horas / Alteração de saldo de horas pelo admin / Reembolso de cancelamento / Reserva de horas). Ordenar por: ocorrência (mais recente/antiga), consultório, usuário ou operação.
+- Colunas: Ocorrência | Usuário | Médico (cliente) | Operação (+ "por <usuário>" nas alterações do admin) | Consultório | Qtd Horas com sinal (+/−).
+- Quem alterou o saldo: nova coluna `creditos_transacoes.criado_por` (sql/migration_transacoes_usuario.sql, também em INSTALL_ALL.sql), gravada por Admin > Cliente > Alterar saldo. Sem a migração o sistema grava a alteração normalmente, só sem o nome (alterações antigas/sem nome aparecem como "Administrador").
+- Arquivos: services/relatorios_service.py, services/creditos_service.py (registrar_transacao), routes/admin.py, templates/admin_relatorios.html.
+
 ## v88 — Admin > Horas: Saldo de horas mensal
 - Card "Horas na praça (mês)" renomeado para "Saldo de horas mensais" (vendidas − utilizadas do mês).
 - Novo botão/aba "Saldo de horas mensal" em Horas (`/admin/horas?visao=saldo_mensal&ano=AAAA`): tabela com a "Horas na praça (total)" no fim de cada mês do ano escolhido (campo Ano, troca sozinho). O saldo de cada mês é reconstruído a partir do saldo atual dos médicos desfazendo as transações posteriores (`creditos_service.horas_na_praca_por_mes`); o mês atual bate com o card "Horas na praça (total)"; meses futuros mostram "—". Aba "Resumo do mês" volta à tela anterior.

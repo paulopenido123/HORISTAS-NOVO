@@ -107,14 +107,53 @@ def listar_agendamentos(data_inicio: str | None = None, data_fim: str | None = N
     return filtrados
 
 
+# Operações do extrato de transações (chave do filtro -> rótulo)
+OPERACOES_TRANSACOES = [
+    ("compra", "Compra de horas"),
+    ("ajuste_admin", "Alteração de saldo de horas pelo admin"),
+    ("reembolso", "Reembolso de cancelamento"),
+    ("consumo", "Reserva de horas"),
+]
+_ROTULO_OPERACAO = dict(OPERACOES_TRANSACOES)
+USUARIO_CLIENTE = "__cliente"   # filtro "Usuário": operações feitas pelo próprio cliente
+
+
+def _operacao_da_transacao(t: dict) -> str:
+    tipo = t.get("tipo")
+    if tipo == "compra":
+        return "compra"
+    if tipo == "consumo":
+        return "consumo"
+    if tipo == "ajuste":
+        if t.get("reserva_id") or str(t.get("descricao") or "").startswith("Reembolso por cancelamento"):
+            return "reembolso"
+        return "ajuste_admin"
+    return tipo or ""
+
+
 def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = None,
                        medico_id: str | None = None, cliente_busca: str = "",
-                       ordenar: str = "desc") -> tuple[list[dict], float]:
+                       ordenar: str = "desc", consultorio_id: str | None = None,
+                       usuario: str | None = None, operacao: str | None = None) -> tuple[list[dict], float]:
+    """Extrato de transações em horas (Admin > Relatórios > Transações).
+
+    Filtros: período, consultório (das reservas ligadas à transação),
+    usuário (quem fez: o admin/secretária numa alteração de saldo, ou o
+    próprio cliente -- USUARIO_CLIENTE), médico/cliente e operação.
+    Ordenação: desc/asc (cronológica), consultorio, usuario, operacao
+    (empate sempre do mais recente para o mais antigo)."""
     client = db.get_client()
     query = client.table("creditos_transacoes").select("*, medicos(nome)").eq("carteira", "salas")
     if medico_id:
         query = query.eq("medico_id", medico_id)
     resp = query.execute().data
+
+    # consultório de cada transação ligada a uma reserva (compra e ajuste manual não têm)
+    consultorio_da_reserva = {}
+    if any(t.get("reserva_id") for t in resp):
+        nomes = {str(c["id"]): c.get("nome") or "—" for c in client.table("consultorios").select("id, nome").execute().data}
+        for r in client.table("reservas").select("id, consultorio_id").execute().data:
+            consultorio_da_reserva[str(r["id"])] = (str(r.get("consultorio_id")), nomes.get(str(r.get("consultorio_id")), "—"))
 
     cliente_busca = (cliente_busca or "").strip().lower()
     linhas = []
@@ -122,22 +161,49 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
         medico_nome = (t.get("medicos") or {}).get("nome") or "—"
         if cliente_busca and cliente_busca not in medico_nome.lower():
             continue
-        ocorrencia = t.get("criado_em") or ""
+        ocorrencia = str(t.get("criado_em") or "")
         ocorrencia_data = ocorrencia[:10]
         if data_inicio and ocorrencia_data < data_inicio:
             continue
         if data_fim and ocorrencia_data > data_fim:
             continue
+        op = _operacao_da_transacao(t)
+        if operacao and op != operacao:
+            continue
+        cons_id, cons_nome = consultorio_da_reserva.get(str(t.get("reserva_id")), (None, "—"))
+        if consultorio_id and cons_id != str(consultorio_id):
+            continue
+        # usuário: quem fez a operação
+        if op == "ajuste_admin":
+            usuario_nome = t.get("criado_por") or "Administrador"
+            feito_por_admin = True
+        else:
+            usuario_nome = medico_nome
+            feito_por_admin = False
+        if usuario:
+            if usuario == USUARIO_CLIENTE:
+                if feito_por_admin:
+                    continue
+            elif not (feito_por_admin and usuario_nome == usuario):
+                continue
+        valor = float(t.get("valor") or 0)
         linhas.append({
             "ocorrencia": ocorrencia,
-            "operador": medico_nome,
+            "operador": usuario_nome,
             "cliente": medico_nome,
-            "tipo": {"compra": "Compra", "consumo": "Consumo", "ajuste": "Ajuste"}.get(t.get("tipo"), t.get("tipo")),
+            "operacao": op,
+            "tipo": _ROTULO_OPERACAO.get(op, op),
+            "usuario_admin": usuario_nome if feito_por_admin else "",
+            "consultorio": cons_nome,
             "qtd_horas": t.get("quantidade_horas") or 0,
+            "sinal": "-" if valor < 0 else "+",
             "valor": t.get("valor"),
         })
 
-    linhas.sort(key=lambda l: l["ocorrencia"] or "", reverse=(ordenar != "asc"))
+    linhas.sort(key=lambda l: l["ocorrencia"] or "", reverse=(ordenar != "asc"))   # base: cronológica
+    chave = {"consultorio": "consultorio", "usuario": "operador", "operacao": "tipo"}.get(ordenar)
+    if chave:
+        linhas.sort(key=lambda l: str(l[chave]).lower())   # estável: mantém recente->antigo dentro de cada grupo
     total_horas = round(sum(abs(l["qtd_horas"] or 0) for l in linhas), 1)
     return linhas, total_horas
 

@@ -21,6 +21,16 @@ def _admin(view):
     return auth_service.requer_admin(view)
 
 
+def _nome_usuario_admin_logado() -> str:
+    """Nome do usuário do admin logado (para registrar quem fez uma alteração)."""
+    uid = session.get('admin_usuario_id')
+    if uid:
+        u = usuarios_admin.buscar_por_id(uid)
+        if u and u.get('nome'):
+            return u['nome']
+    return 'Administrador'
+
+
 def _admin_total(view):
     """Só perfil Administrador (a secretária não acessa Horas, Relatórios, Usuários nem altera saldo)."""
     return auth_service.requer_admin_total(view)
@@ -317,7 +327,7 @@ def ajustar_saldo_cliente(medico_id):
     try:
         creditos_db.registrar_transacao(
             medico_id, tipo='ajuste', valor=valor, descricao=descricao, carteira='salas',
-            quantidade_horas=quantidade_horas_param,
+            quantidade_horas=quantidade_horas_param, criado_por=_nome_usuario_admin_logado(),
         )
     except Exception as e:
         flash(f'Não foi possível ajustar o saldo: {e}', 'erro')
@@ -594,6 +604,7 @@ def relatorios():
         'medico_id': request.args.get('medico_id', '').strip(),
         'cliente': request.args.get('cliente', '').strip(),
         'operacao': request.args.get('operacao', '').strip(),
+        'usuario': request.args.get('usuario', '').strip(),
         'ordenar': request.args.get('ordenar', 'desc').strip() or 'desc',
     }
 
@@ -645,7 +656,8 @@ def relatorios():
         linhas, total_horas = relatorios_service.listar_transacoes(
             data_inicio=filtros['data_inicio'] or None, data_fim=filtros['data_fim'] or None,
             medico_id=filtros['medico_id'] or None, cliente_busca=filtros['cliente'],
-            ordenar=filtros['ordenar'],
+            ordenar=filtros['ordenar'], consultorio_id=filtros['consultorio_id'] or None,
+            usuario=filtros['usuario'] or None, operacao=filtros['operacao'] or None,
         )
     elif tipo in ('nao_faturadas', 'faturadas'):
         linhas, total_valor = relatorios_service.listar_faturamento(
@@ -667,6 +679,8 @@ def relatorios():
         linhas=linhas, total_horas=total_horas, total_valor=total_valor, filtros=filtros,
         resumo_dias=resumo_dias, mes_receitas=mes_receitas, mes_anterior=mes_anterior, mes_proximo=mes_proximo, ranking=ranking, visao_receitas=visao_receitas,
         operacoes=relatorios_service.OPERACOES_AGENDAMENTOS,
+        operacoes_transacoes=relatorios_service.OPERACOES_TRANSACOES,
+        usuarios_filtro=([u['nome'] for u in usuarios_admin.listar()] if tipo == 'transacoes' else []),
         nfe_configurado=nfe_service.configurado(),
     )
 

@@ -171,7 +171,7 @@
         <input type="date" name="data_fim" value="{{ filtros.data_fim }}">
       </div>
 
-      {% if tipo == 'agendamentos' %}
+      {% if tipo in ('agendamentos', 'transacoes') %}
       <div>
         <label>Consultório</label>
         <select name="consultorio_id">
@@ -183,8 +183,21 @@
       </div>
       {% endif %}
 
+      {% if tipo == 'transacoes' %}
       <div>
-        <label>Operador (médico)</label>
+        <label>Usuário</label>
+        <select name="usuario">
+          <option value="">Todos</option>
+          <option value="__cliente" {{ 'selected' if filtros.usuario == '__cliente' else '' }}>O próprio cliente (compras e reservas)</option>
+          {% for u in usuarios_filtro %}
+          <option value="{{ u }}" {{ 'selected' if filtros.usuario == u else '' }}>{{ u }} (admin)</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div>
+        <label>{{ 'Médico (cliente)' if tipo == 'transacoes' else 'Operador (médico)' }}</label>
         <select name="medico_id">
           <option value="">Todos</option>
           {% for m in medicos %}
@@ -193,10 +206,24 @@
         </select>
       </div>
 
+      {% if tipo != 'transacoes' %}
       <div>
         <label>Cliente</label>
         <input type="text" name="cliente" placeholder="Filtre por cliente" value="{{ filtros.cliente }}">
       </div>
+      {% endif %}
+
+      {% if tipo == 'transacoes' %}
+      <div>
+        <label>Operação</label>
+        <select name="operacao">
+          <option value="">Todas</option>
+          {% for chave, rotulo in operacoes_transacoes %}
+          <option value="{{ chave }}" {{ 'selected' if filtros.operacao == chave else '' }}>{{ rotulo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
 
       {% if tipo == 'agendamentos' %}
       <div>
@@ -215,6 +242,11 @@
         <select name="ordenar">
           <option value="desc" {{ 'selected' if filtros.ordenar == 'desc' else '' }}>Ocorrência (mais recente)</option>
           <option value="asc" {{ 'selected' if filtros.ordenar == 'asc' else '' }}>Ocorrência (mais antiga)</option>
+          {% if tipo == 'transacoes' %}
+          <option value="consultorio" {{ 'selected' if filtros.ordenar == 'consultorio' else '' }}>Consultório</option>
+          <option value="usuario" {{ 'selected' if filtros.ordenar == 'usuario' else '' }}>Usuário</option>
+          <option value="operacao" {{ 'selected' if filtros.ordenar == 'operacao' else '' }}>Operação</option>
+          {% endif %}
         </select>
       </div>
 
@@ -250,15 +282,16 @@
       </table>
       {% elif tipo == 'transacoes' %}
       <table>
-        <thead><tr><th>Ocorrência</th><th>Operador (user)</th><th>Cliente</th><th>Tipo</th><th>Qtd Horas</th></tr></thead>
+        <thead><tr><th>Ocorrência</th><th>Usuário</th><th>Médico (cliente)</th><th>Operação</th><th>Consultório</th><th>Qtd Horas</th></tr></thead>
         <tbody>
           {% for l in linhas %}
           <tr>
             <td data-label="Ocorrência">{{ l.ocorrencia[8:10] }}/{{ {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'}.get(l.ocorrencia[5:7], l.ocorrencia[5:7]) }}/{{ l.ocorrencia[2:4] }} {{ l.ocorrencia[11:16] }}</td>
-            <td data-label="Operador (user)">{{ l.operador }}</td>
-            <td data-label="Cliente">{{ l.cliente }}</td>
-            <td data-label="Tipo"><span class="tag-tipo">{{ l.tipo }}</span></td>
-            <td data-label="Qtd Horas">{{ l.qtd_horas }}h</td>
+            <td data-label="Usuário">{{ l.operador }}</td>
+            <td data-label="Médico (cliente)">{{ l.cliente }}</td>
+            <td data-label="Operação"><span class="tag-tipo">{{ l.tipo }}</span>{% if l.usuario_admin %} <span style="color:#62788A;font-size:12.5px">por <strong>{{ l.usuario_admin }}</strong></span>{% endif %}</td>
+            <td data-label="Consultório">{{ l.consultorio }}</td>
+            <td data-label="Qtd Horas">{{ l.sinal }}{{ l.qtd_horas }}h</td>
           </tr>
           {% endfor %}
         </tbody>

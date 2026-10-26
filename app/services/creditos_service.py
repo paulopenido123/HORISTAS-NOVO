@@ -712,7 +712,8 @@ def _a_partir_do_inicio_da_contagem(transacoes: list[dict]) -> list[dict]:
     return [t for t in transacoes if (t.get("criado_em") or "")[:10] >= DATA_INICIO_CONTAGEM_HORAS]
 
 
-def _somar_vendidas_e_utilizadas(compras: list[dict], consumos: list[dict], pacotes_atuais: list[dict]) -> tuple[int, int]:
+def _somar_vendidas_e_utilizadas(compras: list[dict], consumos: list[dict], pacotes_atuais: list[dict],
+                                 reembolsos: list[dict] | None = None) -> tuple[int, int]:
     """Soma horas_vendidas/horas_utilizadas para uma lista de transações já
     filtrada (ou não) por mês/ano -- extraído de estatisticas_horas pra
     poder calcular o mesmo par de números duas vezes (mês escolhido e
@@ -727,6 +728,12 @@ def _somar_vendidas_e_utilizadas(compras: list[dict], consumos: list[dict], paco
     )
     horas_vendidas = horas_exatas + estimar_horas_compraveis(valor_sem_horas_exatas, pacotes_atuais, limite=SEM_TETO)
     horas_utilizadas = sum(int(t["quantidade_horas"] or 0) for t in consumos)
+    # Reembolso de cancelamento (26/10/2026): as horas devolvidas ao médico
+    # deixam de contar como utilizadas (descontadas no mês em que o reembolso
+    # foi feito). Sem isso o cancelamento devolvia o saldo mas o "utilizadas"
+    # continuava alto.
+    horas_utilizadas -= sum(int(t.get("quantidade_horas") or 0) for t in (reembolsos or []))
+    horas_utilizadas = max(horas_utilizadas, 0)
     return horas_vendidas, horas_utilizadas
 
 
@@ -766,6 +773,15 @@ def estatisticas_horas(mes: int | None = None, ano: int | None = None) -> dict:
         .eq("tipo", "consumo").eq("carteira", "salas")
         .execute().data
     )
+    # reembolsos de cancelamento são gravados como tipo='ajuste' ligados a uma reserva
+    # (ver reserva_service._cancelar...): entram aqui pra abater das horas utilizadas.
+    reembolsos = (
+        client.table("creditos_transacoes")
+        .select("quantidade_horas, criado_em")
+        .eq("tipo", "ajuste").eq("carteira", "salas")
+        .ilike("descricao", "Reembolso por cancelamento%")
+        .execute().data
+    )
     medicos = (
         client.table("medicos").select("id, saldo_creditos")
         .execute().data
@@ -775,13 +791,15 @@ def estatisticas_horas(mes: int | None = None, ano: int | None = None) -> dict:
     # do uso real do sistema; o saldo ("horas na praça") continua sendo o saldo real de hoje.
     compras = _a_partir_do_inicio_da_contagem(compras)
     consumos = _a_partir_do_inicio_da_contagem(consumos)
+    reembolsos = _a_partir_do_inicio_da_contagem(reembolsos)
     compras_filtradas = _filtrar_por_mes_ano(compras, mes, ano)
     consumos_filtrados = _filtrar_por_mes_ano(consumos, mes, ano)
+    reembolsos_filtrados = _filtrar_por_mes_ano(reembolsos, mes, ano)
     pacotes_atuais = listar_pacotes_horas()
 
-    horas_vendidas, horas_utilizadas = _somar_vendidas_e_utilizadas(compras_filtradas, consumos_filtrados, pacotes_atuais)
+    horas_vendidas, horas_utilizadas = _somar_vendidas_e_utilizadas(compras_filtradas, consumos_filtrados, pacotes_atuais, reembolsos_filtrados)
     # acumulado geral = mesma conta, mas com as listas SEM filtro de mês/ano
-    horas_vendidas_total, horas_utilizadas_total = _somar_vendidas_e_utilizadas(compras, consumos, pacotes_atuais)
+    horas_vendidas_total, horas_utilizadas_total = _somar_vendidas_e_utilizadas(compras, consumos, pacotes_atuais, reembolsos)
 
     horas_na_praca_total = sum(
         estimar_horas_compraveis(float(m.get("saldo_creditos") or 0), pacotes_atuais, limite=SEM_TETO)

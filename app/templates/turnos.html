@@ -82,6 +82,9 @@
   .bloco-consultorio.modo-cancelar .bloco-reserva.minha { outline: 2px solid var(--coral); outline-offset: -2px; }
 
   .cabecalho-calendario { display: flex; align-items: center; justify-content: space-between; gap: 8px; max-width: 1004px; margin: 14px 12px 0; background: #fff; border-radius: 20px; box-shadow: 0 4px 16px rgba(11,58,87,.08); padding: 12px 14px; }
+  /* Setas de semana acompanham a rolagem (26/10/2026): a barra com ← mês → fica
+     grudada no alto da tela enquanto o médico desce pelos consultórios. */
+  .cabecalho-calendario { position: sticky; top: 8px; z-index: 60; box-shadow: 0 6px 20px rgba(11,58,87,.16); }
   .nav-semana { display: flex; align-items: center; gap: 10px; }
   .nav-semana .rotulo-semana { display: none; }
   .btn-seta { cursor: pointer; background: var(--teal); border: 0; color: #fff; font-weight: 800; font-size: 30px; width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; padding: 0; box-shadow: 0 4px 12px rgba(14,165,160,.45); }
@@ -233,6 +236,7 @@
     .btn-pad .ic { display: block; }
     .btn-modo { font-size: 17px; height: 48px; }
     .mes-ano-atual { font-size: 17px; gap: 6px; } .mes-ano-atual .ic { font-size: 22px; }
+    .cabecalho-calendario { padding: 8px 10px; top: 6px; } .cabecalho-calendario .btn-seta { width: 44px; height: 44px; font-size: 24px; }
     .legenda { font-size: 12.5px; gap: 6px 10px; } .dot { width: 15px; height: 15px; }
     .bloco-consultorio-nome { font-size: 28px; }
     .bloco-consultorio-header { flex-wrap: wrap; gap: 8px 8px; }

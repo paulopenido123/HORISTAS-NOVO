@@ -688,7 +688,7 @@ def relatorios():
         resumo_dias=resumo_dias, mes_receitas=mes_receitas, mes_anterior=mes_anterior, mes_proximo=mes_proximo, ranking=ranking, visao_receitas=visao_receitas,
         operacoes=relatorios_service.OPERACOES_AGENDAMENTOS,
         operacoes_transacoes=relatorios_service.OPERACOES_TRANSACOES,
-        usuarios_filtro=([u['nome'] for u in usuarios_admin.listar()] if tipo == 'transacoes' else []),
+        usuarios_filtro=(sorted({u['nome'] for u in usuarios_admin.listar()} | {relatorios_service.USUARIO_ADMIN_SEM_NOME}) if tipo == 'transacoes' else []),
         nfe_configurado=nfe_service.configurado(),
     )
 

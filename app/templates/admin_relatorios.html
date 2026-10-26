@@ -214,7 +214,7 @@
           <option value="">Todos</option>
           <option value="__cliente" {{ 'selected' if filtros.usuario == '__cliente' else '' }}>O próprio cliente (compras e reservas)</option>
           {% for u in usuarios_filtro %}
-          <option value="{{ u }}" {{ 'selected' if filtros.usuario == u else '' }}>{{ u }} (admin)</option>
+          <option value="{{ u }}" {{ 'selected' if filtros.usuario == u else '' }}>{{ u }}{{ ' (sem identificação / login antigo)' if u == 'Administrador' else ' (admin)' }}</option>
           {% endfor %}
         </select>
       </div>
@@ -279,7 +279,7 @@
     </form>
 
     {% if tipo == 'transacoes' %}
-    <div class="resumo"><strong>{{ linhas|length }}</strong> resultado(s) · <strong>{{ total_horas }}</strong> hora(s) totais (em módulo, soma de compras + consumos + ajustes)</div>
+    <div class="resumo"><strong>{{ linhas|length }}</strong> resultado(s) · <strong>{{ total_horas }}</strong> hora(s) totais (soma das horas de todas as operações listadas)</div>
     {% elif tipo == 'nao_faturadas' %}
     <div class="resumo"><strong>{{ linhas|length }}</strong> resultado(s) · <strong>R$ {{ '%.2f'|format(total_valor or 0) }}</strong> em pagamentos ainda não faturados</div>
     {% else %}

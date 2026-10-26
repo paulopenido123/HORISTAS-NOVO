@@ -110,12 +110,14 @@ def listar_agendamentos(data_inicio: str | None = None, data_fim: str | None = N
 # Operações do extrato de transações (chave do filtro -> rótulo)
 OPERACOES_TRANSACOES = [
     ("compra", "Compra de horas"),
-    ("ajuste_admin", "Alteração de saldo de horas pelo admin"),
+    ("agendamento", "Agendamento"),
+    ("cancelamento", "Cancelamento"),
     ("reembolso", "Reembolso de cancelamento"),
-    ("consumo", "Reserva de horas"),
+    ("ajuste_admin", "Alteração de saldo de horas pelo admin"),
 ]
 _ROTULO_OPERACAO = dict(OPERACOES_TRANSACOES)
 USUARIO_CLIENTE = "__cliente"   # filtro "Usuário": operações feitas pelo próprio cliente
+USUARIO_ADMIN_SEM_NOME = "Administrador"   # alteração sem usuário identificado (antes da migração / login antigo)
 
 
 def _operacao_da_transacao(t: dict) -> str:
@@ -123,7 +125,7 @@ def _operacao_da_transacao(t: dict) -> str:
     if tipo == "compra":
         return "compra"
     if tipo == "consumo":
-        return "consumo"
+        return "agendamento"
     if tipo == "ajuste":
         if t.get("reserva_id") or str(t.get("descricao") or "").startswith("Reembolso por cancelamento"):
             return "reembolso"
@@ -131,22 +133,33 @@ def _operacao_da_transacao(t: dict) -> str:
     return tipo or ""
 
 
+def _iso_local(valor) -> str:
+    """'AAAA-MM-DDTHH:MM' no fuso de Brasília (o banco guarda em UTC)."""
+    d = _data_local(valor)
+    return f"{d}T{_hora_local(valor)}" if d else ""
+
+
 def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = None,
                        medico_id: str | None = None, cliente_busca: str = "",
                        ordenar: str = "desc", consultorio_id: str | None = None,
                        usuario: str | None = None, operacao: str | None = None) -> tuple[list[dict], float]:
-    """Extrato de transações em horas (Admin > Relatórios > Transações).
+    """Extrato COMPLETO (Admin > Relatórios > Transações): compras, agendamentos,
+    cancelamentos (com ou sem reembolso), reembolsos e alterações de saldo
+    (acréscimo/subtração) feitas pelo admin.
 
-    Filtros: período, consultório (das reservas ligadas à transação),
-    usuário (quem fez: o admin/secretária numa alteração de saldo, ou o
-    próprio cliente -- USUARIO_CLIENTE), médico/cliente e operação.
-    Ordenação: desc/asc (cronológica), consultorio, usuario, operacao
-    (empate sempre do mais recente para o mais antigo)."""
+    Fontes: creditos_transacoes (carteira "salas", em horas) + reservas
+    canceladas (o cancelamento dentro das 12h não gera transação, mas é
+    uma operação e precisa aparecer). Data/hora no fuso de Brasília.
+
+    Filtros: período, consultório, usuário (quem fez: usuário do admin numa
+    alteração/cancelamento pelo admin, ou o próprio cliente -- USUARIO_CLIENTE),
+    médico/cliente e operação. Ordenação: desc/asc (cronológica), consultorio,
+    usuario, operacao (empate: do mais recente para o mais antigo)."""
     client = db.get_client()
     query = client.table("creditos_transacoes").select("*, medicos(nome)").eq("carteira", "salas")
     if medico_id:
         query = query.eq("medico_id", medico_id)
-    resp = query.execute().data
+    resp = query.execute().data or []
 
     # consultório de cada transação ligada a uma reserva (compra e ajuste manual não têm)
     consultorio_da_reserva = {}
@@ -157,48 +170,58 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
 
     cliente_busca = (cliente_busca or "").strip().lower()
     linhas = []
-    for t in resp:
-        medico_nome = (t.get("medicos") or {}).get("nome") or "—"
+
+    def _adicionar(ocorrencia_bruta, op, medico_nome, cons_id, cons_nome, qtd, sinal, feito_por_admin, nome_admin, valor):
+        ocorrencia = _iso_local(ocorrencia_bruta)
+        if not ocorrencia:
+            return
         if cliente_busca and cliente_busca not in medico_nome.lower():
-            continue
-        ocorrencia = str(t.get("criado_em") or "")
-        ocorrencia_data = ocorrencia[:10]
-        if data_inicio and ocorrencia_data < data_inicio:
-            continue
-        if data_fim and ocorrencia_data > data_fim:
-            continue
-        op = _operacao_da_transacao(t)
+            return
+        if (data_inicio and ocorrencia[:10] < data_inicio) or (data_fim and ocorrencia[:10] > data_fim):
+            return
         if operacao and op != operacao:
-            continue
-        cons_id, cons_nome = consultorio_da_reserva.get(str(t.get("reserva_id")), (None, "—"))
+            return
         if consultorio_id and cons_id != str(consultorio_id):
-            continue
-        # usuário: quem fez a operação
-        if op == "ajuste_admin":
-            usuario_nome = t.get("criado_por") or "Administrador"
-            feito_por_admin = True
-        else:
-            usuario_nome = medico_nome
-            feito_por_admin = False
+            return
+        usuario_nome = (nome_admin or USUARIO_ADMIN_SEM_NOME) if feito_por_admin else medico_nome
         if usuario:
             if usuario == USUARIO_CLIENTE:
                 if feito_por_admin:
-                    continue
+                    return
             elif not (feito_por_admin and usuario_nome == usuario):
-                continue
-        valor = float(t.get("valor") or 0)
+                return
         linhas.append({
-            "ocorrencia": ocorrencia,
-            "operador": usuario_nome,
-            "cliente": medico_nome,
-            "operacao": op,
-            "tipo": _ROTULO_OPERACAO.get(op, op),
+            "ocorrencia": ocorrencia, "operador": usuario_nome, "cliente": medico_nome,
+            "operacao": op, "tipo": _ROTULO_OPERACAO.get(op, op),
             "usuario_admin": usuario_nome if feito_por_admin else "",
-            "consultorio": cons_nome,
-            "qtd_horas": t.get("quantidade_horas") or 0,
-            "sinal": "-" if valor < 0 else "+",
-            "valor": t.get("valor"),
+            "consultorio": cons_nome, "qtd_horas": qtd, "sinal": sinal, "valor": valor,
         })
+
+    for t in resp:
+        medico_nome = (t.get("medicos") or {}).get("nome") or "—"
+        op = _operacao_da_transacao(t)
+        cons_id, cons_nome = consultorio_da_reserva.get(str(t.get("reserva_id")), (None, "—"))
+        valor = float(t.get("valor") or 0)
+        _adicionar(t.get("criado_em"), op, medico_nome, cons_id, cons_nome,
+                   t.get("quantidade_horas") or 0, "-" if valor < 0 else "+",
+                   op == "ajuste_admin", t.get("criado_por"), t.get("valor"))
+
+    # cancelamentos (evento da reserva, com ou sem reembolso)
+    if not operacao or operacao == "cancelamento":
+        from app.services import template_service
+        rq = (client.table("reservas").select("*, medicos(nome), consultorios(nome)").eq("status", "cancelada"))
+        if medico_id:
+            rq = rq.eq("medico_id", medico_id)
+        for r in rq.execute().data or []:
+            if not r.get("cancelado_em"):
+                continue
+            if r.get("tipo_reserva") == "hora":
+                qtd = int(r.get("quantidade_horas") or 0)
+            else:
+                qtd = len(template_service.HORARIOS_POR_PERIODO.get(r.get("periodo"), []))
+            _adicionar(r["cancelado_em"], "cancelamento", (r.get("medicos") or {}).get("nome") or "—",
+                       str(r.get("consultorio_id")), (r.get("consultorios") or {}).get("nome") or "—",
+                       qtd, "", bool(r.get("cancelado_por_admin")), None, None)
 
     linhas.sort(key=lambda l: l["ocorrencia"] or "", reverse=(ordenar != "asc"))   # base: cronológica
     chave = {"consultorio": "consultorio", "usuario": "operador", "operacao": "tipo"}.get(ordenar)

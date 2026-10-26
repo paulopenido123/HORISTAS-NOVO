@@ -480,6 +480,12 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v91 — Transações: extrato completo
+- Relatórios > Transações lista TODAS as operações: compra de horas, agendamento, cancelamento (com ou sem reembolso — vem do evento da reserva cancelada), reembolso de cancelamento e alteração de saldo de horas pelo admin (acréscimo/subtração manual, com sinal ± e o usuário que fez). Operação "Reserva de horas" renomeada para "Agendamento".
+- Data e hora em horário de Brasília (antes: UTC — um lançamento à noite caía no dia seguinte e podia sumir de filtro por data).
+- Filtro Usuário: "O próprio cliente", cada usuário do admin e "Administrador (sem identificação / login antigo)" (alterações feitas antes da coluna `criado_por` ou com o login antigo). Cancelamento feito pelo admin conta como feito pelo usuário "Administrador".
+- Arquivos: services/relatorios_service.py, routes/admin.py, templates/admin_relatorios.html.
+
 ## v90 — Relatórios: sai "Transações faturadas", entra "Horas / consultório"
 - Removida a aba "Transações faturadas" (rota `tipo=faturadas` deixa de existir; link antigo cai em Agendamentos). `relatorios_service.listar_faturamento` agora só lista as não faturadas (parâmetro `faturadas` removido). Emissão de NF e "Transações ainda não faturadas" inalteradas.
 - Nova aba "Horas / consultório" (`/admin/relatorios?tipo=horas_consultorio&mes=AAAA-MM`): escolher o mês atualiza sozinho; lista todos os consultórios ativos com as horas agendadas no mês e o número de reservas, mais o total. Conta reservas não canceladas pela DATA de uso (turno = horas do turno; hora avulsa = quantidade_horas); reservas manuais do admin na Matriz não entram. Função `relatorios_service.horas_por_consultorio`.

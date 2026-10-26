@@ -872,6 +872,13 @@ def atualizar_dados_pessoais(medico_id: str, dados: dict) -> dict:
         if not telefone_normalizado or len(telefone_normalizado) not in (12, 13):
             raise ValueError("Telefone inválido -- inclua o DDD.")
         payload["telefone"] = telefone_normalizado
+        # telefone é ÚNICO no banco: se já pertence a OUTRO cliente, avisa com
+        # clareza em vez de estourar "erro interno" (cliente novo que digita o
+        # telefone de um cadastro antigo da migração, 26/10/2026).
+        outros = (get_client().table("medicos").select("id").eq("telefone", telefone_normalizado).execute().data or [])
+        if any(str(o["id"]) != str(medico_id) for o in outros):
+            raise ValueError("Este telefone já está cadastrado em outro acesso. Se você já era cliente da Lifemax, "
+                             "entre pelo seu acesso anterior; se precisar de ajuda, fale com a Lifemax pelos canais de atendimento.")
     if "cpf_cnpj" in payload and payload["cpf_cnpj"]:
         apenas_digitos = "".join(c for c in payload["cpf_cnpj"] if c.isdigit())
         if len(apenas_digitos) not in (11, 14):
@@ -881,5 +888,22 @@ def atualizar_dados_pessoais(medico_id: str, dados: dict) -> dict:
         # é do tipo date no banco, então "" precisa virar None (senão dá
         # erro de sintaxe no Postgres).
         payload["data_nascimento"] = None
-    resp = get_client().table("medicos").update(payload).eq("id", medico_id).execute()
+    try:
+        resp = get_client().table("medicos").update(payload).eq("id", medico_id).execute()
+    except Exception as e:
+        # erros do banco viram mensagem amigável (e ficam no log do servidor)
+        print(f"[dados_pessoais] erro ao salvar médico {medico_id}: {type(e).__name__}: {e}")
+        codigo = getattr(e, "pgcode", None)
+        if codigo == "23505":
+            raise ValueError("Algum dado informado (telefone ou e-mail) já está cadastrado em outro acesso.")
+        if codigo == "23502":
+            raise ValueError("Preencha todos os campos obrigatórios (nome e telefone) antes de salvar.")
+        if codigo in ("22P02", "22007", "22008", "22003", "22001"):
+            raise ValueError("Algum campo está com formato inválido. Confira os dados (datas, números e tamanhos) e tente de novo.")
+        if codigo == "42703":
+            raise ValueError("O sistema ainda não está atualizado para salvar um dos campos (falta uma atualização do banco). "
+                             "Avise a Lifemax.")
+        raise ValueError(f"Não foi possível salvar agora. Tente de novo; se continuar, avise a Lifemax (código {codigo or 'interno'}).")
+    if not resp.data:
+        raise ValueError("Cadastro não encontrado. Saia e entre novamente.")
     return resp.data[0]

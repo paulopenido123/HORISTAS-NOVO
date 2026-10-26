@@ -140,7 +140,7 @@ def gerar_pdf_contrato(medico: dict) -> io.BytesIO:
     dados = [
         ("Nome do profissional", medico.get("nome") or "—"),
         ("CPF/CNPJ", medico.get("cpf_cnpj") or "não informado"),
-        ("Registro profissional (CRM)", medico.get("crm") or "não informado"),
+        ("Registro profissional (CRM/Correspondente)", medico.get("crm") or "não informado"),
         ("Especialidade", medico.get("especialidade") or "não informada"),
         ("Data de nascimento", medico.get("data_nascimento") or "não informada"),
         ("Endereço", endereco_fmt),

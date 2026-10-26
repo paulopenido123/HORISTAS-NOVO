@@ -589,10 +589,22 @@ def relatorios():
     ranking = []
     visao_receitas = 'pagamentos'
     mes_receitas = request.args.get('mes', '').strip()
+    mes_anterior = mes_proximo = ''
     if tipo == 'receitas':
         # "Receitas" (22/10/2026): tudo que entrou de dinheiro, por data de pagamento.
-        # Sem filtro, mostra os últimos 120 dias; "mes" (AAAA-MM) vale mais que de/até.
-        ini, fim = relatorios_service.periodo_receitas(filtros['data_inicio'], filtros['data_fim'], mes_receitas)
+        # Sempre por mês (ver abaixo).
+        # Atualização de 25/10/2026: Receitas é SEMPRE por mês -- sem "mes" válido na
+        # URL, abre o mês atual; de/até antigos são ignorados.
+        _hoje_sp = datetime.now(timezone(timedelta(hours=-3))).date()
+        try:
+            _a, _m = (int(x) for x in mes_receitas.split('-', 1)); date(_a, _m, 1)
+        except (ValueError, TypeError):
+            _a, _m = _hoje_sp.year, _hoje_sp.month
+        mes_receitas = f"{_a:04d}-{_m:02d}"
+        _ant = date(_a - (_m == 1), 12 if _m == 1 else _m - 1, 1)
+        _prox = date(_a + (_m == 12), 1 if _m == 12 else _m + 1, 1)
+        mes_anterior, mes_proximo = _ant.strftime('%Y-%m'), _prox.strftime('%Y-%m')
+        ini, fim = relatorios_service.periodo_receitas('', '', mes_receitas)
         filtros['data_inicio'], filtros['data_fim'] = ini, fim
         linhas, resumo_dias, total_valor = relatorios_service.listar_receitas(
             ini, fim, medico_id=filtros['medico_id'] or None, cliente_busca=filtros['cliente'])
@@ -639,7 +651,7 @@ def relatorios():
     return render_template(
         'admin_relatorios.html', tipo=tipo, consultorios=consultorios, medicos=medicos,
         linhas=linhas, total_horas=total_horas, total_valor=total_valor, filtros=filtros,
-        resumo_dias=resumo_dias, mes_receitas=mes_receitas, ranking=ranking, visao_receitas=visao_receitas,
+        resumo_dias=resumo_dias, mes_receitas=mes_receitas, mes_anterior=mes_anterior, mes_proximo=mes_proximo, ranking=ranking, visao_receitas=visao_receitas,
         operacoes=relatorios_service.OPERACOES_AGENDAMENTOS,
         nfe_configurado=nfe_service.configurado(),
     )

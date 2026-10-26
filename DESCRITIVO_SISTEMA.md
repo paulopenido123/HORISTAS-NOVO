@@ -480,6 +480,18 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v86 — Rótulo "CRM/Correspondente"
+- O campo CRM passou a se chamar "CRM/Correspondente" em Meus dados, no cadastro/visualização de cliente do admin, no PDF do contrato (linha "Registro profissional") e nas mensagens de salvamento. Só o rótulo mudou; o campo no banco continua `crm`.
+
+## v85 — "Meus dados" sem erro interno
+- `creditos_service.atualizar_dados_pessoais`: telefone já usado por outro cliente (campo único no banco) → mensagem clara; erros do banco (duplicado, obrigatório, formato, coluna inexistente, outros) viram mensagem amigável na tela e ficam no log do servidor (`[dados_pessoais] erro ao salvar...`) em vez de "erro interno". Cadastro inexistente também tratado.
+- A tela já exibia `erro` das respostas 400, sem mudança de front.
+
+## v84 — Relatórios > Receitas sempre por mês
+- Receitas (visões Pagamentos e Profissionais) abre sempre num mês: o mês atual (fuso Brasília) ou o escolhido em `mes=AAAA-MM`; mês inválido volta ao atual. Removidos os campos "de/até" e "Últimos 120 dias"; entram setas ← → de mês e "Mês atual". O CSV exporta o mês exibido. Filtros de profissional/cliente preservados ao navegar.
+- Arquivos: routes/admin.py (relatorios), templates/admin_relatorios.html.
+- Também nesta versão: backup_service trata colunas de intervalo (tstzrange) e tipos desconhecidos.
+
 ## v81 — Backup/restauração e limpeza de pagamentos de teste
 - Admin > "Backup" (menu + atalho no Dashboard; só Administrador; protegido pela senha master, 15 min): (1) "Baixar backup agora" gera `backup_lifemax_AAAA-MM-DD_HH-MM.json.gz` com TODAS as tabelas do schema public (médicos, reservas, pagamentos, consultórios, valores, usuários admin, fotos no banco...). (2) "Restaurar backup": envia o arquivo, exige digitar RESTAURAR + confirmação; modo mesclar (upsert pela chave primária, nada é apagado), numa única transação (falhou = nada muda).
 - Tipos especiais: colunas de intervalo (tstzrange etc.) são salvas como texto e voltam ao tipo certo; qualquer tipo desconhecido vira texto em vez de derrubar o backup.

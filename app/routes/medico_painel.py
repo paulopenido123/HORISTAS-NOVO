@@ -339,10 +339,10 @@ def atualizar_crm():
     valor = (body.get("crm") or "").strip()
 
     if not valor:
-        return jsonify({"erro": "Informe o número do CRM."}), 400
+        return jsonify({"erro": "Informe o número do CRM/Correspondente."}), 400
 
     creditos_db.atualizar_crm(medico_logado_id(), valor)
-    return jsonify({"resultado": "CRM salvo com sucesso."})
+    return jsonify({"resultado": "CRM/Correspondente salvo com sucesso."})
 
 
 @medico_painel_bp.route("/api/creditos/status/<pagamento_id>")

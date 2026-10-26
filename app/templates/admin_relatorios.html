@@ -110,16 +110,19 @@
     <form class="filtro" method="get">
       <input type="hidden" name="tipo" value="receitas">
       <input type="hidden" name="visao" value="{{ visao_receitas }}">
-      <div><label>Por período — de</label><input type="date" name="data_inicio" value="{{ filtros.data_inicio if not mes_receitas else '' }}"></div>
-      <div><label>até</label><input type="date" name="data_fim" value="{{ filtros.data_fim if not mes_receitas else '' }}"></div>
-      <button type="submit">Ver período</button>
-      <div style="margin-left:14px"><label>Mês</label><input type="month" name="mes" value="{{ mes_receitas }}" onchange="this.form.submit()"></div>
-      <a class="btn-limpar" href="{{ url_for('admin.relatorios', tipo='receitas', visao=visao_receitas) }}">Últimos 120 dias</a>
-      <a class="btn-escuro" href="{{ url_for('admin.relatorios', tipo='receitas', data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, medico_id=filtros.medico_id, cliente=filtros.cliente, visao=visao_receitas, mes=mes_receitas, formato='csv') }}">⬇ Baixar planilha (CSV)</a>
+      <input type="hidden" name="medico_id" value="{{ filtros.medico_id }}">
+      <input type="hidden" name="cliente" value="{{ filtros.cliente }}">
+      <div style="display:flex;align-items:flex-end;gap:8px">
+        <a class="btn-limpar" href="{{ url_for('admin.relatorios', tipo='receitas', visao=visao_receitas, mes=mes_anterior, medico_id=filtros.medico_id, cliente=filtros.cliente) }}" title="Mês anterior" aria-label="Mês anterior">&larr;</a>
+        <div><label>Mês</label><input type="month" name="mes" value="{{ mes_receitas }}" onchange="this.form.submit()"></div>
+        <a class="btn-limpar" href="{{ url_for('admin.relatorios', tipo='receitas', visao=visao_receitas, mes=mes_proximo, medico_id=filtros.medico_id, cliente=filtros.cliente) }}" title="Próximo mês" aria-label="Próximo mês">&rarr;</a>
+      </div>
+      <a class="btn-limpar" href="{{ url_for('admin.relatorios', tipo='receitas', visao=visao_receitas) }}">Mês atual</a>
+      <a class="btn-escuro" href="{{ url_for('admin.relatorios', tipo='receitas', medico_id=filtros.medico_id, cliente=filtros.cliente, visao=visao_receitas, mes=mes_receitas, formato='csv') }}">⬇ Baixar planilha (CSV)</a>
     </form>
     <div class="visoes">
-      <a class="{{ 'on' if visao_receitas == 'pagamentos' else '' }}" href="{{ url_for('admin.relatorios', tipo='receitas', visao='pagamentos', data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, mes=mes_receitas) }}">Pagamentos</a>
-      <a class="{{ 'on' if visao_receitas == 'profissionais' else '' }}" href="{{ url_for('admin.relatorios', tipo='receitas', visao='profissionais', data_inicio=filtros.data_inicio, data_fim=filtros.data_fim, mes=mes_receitas) }}">Profissionais</a>
+      <a class="{{ 'on' if visao_receitas == 'pagamentos' else '' }}" href="{{ url_for('admin.relatorios', tipo='receitas', visao='pagamentos', mes=mes_receitas, medico_id=filtros.medico_id, cliente=filtros.cliente) }}">Pagamentos</a>
+      <a class="{{ 'on' if visao_receitas == 'profissionais' else '' }}" href="{{ url_for('admin.relatorios', tipo='receitas', visao='profissionais', mes=mes_receitas, medico_id=filtros.medico_id, cliente=filtros.cliente) }}">Profissionais</a>
     </div>
     <div class="rec-grid">
       <div class="rec-card"><div class="r">Período</div><div class="n" style="font-size:15px">{{ filtros.data_inicio[8:10] }}/{{ filtros.data_inicio[5:7] }}/{{ filtros.data_inicio[:4] }} a {{ filtros.data_fim[8:10] }}/{{ filtros.data_fim[5:7] }}/{{ filtros.data_fim[:4] }}</div></div>

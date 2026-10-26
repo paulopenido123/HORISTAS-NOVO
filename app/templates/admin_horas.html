@@ -17,6 +17,11 @@ body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
 .nota{color:#62788A;font-size:12.5px;margin-top:-14px;margin-bottom:24px}
 .titulo-acumulado{font-size:13.5px;font-weight:800;color:#0B3A52;text-transform:uppercase;letter-spacing:.03em;margin-bottom:14px;padding-top:10px;border-top:1px solid #e3ebef}
 @media(max-width:760px){.kpis{grid-template-columns:1fr}}
+.abas-horas{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.abas-horas a{padding:10px 16px;border-radius:999px;background:#fff;border:1px solid #d8e3e7;color:#0B3A57;font-weight:700;font-size:13.5px;text-decoration:none}
+.abas-horas a.on{background:#0EA5A0;border-color:#0EA5A0;color:#fff}
+.filtro select{padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px;background:#fff}
+.tab-saldos{width:100%;border-collapse:collapse}.tab-saldos th,.tab-saldos td{padding:11px 10px;border-bottom:1px solid #e3ebef;font-size:14px;text-align:left}.tab-saldos th{font-size:12px;color:#6B8493;text-transform:uppercase}
 .card-endereco{margin-top:24px}
 .card-endereco h2{margin-top:0;font-size:16px}
 .card-endereco p.explica{color:#62788A;font-size:12.5px;margin-top:-6px;margin-bottom:18px}
@@ -31,13 +36,37 @@ body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
 </style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head><body>
 {% with titulo='Horas', ativo='horas' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
+  <div class="abas-horas">
+    <a href="{{ url_for('admin.horas') }}" class="{{ 'on' if visao != 'saldo_mensal' else '' }}">Resumo do mês</a>
+    <a href="{{ url_for('admin.horas', visao='saldo_mensal') }}" class="{{ 'on' if visao == 'saldo_mensal' else '' }}">Saldo de horas mensal</a>
+  </div>
+  {% if visao == 'saldo_mensal' %}
+  <div class="card">
+    <form class="filtro" method="get">
+      <input type="hidden" name="visao" value="saldo_mensal">
+      <div>
+        <label>Ano</label>
+        <select name="ano" onchange="this.form.submit()">{% for a in anos_opcoes %}<option value="{{ a }}" {{ 'selected' if a == ano_sel else '' }}>{{ a }}</option>{% endfor %}</select>
+      </div>
+    </form>
+    <div class="titulo-acumulado" style="border-top:0;padding-top:0">Horas na praça (total) no fim de cada mês de {{ ano_sel }}</div>
+    <table class="tab-saldos cartoes">
+      <thead><tr><th>Mês</th><th style="text-align:right">Horas na praça (total)</th></tr></thead>
+      <tbody>
+      {% for r in saldos_mensais %}
+        <tr><td data-label="Mês">{{ r.nome|capitalize }}/{{ ano_sel }}</td><td data-label="Horas na praça (total)" style="text-align:right;font-weight:800">{{ r.horas if r.horas is not none else '—' }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="nota" style="margin-top:14px">Soma das horas dos saldos de todos os profissionais no fim de cada mês (o mês atual é o saldo de hoje). Meses futuros aparecem com "—".</p>
+  </div>
+  {% else %}
   <div class="card">
     <form class="filtro" method="get">
       <div>
         <label>Filtre por mês</label>
-        <input type="month" name="mes" value="{{ mes_valor }}">
+        <input type="month" name="mes" value="{{ mes_valor }}" onchange="if(this.value)this.form.submit()">
       </div>
-      <button type="submit">Aplicar</button>
     </form>
 
     <div class="kpis">
@@ -52,13 +81,13 @@ body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
         <div class="num">{{ stats.horas_utilizadas }}</div>
       </div>
       <div class="kpi green">
-        <div class="rotulo">Horas na praça (mês)</div>
+        <div class="rotulo">Saldo de horas mensais</div>
         <div class="sub">Saldo líquido gerado em {{ mes_nome }}/{{ '%02d'|format(ano % 100) }} (vendidas − utilizadas no mês)</div>
         <div class="num">{{ stats.horas_na_praca_mes }}</div>
       </div>
     </div>
 
-    <p class="nota">"Horas vendidas" e "horas utilizadas" contam só pacotes comprados de verdade (via PIX/cartão) e reservas efetivamente feitas -- ajustes manuais e transferências entre carteiras não entram nessa conta. "Horas na praça (mês)" é vendidas menos utilizadas dentro do mês filtrado.</p>
+    <p class="nota">"Horas vendidas" e "horas utilizadas" contam só pacotes comprados de verdade (via PIX/cartão) e reservas efetivamente feitas -- ajustes manuais e transferências entre carteiras não entram nessa conta. "Saldo de horas mensais" é vendidas menos utilizadas dentro do mês filtrado.</p>
 
     <p class="nota">Contagem iniciada em <strong>{{ inicio_contagem }}</strong>: horas vendidas e utilizadas só consideram movimentos a partir dessa data. A <strong>soma das horas dos profissionais</strong> (horas na praça, total) é sempre o saldo real de hoje.</p>
 
@@ -130,5 +159,6 @@ body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
       <button type="submit">Salvar endereço padrão</button>
     </form>
   </div>
+  {% endif %}
 </div>
 </body></html>

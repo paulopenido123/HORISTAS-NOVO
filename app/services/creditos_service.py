@@ -817,6 +817,46 @@ def estatisticas_horas(mes: int | None = None, ano: int | None = None) -> dict:
     }
 
 
+def horas_na_praca_por_mes(ano: int) -> list[dict]:
+    """"Saldo de horas mensal" (Admin > Horas, 26/10/2026): para cada mês do
+    ano, a mesma conta de "Horas na praça (total)" -- soma das horas
+    compráveis com o saldo de todos os médicos -- mas como estava no FIM
+    daquele mês. O saldo do fim do mês é reconstruído a partir do saldo
+    de hoje, desfazendo as transações (compras, consumos, reembolsos e
+    ajustes) feitas depois dele. Mês futuro devolve horas=None; o mês atual
+    bate exatamente com o "Horas na praça (total)" da tela."""
+    from datetime import datetime, timedelta
+    agora = datetime.utcnow() - timedelta(hours=3)
+    client = get_client()
+    medicos = client.table("medicos").select("id, saldo_creditos").execute().data or []
+    transacoes = (
+        client.table("creditos_transacoes").select("medico_id, valor, criado_em")
+        .eq("carteira", "salas").execute().data or []
+    )
+    por_medico: dict = {}
+    for t in transacoes:
+        ym = str(t.get("criado_em") or "")[:7]
+        if len(ym) != 7:
+            continue
+        chave = int(ym[:4]) * 12 + int(ym[5:7]) - 1
+        d = por_medico.setdefault(str(t["medico_id"]), {})
+        d[chave] = d.get(chave, 0.0) + float(t.get("valor") or 0)
+    pacotes = listar_pacotes_horas()
+    resultado = []
+    for mes in range(1, 13):
+        if (ano, mes) > (agora.year, agora.month):
+            resultado.append({"mes": mes, "horas": None})
+            continue
+        fim = ano * 12 + mes - 1
+        total = 0
+        for m in medicos:
+            depois = sum(v for k, v in por_medico.get(str(m["id"]), {}).items() if k > fim)
+            saldo_fim = float(m.get("saldo_creditos") or 0) - depois
+            total += estimar_horas_compraveis(max(saldo_fim, 0.0), pacotes, limite=SEM_TETO)
+        resultado.append({"mes": mes, "horas": total})
+    return resultado
+
+
 def marcar_alerta_saldo_baixo_enviado(medico_id: str):
     get_client().table("medicos").update({"alerta_saldo_baixo_enviado": True}).eq("id", medico_id).execute()
 

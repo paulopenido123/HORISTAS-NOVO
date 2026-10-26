@@ -113,10 +113,24 @@ def horas():
         ano, mes = hoje.year, hoje.month
         mes_valor = f"{ano:04d}-{mes:02d}"
 
+    # Visão "Saldo de horas mensal": horas na praça no fim de cada mês do ano escolhido.
+    visao = 'saldo_mensal' if request.args.get('visao') == 'saldo_mensal' else 'mes'
+    ano_sel = hoje.year
+    saldos_mensais = []
+    if visao == 'saldo_mensal':
+        try:
+            ano_sel = int(request.args.get('ano') or hoje.year)
+            if not (2000 <= ano_sel <= 2100):
+                raise ValueError
+        except ValueError:
+            ano_sel = hoje.year
+        saldos_mensais = [dict(r, nome=_NOMES_MESES[r['mes']]) for r in creditos_db.horas_na_praca_por_mes(ano_sel)]
+
     stats = creditos_db.estatisticas_horas(mes, ano)
     endereco = creditos_db.obter_endereco_padrao()
     return render_template(
         'admin_horas.html', stats=stats, mes=mes, ano=ano,
+        visao=visao, ano_sel=ano_sel, saldos_mensais=saldos_mensais, anos_opcoes=list(range(2026, max(hoje.year, 2026) + 2)),
         mes_valor=mes_valor, mes_nome=_NOMES_MESES[mes], endereco=endereco,
         inicio_contagem='/'.join(reversed(creditos_db.DATA_INICIO_CONTAGEM_HORAS.split('-'))),
     )

@@ -480,6 +480,12 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v88 — Admin > Horas: Saldo de horas mensal
+- Card "Horas na praça (mês)" renomeado para "Saldo de horas mensais" (vendidas − utilizadas do mês).
+- Novo botão/aba "Saldo de horas mensal" em Horas (`/admin/horas?visao=saldo_mensal&ano=AAAA`): tabela com a "Horas na praça (total)" no fim de cada mês do ano escolhido (campo Ano, troca sozinho). O saldo de cada mês é reconstruído a partir do saldo atual dos médicos desfazendo as transações posteriores (`creditos_service.horas_na_praca_por_mes`); o mês atual bate com o card "Horas na praça (total)"; meses futuros mostram "—". Aba "Resumo do mês" volta à tela anterior.
+- Filtro de mês sem botão "Aplicar": escolher o mês já atualiza o resultado.
+- Arquivos: routes/admin.py, services/creditos_service.py, templates/admin_horas.html.
+
 ## v87 — Reembolso nas horas utilizadas/na praça + setas da semana fixas
 - Admin > Horas: o reembolso de cancelamento (transação tipo 'ajuste' com descrição "Reembolso por cancelamento...") agora é DESCONTADO das horas utilizadas (no mês em que o reembolso foi feito, respeitando a data de início da contagem). Ajustes manuais do admin continuam fora da conta. "Horas na praça" do mês (vendidas − utilizadas) passa a refletir o reembolso; "horas na praça" total já vinha do saldo atual dos médicos, que inclui o reembolso. Arquivo: services/creditos_service.py (`estatisticas_horas`, `_somar_vendidas_e_utilizadas`).
 - Grade de Turnos: a barra com as setas ← → da semana e o mês fica fixa no alto (position: sticky) enquanto o médico rola a tela; compacta no celular. Arquivo: templates/turnos.html.

@@ -101,7 +101,7 @@
     <a href="{{ url_for('admin.relatorios', tipo='agendamentos') }}" class="{{ 'active' if tipo == 'agendamentos' else '' }}">Agendamentos</a>
     <a href="{{ url_for('admin.relatorios', tipo='transacoes') }}" class="{{ 'active' if tipo == 'transacoes' else '' }}">Transações</a>
     <a href="{{ url_for('admin.relatorios', tipo='nao_faturadas') }}" class="{{ 'active' if tipo == 'nao_faturadas' else '' }}">Transações ainda não faturadas</a>
-    <a href="{{ url_for('admin.relatorios', tipo='faturadas') }}" class="{{ 'active' if tipo == 'faturadas' else '' }}">Transações faturadas</a>
+    <a href="{{ url_for('admin.relatorios', tipo='horas_consultorio') }}" class="{{ 'active' if tipo == 'horas_consultorio' else '' }}">Horas / consultório</a>
     <a href="{{ url_for('admin.relatorios', tipo='receitas') }}" class="aba-preta {{ 'active' if tipo == 'receitas' else '' }}">Receitas</a>
   </div>
 
@@ -155,6 +155,30 @@
     {% else %}
       <div class="vazio">Nenhum pagamento recebido neste período.</div>
     {% endif %}
+    </div>
+    {% elif tipo == 'horas_consultorio' %}
+    <form class="filtro" method="get">
+      <input type="hidden" name="tipo" value="horas_consultorio">
+      <div><label>Mês</label><input type="month" name="mes" value="{{ mes_receitas }}" onchange="if(this.value)this.form.submit()"></div>
+    </form>
+    <div class="resumo"><strong>{{ total_horas }}</strong> hora(s) agendadas em {{ linhas|length }} consultório(s) no mês escolhido (reservas não canceladas, pela data de uso)</div>
+    <div class="wrap-tabela">
+      {% if linhas %}
+      <table>
+        <thead><tr><th>Consultório</th><th style="text-align:right">Horas agendadas no mês</th><th style="text-align:right">Reservas</th></tr></thead>
+        <tbody>
+          {% for l in linhas %}
+          <tr>
+            <td data-label="Consultório"><strong>{{ l.nome }}</strong></td>
+            <td data-label="Horas agendadas no mês" style="text-align:right;font-weight:800">{{ l.horas }}h</td>
+            <td data-label="Reservas" style="text-align:right">{{ l.reservas }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="vazio">Nenhum consultório cadastrado.</div>
+      {% endif %}
     </div>
     {% else %}
     {% if tipo == 'nao_faturadas' and not nfe_configurado %}
@@ -256,8 +280,8 @@
 
     {% if tipo == 'transacoes' %}
     <div class="resumo"><strong>{{ linhas|length }}</strong> resultado(s) · <strong>{{ total_horas }}</strong> hora(s) totais (em módulo, soma de compras + consumos + ajustes)</div>
-    {% elif tipo in ('nao_faturadas', 'faturadas') %}
-    <div class="resumo"><strong>{{ linhas|length }}</strong> resultado(s) · <strong>R$ {{ '%.2f'|format(total_valor or 0) }}</strong> em pagamentos {{ 'já faturados' if tipo == 'faturadas' else 'ainda não faturados' }}</div>
+    {% elif tipo == 'nao_faturadas' %}
+    <div class="resumo"><strong>{{ linhas|length }}</strong> resultado(s) · <strong>R$ {{ '%.2f'|format(total_valor or 0) }}</strong> em pagamentos ainda não faturados</div>
     {% else %}
     <div class="resumo"><strong>{{ linhas|length }}</strong> resultado(s)</div>
     {% endif %}
@@ -298,7 +322,7 @@
       </table>
       {% else %}
       <table>
-        <thead><tr><th>Ocorrência (pago em)</th><th>Cliente</th><th>Forma</th><th>Valor</th><th>Nota Fiscal</th>{% if tipo == 'nao_faturadas' %}<th>Ação</th>{% endif %}</tr></thead>
+        <thead><tr><th>Ocorrência (pago em)</th><th>Cliente</th><th>Forma</th><th>Valor</th><th>Nota Fiscal</th><th>Ação</th></tr></thead>
         <tbody>
           {% for l in linhas %}
           <tr class="{{ 't-no' if l.nota_fiscal_status == 'nao_emitida' else 't-ok' }}">
@@ -312,14 +336,12 @@
               <div style="margin-top:4px;font-size:12px;">Nº {{ l.nota_fiscal_numero }}{% if l.nota_fiscal_url %} · <a class="link-nf" href="{{ l.nota_fiscal_url }}" target="_blank" rel="noopener">ver nota</a>{% endif %}</div>
               {% endif %}
             </td>
-            {% if tipo == 'nao_faturadas' %}
             <td data-label="Ação">
               <form method="post" action="{{ url_for('admin.emitir_nf_pagamento', pagamento_id=l.id) }}" style="margin:0;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn-emitir-nf">Emitir NF</button>
               </form>
             </td>
-            {% endif %}
           </tr>
           {% endfor %}
         </tbody>

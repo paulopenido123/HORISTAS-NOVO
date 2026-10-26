@@ -480,6 +480,11 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v90 — Relatórios: sai "Transações faturadas", entra "Horas / consultório"
+- Removida a aba "Transações faturadas" (rota `tipo=faturadas` deixa de existir; link antigo cai em Agendamentos). `relatorios_service.listar_faturamento` agora só lista as não faturadas (parâmetro `faturadas` removido). Emissão de NF e "Transações ainda não faturadas" inalteradas.
+- Nova aba "Horas / consultório" (`/admin/relatorios?tipo=horas_consultorio&mes=AAAA-MM`): escolher o mês atualiza sozinho; lista todos os consultórios ativos com as horas agendadas no mês e o número de reservas, mais o total. Conta reservas não canceladas pela DATA de uso (turno = horas do turno; hora avulsa = quantidade_horas); reservas manuais do admin na Matriz não entram. Função `relatorios_service.horas_por_consultorio`.
+- Arquivos: routes/admin.py, services/relatorios_service.py, templates/admin_relatorios.html.
+
 ## v89 — Relatórios > Transações com filtros e ordenação
 - Filtros: período (data), Consultório (das reservas ligadas à transação), Usuário (quem fez: um usuário do admin/secretária numa alteração de saldo, ou "o próprio cliente"), Médico (cliente) e Operação (Compra de horas / Alteração de saldo de horas pelo admin / Reembolso de cancelamento / Reserva de horas). Ordenar por: ocorrência (mais recente/antiga), consultório, usuário ou operação.
 - Colunas: Ocorrência | Usuário | Médico (cliente) | Operação (+ "por <usuário>" nas alterações do admin) | Consultório | Qtd Horas com sinal (+/−).

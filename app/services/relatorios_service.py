@@ -208,26 +208,19 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
     return linhas, total_horas
 
 
-def listar_faturamento(faturadas: bool, data_inicio: str | None = None, data_fim: str | None = None,
+def listar_faturamento(data_inicio: str | None = None, data_fim: str | None = None,
                         medico_id: str | None = None, cliente_busca: str = "",
                         ordenar: str = "desc") -> tuple[list[dict], float]:
-    """Relatórios "Transações ainda não faturadas" / "Transações faturadas"
-    -- pedido do Paulo em 11/09/2026. Ao contrário de listar_transacoes()
-    (que lê creditos_transacoes, o extrato em HORAS), este lê
-    pagamentos_pix (os pagamentos em R$ de fato recebidos via Pix/cartão)
-    e usa a coluna nota_fiscal_status (ver sql/migration_notas_fiscais.sql)
-    pra separar o que ainda não tem Nota Fiscal emitida do que já tem.
-
-    faturadas=False -> pagamentos confirmados (status='pago') com
-      nota_fiscal_status == 'nao_emitida' (ainda faltando emitir).
-    faturadas=True  -> pagamentos confirmados com nota_fiscal_status em
-      ('emitida', 'enviada') (já faturados)."""
+    """Relatório "Transações ainda não faturadas" -- pedido do Paulo em
+    11/09/2026. Ao contrário de listar_transacoes() (que lê
+    creditos_transacoes, o extrato em HORAS), este lê pagamentos_pix (os
+    pagamentos em R$ de fato recebidos via Pix/cartão) com status 'pago' e
+    nota_fiscal_status == 'nao_emitida' (ainda faltando emitir a NF; ver
+    sql/migration_notas_fiscais.sql). A aba "Transações faturadas" foi
+    removida a pedido do Paulo em 26/10/2026."""
     client = db.get_client()
-    query = client.table("pagamentos_pix").select("*, medicos(nome)").eq("status", "pago")
-    if faturadas:
-        query = query.neq("nota_fiscal_status", "nao_emitida")
-    else:
-        query = query.eq("nota_fiscal_status", "nao_emitida")
+    query = (client.table("pagamentos_pix").select("*, medicos(nome)").eq("status", "pago")
+             .eq("nota_fiscal_status", "nao_emitida"))
     if medico_id:
         query = query.eq("medico_id", medico_id)
     resp = query.execute().data
@@ -260,6 +253,46 @@ def listar_faturamento(faturadas: bool, data_inicio: str | None = None, data_fim
     linhas.sort(key=lambda l: l["ocorrencia"] or "", reverse=(ordenar != "asc"))
     total_valor = round(sum(l["valor"] or 0 for l in linhas), 2)
     return linhas, total_valor
+
+
+def horas_por_consultorio(mes_ym: str) -> tuple[list[dict], int]:
+    """"Horas / consultório" (26/10/2026): para o mês `AAAA-MM`, quantas horas
+    de reserva (feitas pelos médicos, não canceladas) caem em cada consultório
+    -- pela DATA da reserva (o dia em que o consultório será usado), não pelo
+    dia em que ela foi feita. Reserva por turno conta as horas do turno.
+    Devolve ([{id, nome, horas, reservas}], total_horas); todo consultório ativo
+    aparece, mesmo com 0 horas."""
+    from datetime import date, timedelta
+    from app.services import template_service
+    ano, mes = int(mes_ym[:4]), int(mes_ym[5:7])
+    ini = date(ano, mes, 1)
+    fim = date(ano + (mes == 12), mes % 12 + 1, 1) - timedelta(days=1)
+    reservas = (
+        db.get_client().table("reservas")
+        .select("consultorio_id, tipo_reserva, quantidade_horas, periodo, data, status")
+        .neq("status", "cancelada")
+        .gte("data", ini.isoformat()).lte("data", fim.isoformat())
+        .execute().data
+    )
+    acum: dict = {}
+    for r in reservas:
+        if r.get("tipo_reserva") == "hora":
+            h = int(r.get("quantidade_horas") or 0)
+        else:
+            h = len(template_service.HORARIOS_POR_PERIODO.get(r.get("periodo"), []))
+        a = acum.setdefault(str(r.get("consultorio_id")), {"horas": 0, "reservas": 0})
+        a["horas"] += h
+        a["reservas"] += 1
+    linhas = []
+    conhecidos = set()
+    for c in db.listar_todos_consultorios():
+        conhecidos.add(str(c["id"]))
+        a = acum.get(str(c["id"]), {"horas": 0, "reservas": 0})
+        linhas.append({"id": c["id"], "nome": c.get("nome") or "—", **a})
+    for cid, a in acum.items():   # consultório hoje inativo, mas com reservas no mês
+        if cid not in conhecidos:
+            linhas.append({"id": cid, "nome": "(consultório inativo)", **a})
+    return linhas, sum(l["horas"] for l in linhas)
 
 
 # ---------------------------------------------------------------------------

@@ -591,7 +591,7 @@ def relatorios():
     esses dois leem pagamentos_pix (os pagamentos em R$ recebidos de
     verdade) e separam pelo status da nota fiscal."""
     tipo = request.args.get('tipo', 'agendamentos')
-    if tipo not in ('agendamentos', 'transacoes', 'nao_faturadas', 'faturadas', 'receitas'):
+    if tipo not in ('agendamentos', 'transacoes', 'nao_faturadas', 'receitas', 'horas_consultorio'):
         tipo = 'agendamentos'
 
     consultorios = db.listar_todos_consultorios()
@@ -659,9 +659,17 @@ def relatorios():
             ordenar=filtros['ordenar'], consultorio_id=filtros['consultorio_id'] or None,
             usuario=filtros['usuario'] or None, operacao=filtros['operacao'] or None,
         )
-    elif tipo in ('nao_faturadas', 'faturadas'):
+    elif tipo == 'horas_consultorio':
+        # sempre por mês; sem "mes" válido na URL, abre o mês atual
+        _hoje_hc = datetime.now(timezone(timedelta(hours=-3))).date()
+        try:
+            _a, _m = (int(x) for x in mes_receitas.split('-', 1)); date(_a, _m, 1)
+        except (ValueError, TypeError):
+            _a, _m = _hoje_hc.year, _hoje_hc.month
+        mes_receitas = f"{_a:04d}-{_m:02d}"
+        linhas, total_horas = relatorios_service.horas_por_consultorio(mes_receitas)
+    elif tipo == 'nao_faturadas':
         linhas, total_valor = relatorios_service.listar_faturamento(
-            faturadas=(tipo == 'faturadas'),
             data_inicio=filtros['data_inicio'] or None, data_fim=filtros['data_fim'] or None,
             medico_id=filtros['medico_id'] or None, cliente_busca=filtros['cliente'],
             ordenar=filtros['ordenar'],

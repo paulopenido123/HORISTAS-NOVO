@@ -480,6 +480,9 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v92 — Horário livre em verde claro nas telas do admin
+- Gerar Matriz (`admin_matriz.html`) e Visualizar agenda (`admin_matriz_visualizar_agenda.html`): a cor dos horários livres/disponíveis (variável `--verde`, que era um azul bem claro #EAF4FF) passou a ser verde claro #D3F2DF com borda verde #86D4A6; a bolinha "Livre"/"Disponível" da legenda acompanha. Reservas (azul), bloqueios (azul-escuro) e demais estados não mudaram. A Grade de Turnos do médico já usava verde claro com contorno verde.
+
 ## v91 — Transações: extrato completo
 - Relatórios > Transações lista TODAS as operações: compra de horas, agendamento, cancelamento (com ou sem reembolso — vem do evento da reserva cancelada), reembolso de cancelamento e alteração de saldo de horas pelo admin (acréscimo/subtração manual, com sinal ± e o usuário que fez). Operação "Reserva de horas" renomeada para "Agendamento".
 - Data e hora em horário de Brasília (antes: UTC — um lançamento à noite caía no dia seguinte e podia sumir de filtro por data).

@@ -341,8 +341,8 @@ def ajustar_saldo_cliente(medico_id):
 @admin_bp.route('/api/clientes/enviar-email-lote', methods=['POST'])
 @_admin
 def api_clientes_enviar_email_lote():
-    """Pedido do Paulo em 23/09/2026 (item 2): botão "Enviar e-mail para
-    clientes" -- o admin seleciona uma lista de médicos (checkbox na tela
+    """Pedido do Paulo em 23/09/2026 (item 2) e 28/10/2026: botão "Configurar
+    e-mail" (topo da lista e em cada linha) -- o admin seleciona uma lista de médicos (checkbox na tela
     de Clientes), escreve uma mensagem e, opcionalmente, anexa uma
     imagem promocional (mostrada embutida no corpo do e-mail, não como
     anexo pra baixar), e manda um e-mail PRA CADA médico selecionado que
@@ -356,26 +356,33 @@ def api_clientes_enviar_email_lote():
     medico_ids = request.form.getlist('medico_ids')
     assunto = (request.form.get('assunto') or '').strip() or 'Aviso Lifemax'
     mensagem = (request.form.get('mensagem') or '').strip()
-    arquivo = request.files.get('imagem')
+    arquivos = [a for a in request.files.getlist('imagens') if a and a.filename]
+    legado = request.files.get('imagem')  # compatibilidade com o formulário antigo
+    if legado and legado.filename:
+        arquivos.append(legado)
 
     if not medico_ids:
         return {'erro': 'Selecione pelo menos um cliente.'}, 400
     if not mensagem:
         return {'erro': 'Escreva uma mensagem.'}, 400
 
-    imagem_bytes = None
-    imagem_mimetype = None
-    if arquivo and arquivo.filename:
+    if len(arquivos) > 5:
+        return {'erro': 'Anexe no máximo 5 fotos.'}, 400
+    fotos = []  # [(cid, bytes, mimetype)]
+    for i, arquivo in enumerate(arquivos):
         if not (arquivo.mimetype or '').startswith('image/'):
-            return {'erro': 'O arquivo anexado precisa ser uma imagem.'}, 400
-        imagem_bytes = arquivo.read()
-        imagem_mimetype = arquivo.mimetype
+            return {'erro': 'Os arquivos anexados precisam ser imagens.'}, 400
+        dados = arquivo.read()
+        if len(dados) > 5 * 1024 * 1024:
+            return {'erro': f'A foto "{arquivo.filename}" passa de 5 MB.'}, 400
+        fotos.append((f"promo{i}", dados, arquivo.mimetype))
 
     # Corpo do e-mail: a mensagem digitada pelo admin (uma linha por
     # parágrafo) + a imagem embutida no topo, se tiver.
     from app.services.email_service import _esc
     paragrafos = "".join(f"<p>{_esc(linha)}</p>" for linha in mensagem.splitlines() if linha.strip())
-    corpo_imagem = '<p><img src="cid:promo" style="max-width:100%; border-radius:8px;"></p>' if imagem_bytes else ''
+    corpo_imagem = "".join(
+        f'<p><img src="cid:{cid}" style="max-width:100%; border-radius:8px;"></p>' for cid, _, _ in fotos)
     corpo_html = f"""
     <div style="font-family:Arial,sans-serif; color:#102A43; max-width:560px;">
       {corpo_imagem}
@@ -394,7 +401,7 @@ def api_clientes_enviar_email_lote():
         if not medico.get('email'):
             sem_email.append(medico['nome'])
             continue
-        imagens_inline = [("promo", imagem_bytes, imagem_mimetype)] if imagem_bytes else None
+        imagens_inline = fotos or None
         try:
             ok = email_service.enviar_email([medico['email']], assunto, corpo_html, imagens_inline=imagens_inline)
         except Exception:

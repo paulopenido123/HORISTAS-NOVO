@@ -480,6 +480,13 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v93 — "Configurar e-mail" (e-mails promocionais para médicos)
+
+- **Tela Clientes (`admin_clientes.html`)**: o botão do topo "Enviar e-mail para clientes" virou **"📧 Configurar e-mail"**; cada linha ganhou também o botão **"📧 Configurar e-mail"**, que abre o mesmo painel já com aquele médico marcado.
+- **Painel**: assunto, texto, anexo de **até 5 fotos** (5 MB cada; mostra os nomes escolhidos), seleção de destinatários e botão **Enviar**.
+- **Rota `POST /admin/api/clientes/enviar-email-lote`** (`admin.py`): aceita `imagens` (várias; o campo antigo `imagem` continua valendo). Valida: só imagens, máx. 5, máx. 5 MB. As fotos vão embutidas no corpo (`cid:promo0..N`, na ordem escolhida). Um e-mail por médico (não expõe endereços), com o rodapé automático. Retorna enviados / sem e-mail / falhas.
+- Sem migração de banco. O envio depende do SMTP configurado.
+
 ## v92 — Horário livre em verde claro nas telas do admin
 - Gerar Matriz (`admin_matriz.html`) e Visualizar agenda (`admin_matriz_visualizar_agenda.html`): a cor dos horários livres/disponíveis (variável `--verde`, que era um azul bem claro #EAF4FF) passou a ser verde claro #D3F2DF com borda verde #86D4A6; a bolinha "Livre"/"Disponível" da legenda acompanha. Reservas (azul), bloqueios (azul-escuro) e demais estados não mudaram. A Grade de Turnos do médico já usava verde claro com contorno verde.
 

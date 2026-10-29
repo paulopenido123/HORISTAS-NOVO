@@ -63,7 +63,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
       <h2 style="margin-top:0">Clientes cadastrados</h2>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button type="button" class="btn alt" onclick="abrirModalLote('email')">📧 Enviar e-mail para clientes</button>
+        <button type="button" class="btn alt" onclick="abrirModalLote('email')">📧 Configurar e-mail</button>
         <button type="button" class="btn alt" onclick="abrirModalLote('link')">🔗 Enviar link de acesso</button>
         <a class="btn" href="{{ url_for('admin.novo_cliente') }}">+ Inserir novo</a>
       </div>
@@ -130,6 +130,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
           </td>
           <td data-label="Ação">
             <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.visualizar_cliente', medico_id=m.id) }}">🔍 Visualizar</a>
+            <button type="button" class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px;" onclick="abrirModalLote('email', '{{ m.id }}')">📧 Configurar e-mail</button>
             <details class="ajuste">
               <summary>Enviar link de acesso</summary>
               <form class="form-ajuste" method="post" action="{{ url_for('admin.enviar_link_cliente', medico_id=m.id) }}">
@@ -151,13 +152,13 @@ details.ajuste summary::-webkit-details-marker{display:none}
   </div>
 </div>
 
-{# Modal "Enviar e-mail para clientes" (item 2) e "Enviar link de acesso"
+{# Modal "Configurar e-mail" (promoções) e "Enviar link de acesso"
    em lote (item 3) -- pedido do Paulo em 23/09/2026. Os dois reaproveitam
    a mesma lista de médicos que já veio renderizada nessa página (evita
    buscar de novo no banco só pra montar a lista de checkboxes). #}
 <div class="modal-overlay" id="modal-lote-overlay">
   <div class="modal-lote">
-    <h3 id="modal-lote-titulo">Enviar e-mail para clientes</h3>
+    <h3 id="modal-lote-titulo">Configurar e-mail</h3>
     <p class="muted" id="modal-lote-sub">Selecione os clientes que vão receber a mensagem.</p>
 
     <div id="bloco-campos-email">
@@ -165,8 +166,9 @@ details.ajuste summary::-webkit-details-marker{display:none}
       <input type="text" id="lote-assunto" placeholder="ex: Novidade Lifemax">
       <label>Mensagem</label>
       <textarea id="lote-mensagem" placeholder="Escreva a mensagem que os clientes selecionados vão receber..."></textarea>
-      <label>Foto promocional (opcional)</label>
-      <input type="file" id="lote-imagem" accept="image/*">
+      <label>Fotos (opcional — até 5, de até 5 MB cada)</label>
+      <input type="file" id="lote-imagens" accept="image/*" multiple onchange="listarFotosLote()">
+      <div class="muted" id="lote-fotos-lista" style="margin-top:6px"></div>
     </div>
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
@@ -201,23 +203,33 @@ function csrfHeader() {
 
 let modoLoteAtual = 'email'; // 'email' | 'link'
 
-function abrirModalLote(modo) {
+function abrirModalLote(modo, medicoId) {
   modoLoteAtual = modo;
   document.getElementById('modal-lote-titulo').textContent =
-    modo === 'email' ? 'Enviar e-mail para clientes' : 'Enviar link de acesso';
+    modo === 'email' ? 'Configurar e-mail' : 'Enviar link de acesso';
   document.getElementById('modal-lote-sub').textContent =
     modo === 'email'
-      ? 'Selecione os clientes que vão receber a mensagem por e-mail.'
+      ? 'Escreva o texto, anexe fotos (opcional) e selecione quem vai receber o e-mail promocional.'
       : 'Selecione os clientes que vão receber o link de acesso por e-mail (só quem já tem e-mail cadastrado recebe).';
   document.getElementById('bloco-campos-email').style.display = modo === 'email' ? '' : 'none';
   document.getElementById('lote-assunto').value = '';
   document.getElementById('lote-mensagem').value = '';
-  document.getElementById('lote-imagem').value = '';
+  document.getElementById('lote-imagens').value = '';
+  listarFotosLote();
   document.getElementById('modal-lote-status').textContent = '';
   document.querySelectorAll('.lote-checkbox').forEach(c => c.checked = false);
   document.getElementById('lote-selecionar-todos').checked = false;
+  if (medicoId) {
+    document.querySelectorAll('.lote-checkbox').forEach(c => { if (c.value === String(medicoId)) c.checked = true; });
+  }
   atualizarContagemLote();
   document.getElementById('modal-lote-overlay').classList.add('aberto');
+}
+
+function listarFotosLote() {
+  const arqs = Array.from(document.getElementById('lote-imagens').files);
+  document.getElementById('lote-fotos-lista').textContent =
+    arqs.length ? arqs.map(a => '📎 ' + a.name).join('  ·  ') : '';
 }
 
 function fecharModalLote() {
@@ -258,8 +270,18 @@ async function enviarLote() {
     }
     formData.append('assunto', document.getElementById('lote-assunto').value.trim() || 'Aviso Lifemax');
     formData.append('mensagem', mensagem);
-    const arquivo = document.getElementById('lote-imagem').files[0];
-    if (arquivo) formData.append('imagem', arquivo);
+    const arquivos = Array.from(document.getElementById('lote-imagens').files);
+    if (arquivos.length > 5) {
+      statusEl.textContent = 'Anexe no máximo 5 fotos.';
+      statusEl.style.color = '#B33';
+      return;
+    }
+    if (arquivos.some(a => a.size > 5 * 1024 * 1024)) {
+      statusEl.textContent = 'Cada foto pode ter no máximo 5 MB.';
+      statusEl.style.color = '#B33';
+      return;
+    }
+    arquivos.forEach(a => formData.append('imagens', a));
     url = '/admin/api/clientes/enviar-email-lote';
   }
 

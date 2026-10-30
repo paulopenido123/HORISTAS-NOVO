@@ -533,23 +533,23 @@ if ("serviceWorker" in navigator) {
     </div>
     <div id="bloco-historico" style="display:none;">
     {% if transacoes %}
+    <div style="overflow-x:auto;">
     <table>
-      <thead><tr><th>Data</th><th>Carteira</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Saldo após</th></tr></thead>
+      <thead><tr><th>Data/hora</th><th>Operação</th><th>Consultório</th><th>Horas</th><th>Saldo após</th><th>Feito por</th></tr></thead>
       <tbody>
         {% for t in transacoes %}
         <tr>
-          <td>{{ t.criado_em[8:10] }}/{{ t.criado_em[5:7] }}/{{ t.criado_em[0:4] }}</td>
-          <td>Salas/Horas</td>
-          <td>{{ {'compra': 'Recarga', 'consumo': 'Uso', 'ajuste': 'Ajuste'}.get(t.tipo, t.tipo) }}</td>
-          <td>{{ t.descricao or '—' }}</td>
-          <td class="{{ 'valor-positivo' if t.horas_exibicao > 0 else 'valor-negativo' }}">
-            {% if t.horas_exibicao == t.horas_exibicao|int %}{{ t.horas_exibicao|int }}h{% else %}{{ '%.1f'|format(t.horas_exibicao) }}h{% endif %}
-          </td>
-          <td>{{ t.saldo_apos_horas }}h</td>
+          <td>{{ t.ocorrencia[8:10] }}/{{ t.ocorrencia[5:7] }}/{{ t.ocorrencia[0:4] }} {{ t.ocorrencia[11:16] }}</td>
+          <td>{{ t.tipo }}</td>
+          <td>{{ t.consultorio }}</td>
+          <td class="{{ 'valor-negativo' if t.sinal == '-' else ('valor-positivo' if t.sinal == '+' else '') }}">{{ t.sinal }}{{ t.qtd_horas }}h</td>
+          <td><strong>{{ t.saldo_horas }}h</strong></td>
+          <td>{{ t.usuario_admin or 'Você' }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    </div>
     {% else %}
       <div class="vazio">Nenhuma movimentação ainda.</div>
     {% endif %}
@@ -926,7 +926,7 @@ function selecionarPacote() {
 <script>
 // Histórico começa sempre oculto quando o médico abre a página -- pedido
 // do Paulo em 23/09/2026 (item 5). A ordenação (mais recente no topo) já
-// vem pronta do backend (creditos_service.listar_transacoes_medico ordena
+// vem pronta do backend (relatorios_service.historico_medico ordena
 // por criado_em desc), então aqui só cuida de mostrar/esconder o bloco.
 function alternarHistorico() {
   const bloco = document.getElementById('bloco-historico');

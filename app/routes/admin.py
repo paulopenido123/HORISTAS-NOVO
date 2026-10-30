@@ -541,19 +541,10 @@ def historico_cliente(medico_id):
         flash('Cliente não encontrado.', 'erro')
         return redirect(url_for('admin.clientes'))
     ordenar = 'asc' if request.args.get('ordem') == 'asc' else 'desc'
-    linhas, _total = relatorios_service.listar_transacoes(medico_id=medico_id, ordenar=ordenar)
+    linhas = relatorios_service.historico_medico(medico_id, ordenar)
     resumo = {}
     for l in linhas:
         resumo[l['tipo']] = resumo.get(l['tipo'], 0) + 1
-    # Saldo de horas em cada linha: o saldo (R$) gravado na transação, convertido em horas
-    # com a mesma regra das outras telas (saldo // preço da hora). Cancelamento sem
-    # transação não mexe no saldo: herda o saldo da linha anterior (ordem cronológica).
-    preco_h = creditos_db.preco_hora_avulsa()
-    ultimo = 0.0
-    for l in sorted(linhas, key=lambda x: x['ocorrencia'] or ''):
-        if l.get('saldo_apos_rs') is not None:
-            ultimo = l['saldo_apos_rs']
-        l['saldo_horas'] = int(ultimo // preco_h) if preco_h > 0 else 0
     medico['saldo_horas'] = creditos_db.saldo_em_horas_medico(medico_id)
     return render_template('admin_cliente_historico.html', medico=medico, linhas=linhas,
                            resumo=resumo, ordem=ordenar)

@@ -10,6 +10,7 @@ from app.services import asaas_client
 from app.services import modulos_service
 from app.services import pacientes_service
 from app.services import reserva_service
+from app.services import relatorios_service
 from app.services.auth_service import requer_login_medico, medico_logado_id
 from app.services.termo_service import requer_termo_aceito
 
@@ -30,7 +31,7 @@ def painel():
     with ThreadPoolExecutor(max_workers=4) as ex:
         f_saldo = ex.submit(creditos_db.obter_saldo, mid)
         f_horas = ex.submit(creditos_db.saldo_em_horas_medico, mid)
-        f_trans = ex.submit(creditos_db.listar_transacoes_medico, mid)
+        f_trans = ex.submit(relatorios_service.historico_medico, mid)
         f_precos = ex.submit(creditos_db.obter_precos)
         f_pacotes = ex.submit(creditos_db.listar_pacotes_horas)
         f_notas = ex.submit(creditos_db.listar_pagamentos_com_nota_medico, mid)

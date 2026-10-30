@@ -236,6 +236,25 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
     return linhas, total_horas
 
 
+def historico_medico(medico_id: str, ordenar: str = "desc") -> list[dict]:
+    """Histórico COMPLETO de um médico, com o saldo de horas depois de cada
+    operação (admin: Clientes > Histórico; médico: "Histórico" do painel).
+
+    Mesmas linhas de listar_transacoes() travadas no médico, mais
+    `saldo_horas`: o saldo (R$) gravado na transação convertido em horas
+    (saldo // preço da hora avulsa, mesma regra das outras telas).
+    Cancelamento sem transação não mexe no saldo: repete o da linha anterior."""
+    from app.services import creditos_service
+    linhas, _ = listar_transacoes(medico_id=medico_id, ordenar="desc" if ordenar != "asc" else "asc")
+    preco_h = creditos_service.preco_hora_avulsa()
+    ultimo = 0.0
+    for l in sorted(linhas, key=lambda x: x["ocorrencia"] or ""):
+        if l.get("saldo_apos_rs") is not None:
+            ultimo = l["saldo_apos_rs"]
+        l["saldo_horas"] = int(ultimo // preco_h) if preco_h > 0 else 0
+    return linhas
+
+
 def listar_faturamento(data_inicio: str | None = None, data_fim: str | None = None,
                         medico_id: str | None = None, cliente_busca: str = "",
                         ordenar: str = "desc") -> tuple[list[dict], float]:

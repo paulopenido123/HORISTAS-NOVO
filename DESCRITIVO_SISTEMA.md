@@ -480,6 +480,19 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v97 — Histórico com saldo na página do próprio médico
+
+- O quadro **Histórico** do painel do médico (`painel_medico.html`) agora mostra o mesmo extrato do admin: data/hora, operação (compra, agendamento, cancelamento, reembolso, ajuste), consultório, horas, **saldo após** (em horas) e quem fez ("Você" ou o nome do usuário do admin). Antes mostrava só recarga/uso/ajuste, as últimas 50 e sem cancelamentos.
+- Lógica única em `relatorios_service.historico_medico` (usada pelo painel do médico e por Admin > Clientes > Histórico). O painel a busca em paralelo com as demais consultas (`medico_painel.painel`).
+- Sem migração de banco.
+
+## v96 — Correção: pacote com desconto creditava horas a menos
+
+- **Bug (Dr. Gustavo, 30/10/2026)**: comprou 48h e o saldo subiu só ~33h. O saldo é guardado em R$ e convertido em horas pelo preço da hora avulsa (R$ 65, do pacote de 6h); o pacote de 48h custa R$ 45/h (R$ 2.160) e creditava só os R$ 2.160, que valem 33h a R$ 65. Afetava os pacotes de 12h, 24h e 48h (o de 6h não).
+- **Correção** (`creditos_service.valor_credito_pacote`, usada em `webhooks_asaas.confirmar_pagamento_e_creditar`): o saldo agora recebe `horas × preço da hora avulsa` (48h = R$ 3.120 = 48h). O valor realmente pago continua em `pagamentos_pix` (Receitas, recibo). A transação de compra passa a gravar o valor creditado.
+- **Compras já feitas**: `sql/diagnostico_pacotes_credito_a_menos.sql` (só leitura, lista os afetados) e `sql/correcao_pacotes_credito_a_menos.sql` (credita a diferença com uma linha "Correção de crédito do pacote", ajusta o saldo_apos das movimentações seguintes e o saldo atual; idempotente; testada em Postgres local).
+- Limitação conhecida: o saldo continua sendo em R$; se o valor/hora do pacote de 6h for alterado em "Alterar valores", o saldo em horas de todos os médicos é reconvertido.
+
 ## v95 — Saldo de horas em cada linha do Histórico do cliente
 
 - Tela `/admin/clientes/<id>/historico`: nova coluna **"Saldo após"** (em horas) em cada operação.

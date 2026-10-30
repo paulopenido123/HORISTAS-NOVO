@@ -47,6 +47,10 @@ def confirmar_pagamento_e_creditar(asaas_payment_id: str) -> bool:
     if valor_salas > 0:
         descricao = "Recarga via PIX (Asaas) — reserva de salas"
         if horas_pacote:
+            # o saldo é em R$ e vira horas pelo preço da hora avulsa: credita
+            # horas x preço avulso (e não só o valor pago, que tem desconto
+            # por volume) para o médico receber exatamente as horas compradas.
+            valor_salas = creditos_db.valor_credito_pacote(horas_pacote, valor_salas)
             # compra de um pacote fechado (6h/12h/24h/48h) -- grava a
             # quantidade EXATA de horas na transação, em vez de deixar
             # pra estimar depois a partir do valor pago (ver

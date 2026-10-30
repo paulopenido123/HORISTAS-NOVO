@@ -189,6 +189,21 @@ def preco_hora_avulsa(pacotes: list[dict] | None = None) -> float:
     return float(pacotes[0]["valor_hora"])
 
 
+def valor_credito_pacote(horas: int, valor_pago: float, pacotes: list[dict] | None = None) -> float:
+    """Quanto (em R$) vai para o SALDO do médico quando ele compra um pacote
+    de `horas`. O saldo é guardado em R$ e convertido em horas pelo preço da
+    hora avulsa; como os pacotes maiores têm desconto por hora, creditar só o
+    valor pago fazia o médico receber MENOS horas do que comprou (ex.: 48h
+    pagas a R$ 45/h = R$ 2.160 viravam 33h, pois a hora avulsa é R$ 65).
+    Correção (30/10/2026): credita horas x preço da hora avulsa, para o
+    médico receber exatamente as horas compradas. O valor realmente pago
+    continua registrado em pagamentos_pix (e nos Receitas)."""
+    preco = preco_hora_avulsa(pacotes)
+    if not horas or preco <= 0:
+        return round(float(valor_pago), 2)
+    return round(max(int(horas) * preco, float(valor_pago)), 2)
+
+
 def calcular_preco_horas(n_horas: int, precos=None) -> float:
     """Preço para debitar N horas do saldo (reserva por hora ou turno):
     hora avulsa, valor fixo por hora (ver preco_hora_avulsa). `precos` é

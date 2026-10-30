@@ -480,6 +480,13 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v94 — Botão "Histórico" em cada cliente
+
+- **Lista de Clientes**: novo botão **📜 Histórico** em cada linha (e "Ver histórico completo" dentro da tela Visualizar).
+- **Nova tela** `GET /admin/clientes/<id>/historico` (`admin_cliente_historico.html`): todas as operações do médico até hoje (compras, agendamentos, cancelamentos, reembolsos, ajustes do admin), com saldo atual, contagem por tipo e ordem (recentes ou antigas primeiro). Usa `relatorios_service.listar_transacoes` (o mesmo extrato do Relatório > Transações), sem limite de período.
+- `listar_transacoes` passou a buscar só as reservas do médico quando filtrado por ele (mais rápido com muitos cadastros).
+- Sem migração de banco.
+
 ## v93 — "Configurar e-mail" (e-mails promocionais para médicos)
 
 - **Tela Clientes (`admin_clientes.html`)**: o botão do topo "Enviar e-mail para clientes" virou **"📧 Configurar e-mail"**; cada linha ganhou também o botão **"📧 Configurar e-mail"**, que abre o mesmo painel já com aquele médico marcado.

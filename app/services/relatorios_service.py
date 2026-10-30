@@ -174,7 +174,7 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
     cliente_busca = (cliente_busca or "").strip().lower()
     linhas = []
 
-    def _adicionar(ocorrencia_bruta, op, medico_nome, cons_id, cons_nome, qtd, sinal, feito_por_admin, nome_admin, valor):
+    def _adicionar(ocorrencia_bruta, op, medico_nome, cons_id, cons_nome, qtd, sinal, feito_por_admin, nome_admin, valor, saldo_apos=None):
         ocorrencia = _iso_local(ocorrencia_bruta)
         if not ocorrencia:
             return
@@ -198,6 +198,7 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
             "operacao": op, "tipo": _ROTULO_OPERACAO.get(op, op),
             "usuario_admin": usuario_nome if feito_por_admin else "",
             "consultorio": cons_nome, "qtd_horas": qtd, "sinal": sinal, "valor": valor,
+            "saldo_apos_rs": saldo_apos,   # saldo (R$) logo após a transação; None no cancelamento sem transação
         })
 
     for t in resp:
@@ -207,7 +208,8 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
         valor = float(t.get("valor") or 0)
         _adicionar(t.get("criado_em"), op, medico_nome, cons_id, cons_nome,
                    t.get("quantidade_horas") or 0, "-" if valor < 0 else "+",
-                   op == "ajuste_admin", t.get("criado_por"), t.get("valor"))
+                   op == "ajuste_admin", t.get("criado_por"), t.get("valor"),
+                   float(t["saldo_apos"]) if t.get("saldo_apos") is not None else None)
 
     # cancelamentos (evento da reserva, com ou sem reembolso)
     if not operacao or operacao == "cancelamento":

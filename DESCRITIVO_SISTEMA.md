@@ -480,6 +480,12 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v95 — Saldo de horas em cada linha do Histórico do cliente
+
+- Tela `/admin/clientes/<id>/historico`: nova coluna **"Saldo após"** (em horas) em cada operação.
+- Cálculo: `listar_transacoes` passou a devolver `saldo_apos_rs` (saldo em R$ gravado na transação); a rota converte em horas com a mesma regra das outras telas (saldo ÷ preço da hora avulsa, arredondado para baixo). Cancelamento sem transação não mexe no saldo e repete o saldo da linha anterior (ordem cronológica).
+- O campo extra não afeta Relatórios > Transações. Sem migração de banco.
+
 ## v94 — Botão "Histórico" em cada cliente
 
 - **Lista de Clientes**: novo botão **📜 Histórico** em cada linha (e "Ver histórico completo" dentro da tela Visualizar).

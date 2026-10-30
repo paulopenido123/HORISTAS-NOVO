@@ -72,7 +72,7 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
     {% if linhas %}
     <div class="wrap-tabela">
       <table class="cartoes">
-        <thead><tr><th>Data/hora</th><th>Operação</th><th>Consultório</th><th>Horas</th><th>Feito por</th></tr></thead>
+        <thead><tr><th>Data/hora</th><th>Operação</th><th>Consultório</th><th>Horas</th><th>Saldo após</th><th>Feito por</th></tr></thead>
         <tbody>
           {% for l in linhas %}
           <tr>
@@ -80,6 +80,7 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
             <td data-label="Operação"><span class="tag-tipo">{{ l.tipo }}</span></td>
             <td data-label="Consultório">{{ l.consultorio }}</td>
             <td data-label="Horas" class="{{ 'valor-negativo' if l.sinal == '-' else ('valor-positivo' if l.sinal == '+' else '') }}">{% if l.sinal %}{{ l.sinal }}{{ l.qtd_horas }}h{% else %}{{ l.qtd_horas }}h{% endif %}</td>
+            <td data-label="Saldo após"><strong>{{ l.saldo_horas }}h</strong></td>
             <td data-label="Feito por">{{ l.operador }}</td>
           </tr>
           {% endfor %}

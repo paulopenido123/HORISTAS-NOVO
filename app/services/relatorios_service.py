@@ -165,7 +165,10 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
     consultorio_da_reserva = {}
     if any(t.get("reserva_id") for t in resp):
         nomes = {str(c["id"]): c.get("nome") or "—" for c in client.table("consultorios").select("id, nome").execute().data}
-        for r in client.table("reservas").select("id, consultorio_id").execute().data:
+        rq_res = client.table("reservas").select("id, consultorio_id")
+        if medico_id:   # histórico de um médico só: não varre as reservas de todos
+            rq_res = rq_res.eq("medico_id", medico_id)
+        for r in rq_res.execute().data:
             consultorio_da_reserva[str(r["id"])] = (str(r.get("consultorio_id")), nomes.get(str(r.get("consultorio_id")), "—"))
 
     cliente_busca = (cliente_busca or "").strip().lower()

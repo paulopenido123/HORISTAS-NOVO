@@ -131,6 +131,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
           <td data-label="Ação">
             <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.visualizar_cliente', medico_id=m.id) }}">🔍 Visualizar</a>
             <button type="button" class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px;" onclick="abrirModalLote('email', '{{ m.id }}')">📧 Configurar e-mail</button>
+            <a class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.historico_cliente', medico_id=m.id) }}">📜 Histórico</a>
             <details class="ajuste">
               <summary>Enviar link de acesso</summary>
               <form class="form-ajuste" method="post" action="{{ url_for('admin.enviar_link_cliente', medico_id=m.id) }}">

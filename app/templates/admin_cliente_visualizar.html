@@ -114,6 +114,7 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
      (app/templates/painel_medico.html). #}
   <div class="card">
     <div class="secao" style="margin-top:0; padding-top:0; border-top:0;">Histórico de transações</div>
+    <a class="btn" style="margin-top:8px" href="{{ url_for('admin.historico_cliente', medico_id=medico.id) }}">📜 Ver histórico completo (compras, agendamentos, cancelamentos)</a>
     {% if transacoes %}
     <div class="wrap-tabela">
       <table class="cartoes">

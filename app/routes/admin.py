@@ -528,6 +528,28 @@ def visualizar_cliente(medico_id):
     return render_template('admin_cliente_visualizar.html', medico=medico, transacoes=transacoes)
 
 
+@admin_bp.route('/clientes/<medico_id>/historico', methods=['GET'])
+@_admin
+def historico_cliente(medico_id):
+    """Botão "Histórico" na lista de Clientes (pedido do Paulo em 30/10/2026):
+    TODAS as operações do médico até hoje -- compras, agendamentos,
+    cancelamentos, reembolsos e acréscimos/subtrações feitas pelo admin.
+    Usa o mesmo extrato do Relatório > Transações (relatorios_service.
+    listar_transacoes), só que travado no médico e sem limite de período."""
+    medico = db.get_medico_by_id(medico_id)
+    if not medico:
+        flash('Cliente não encontrado.', 'erro')
+        return redirect(url_for('admin.clientes'))
+    ordenar = 'asc' if request.args.get('ordem') == 'asc' else 'desc'
+    linhas, _total = relatorios_service.listar_transacoes(medico_id=medico_id, ordenar=ordenar)
+    resumo = {}
+    for l in linhas:
+        resumo[l['tipo']] = resumo.get(l['tipo'], 0) + 1
+    medico['saldo_horas'] = creditos_db.saldo_em_horas_medico(medico_id)
+    return render_template('admin_cliente_historico.html', medico=medico, linhas=linhas,
+                           resumo=resumo, ordem=ordenar)
+
+
 @admin_bp.route('/clientes/<medico_id>/editar', methods=['GET', 'POST'])
 @_admin
 def editar_cliente(medico_id):

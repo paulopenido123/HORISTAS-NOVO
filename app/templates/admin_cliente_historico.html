@@ -1,0 +1,94 @@
+<!doctype html><html lang="pt-BR"><head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ medico.nome }} — Lifemax Admin</title><style>
+body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}
+.wrap{max-width:900px;margin:auto;padding:28px 24px}
+.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:24px;margin-bottom:20px}
+.voltar{display:inline-block;margin-bottom:14px;color:#62788A;text-decoration:none;font-size:13px;font-weight:600}
+.voltar:hover{color:#0B3A52}
+.topo-card{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.topo-card h2{margin:0 0 4px}
+.tag{display:inline-block;padding:3px 8px;border-radius:6px;background:#EAF6F5;color:#0B7B76;font-size:11.5px;font-weight:700}
+.status-tag{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-left:6px}
+.status-tag.liberado{background:#E3F7EE;color:#0B7B45}
+.status-tag.bloqueado{background:#FBEAE6;color:#B33}
+.btn{padding:10px 18px;border:0;border-radius:8px;background:#0EA5A0;color:#fff;font-weight:700;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
+.btn.alt{background:#082A3D}
+.grid-dados{display:grid;grid-template-columns:1fr 1fr;gap:16px 28px;margin-top:18px}
+.campo-view label{display:block;font-size:11px;font-weight:700;color:#8AA0A9;text-transform:uppercase;letter-spacing:.02em;margin-bottom:3px}
+.campo-view .valor{font-size:14px;color:#102A43}
+.campo-view .valor.vazio{color:#B7C4CB;font-style:italic}
+.secao{font-size:13px;font-weight:800;color:#0B3A52;text-transform:uppercase;letter-spacing:.03em;margin:22px 0 4px;padding-top:16px;border-top:1px solid #e3ebef}
+.secao:first-of-type{margin-top:0;padding-top:0;border-top:0}
+.saldos{display:flex;gap:24px;flex-wrap:wrap;margin-top:6px}
+.saldo-bloco{background:#F5F8FA;border-radius:10px;padding:14px 18px;min-width:160px}
+.saldo-bloco .rotulo{font-size:11.5px;color:#62788A;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.saldo-bloco .num{font-size:22px;font-weight:800;color:#0B3A52;margin-top:2px}
+details.ajuste{margin-top:16px}
+details.ajuste summary{cursor:pointer;color:#0EA5A0;font-weight:700;font-size:13px;list-style:none}
+details.ajuste summary::-webkit-details-marker{display:none}
+.form-ajuste{margin-top:12px;padding:16px;background:#F5F8FA;border-radius:8px;display:flex;flex-direction:column;gap:10px;max-width:340px}
+.form-ajuste label{font-size:12px;font-weight:600;color:#0B3A52}
+.form-ajuste input,.form-ajuste select{padding:10px;border:1px solid #d8e3e7;border-radius:8px;font-size:13px}
+.form-ajuste button{align-self:flex-start;padding:10px 18px;border:0;border-radius:8px;background:#0EA5A0;color:#fff;font-weight:700;cursor:pointer;font-size:13px}
+.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}
+.flash.ok{background:#E3F7EE;color:#0B7B45}
+.flash.erro{background:#FBEAE6;color:#B33}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:10px;border-bottom:1px solid #e3ebef;text-align:left;font-size:13px;vertical-align:top}
+th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
+.valor-positivo{color:#0B7B45;font-weight:700}
+.valor-negativo{color:#B33;font-weight:700}
+.vazio-lista{color:#8AA0A9;font-size:13px;padding:16px 0;text-align:center}
+.wrap-tabela{overflow-x:auto}
+@media(max-width:640px){.grid-dados{grid-template-columns:1fr}}
+.resumo-hist{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.tag-tipo{display:inline-block;padding:3px 8px;border-radius:6px;background:#EAF6F5;color:#0B7B76;font-size:11.5px;font-weight:700}
+</style><link rel="stylesheet" href="/static/css/base-mobile.css"></head><body>
+{% with titulo='Histórico', ativo='clientes' %}{% include '_admin_topo.html' %}{% endwith %}
+<div class="wrap">
+  <a class="voltar" href="{{ url_for('admin.clientes') }}">← Voltar pra Clientes</a>
+  <div class="card">
+    <div class="topo-card">
+      <div>
+        <h2>Histórico — {{ medico.nome }}</h2>
+        <div style="font-size:13px;color:#62788A">Todas as operações até hoje: compras, agendamentos, cancelamentos, reembolsos e ajustes do admin.</div>
+      </div>
+      <a class="btn alt" href="{{ url_for('admin.visualizar_cliente', medico_id=medico.id) }}">🔍 Dados do cliente</a>
+    </div>
+    <div class="saldos">
+      <div class="saldo-bloco"><div class="rotulo">Saldo atual</div><div class="num">{{ medico.saldo_horas }}h</div></div>
+      <div class="saldo-bloco"><div class="rotulo">Operações</div><div class="num">{{ linhas|length }}</div></div>
+    </div>
+    {% if resumo %}
+    <div class="resumo-hist">{% for nome, qtd in resumo.items() %}<span class="tag-tipo">{{ nome }}: {{ qtd }}</span>{% endfor %}</div>
+    {% endif %}
+    <div style="margin-top:10px;font-size:13px">
+      Ordem:
+      {% if ordem == 'desc' %}<strong>mais recentes primeiro</strong> · <a href="{{ url_for('admin.historico_cliente', medico_id=medico.id, ordem='asc') }}">ver mais antigas primeiro</a>
+      {% else %}<a href="{{ url_for('admin.historico_cliente', medico_id=medico.id) }}">mais recentes primeiro</a> · <strong>mais antigas primeiro</strong>{% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    {% if linhas %}
+    <div class="wrap-tabela">
+      <table class="cartoes">
+        <thead><tr><th>Data/hora</th><th>Operação</th><th>Consultório</th><th>Horas</th><th>Feito por</th></tr></thead>
+        <tbody>
+          {% for l in linhas %}
+          <tr>
+            <td data-label="Data/hora">{{ l.ocorrencia[8:10] }}/{{ l.ocorrencia[5:7] }}/{{ l.ocorrencia[0:4] }} {{ l.ocorrencia[11:16] }}</td>
+            <td data-label="Operação"><span class="tag-tipo">{{ l.tipo }}</span></td>
+            <td data-label="Consultório">{{ l.consultorio }}</td>
+            <td data-label="Horas" class="{{ 'valor-negativo' if l.sinal == '-' else ('valor-positivo' if l.sinal == '+' else '') }}">{% if l.sinal %}{{ l.sinal }}{{ l.qtd_horas }}h{% else %}{{ l.qtd_horas }}h{% endif %}</td>
+            <td data-label="Feito por">{{ l.operador }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="vazio-lista">Este cliente ainda não tem nenhuma operação.</div>
+    {% endif %}
+  </div>
+</div>
+</body></html>

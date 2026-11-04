@@ -138,6 +138,32 @@
   #menu-nome button { padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--muted);
     font-weight: 700; font-size: 12.5px; cursor: pointer; }
   #menu-nome button.principal { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .btn-modo.reservar.ativo { background: #0EA5A0; border-color: #0EA5A0; }
+  .btn-modo.cancelar.ativo { background: #B2402B; border-color: #B2402B; }
+  #lista-consultorios.modo-reservar .slot-vago { cursor: pointer; }
+  #lista-consultorios.modo-reservar .slot-vago:hover { outline: 2px solid #0EA5A0; outline-offset: -2px; }
+  #lista-consultorios.modo-cancelar .bloco-reserva.reservado { cursor: pointer; }
+  #lista-consultorios.modo-cancelar .bloco-reserva.reservado:hover { outline: 2px solid #B2402B; outline-offset: -2px; }
+  .modal-acao-fundo { position: fixed; inset: 0; background: rgba(14,42,59,.5); z-index: 500; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal-acao-fundo.aberto { display: flex; }
+  .modal-acao { background: #fff; border-radius: 14px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; padding: 20px; box-shadow: 0 16px 48px rgba(14,42,59,.35); }
+  .modal-acao h3 { margin: 0 0 4px; font-size: 17px; color: var(--navy); }
+  .modal-acao .sub { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .modal-acao input[type=text] { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; font-family: inherit; margin-bottom: 8px; }
+  .lista-medicos-modal { max-height: 280px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; }
+  .item-medico { display: flex; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 10px 12px; border: 0; border-bottom: 1px solid #EEF3F4; background: #fff; font-size: 14px; font-weight: 600; color: var(--navy); cursor: pointer; font-family: inherit; }
+  .item-medico:hover { background: var(--teal-soft); }
+  .item-medico small { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .caixa-opcao { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; font-weight: 600; color: var(--navy); margin: 10px 0; }
+  .caixa-opcao input { margin-top: 3px; }
+  .resumo-acao { background: #F5F8F9; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.6; margin-bottom: 8px; }
+  .resumo-acao b { color: var(--navy); }
+  .aviso-prazo { background: #FBEAE6; border: 1px solid #E8B4A8; color: #8A2E1B; border-radius: 8px; padding: 9px 11px; font-size: 13px; font-weight: 600; margin: 8px 0; }
+  .botoes-modal { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 14px; }
+  .botoes-modal button { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--navy); font-weight: 700; font-size: 13.5px; cursor: pointer; }
+  .botoes-modal button.principal { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .botoes-modal button.perigo { background: #B2402B; border-color: #B2402B; color: #fff; }
+  .botoes-modal button:disabled { opacity: .6; cursor: default; }
   #aviso-toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 400; background: #10222E; color: #fff;
     padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; display: none; max-width: 90vw; }
   #aviso-toast.erro { background: #B2402B; }
@@ -167,10 +193,14 @@
   </div>
 
   <div class="barra-acoes">
-    <button type="button" class="btn-modo" id="btn-modo-bloqueio" data-dica="Liga/desliga o modo de bloqueio. Com ele ligado, clique num horário livre para bloqueá-lo, ou num horário bloqueado para desbloqueá-lo." onclick="alternarModoBloqueio()">🔒 Bloquear/desbloquear horários</button>
+    <button type="button" class="btn-modo" id="btn-modo-bloqueio" data-dica="Liga/desliga o modo de bloqueio. Com ele ligado, clique num horário livre para bloqueá-lo, ou num horário bloqueado para desbloqueá-lo." onclick="alternarModo('bloqueio')">🔒 Bloquear/desbloquear horários</button>
+    <button type="button" class="btn-modo reservar" id="btn-modo-reservar" data-dica="Reservar um horário para um médico: ligue o botão e clique num horário livre. Você escolhe o médico e confirma." onclick="alternarModo('reservar')">➕ Reservar</button>
+    <button type="button" class="btn-modo cancelar" id="btn-modo-cancelar" data-dica="Cancelar uma reserva de médico: ligue o botão e clique no horário reservado. Você escolhe se devolve a hora ao médico e confirma." onclick="alternarModo('cancelar')">✖ Cancelar</button>
     <span class="muted" style="font-size:12.5px;color:var(--muted)">O círculo verde sobre cada dia oculta/exibe aquele dia para os médicos.</span>
   </div>
   <div class="aviso-modo" id="aviso-modo">Modo bloquear/desbloquear ligado: clique num horário <strong>livre</strong> para bloquear ou num horário <strong>bloqueado</strong> para desbloquear. Clique no botão de novo para sair.</div>
+  <div class="aviso-modo" id="aviso-modo-reservar">Modo <strong>Reservar</strong> ligado: clique num horário <strong>livre</strong> (verde) para escolher o médico. Clique em "Reservar" de novo para sair.</div>
+  <div class="aviso-modo" id="aviso-modo-cancelar">Modo <strong>Cancelar</strong> ligado: clique num horário <strong>reservado</strong> por um médico (azul) para cancelar a reserva. Clique em "Cancelar" de novo para sair.</div>
 
   <button type="button" class="seta-agenda esq" id="seta-esq" aria-label="Voltar 3 dias" data-dica="Move todas as salas 3 dias para trás." onclick="moverAgenda(-1)">&#10094;</button>
 <button type="button" class="seta-agenda dir" id="seta-dir" aria-label="Avançar 3 dias" data-dica="Move todas as salas 3 dias para frente." onclick="moverAgenda(1)">&#10095;</button>
@@ -188,6 +218,7 @@
     <button type="button" class="principal" data-dica="Grava o nome neste horário. Se estava livre, ele passa a ficar bloqueado com esse nome." onclick="salvarNome(document.getElementById('menu-nome-input').value)">Salvar</button>
   </div>
 </div>
+<div class="modal-acao-fundo" id="modal-acao-fundo"><div class="modal-acao" id="modal-acao"></div></div>
 <div id="dica-flutuante"></div>
 <div id="aviso-toast"></div>
 
@@ -223,6 +254,7 @@ let bloqSet = new Set();      // "consultorio|dia_semana|hora"
 let ocupacao = {};            // "consultorio|data|hora" -> {nome, bloqueado}
 let ocultosSet = new Set();   // datas ocultas para os médicos
 let modoBloqueio = false;
+let modoAtual = null;   // null | 'bloqueio' | 'reservar' | 'cancelar'
 
 function csrfHeader() {
   return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
@@ -297,7 +329,7 @@ function montarOcupacao() {
       horariosOcupados = HORARIOS_DO_TURNO[r.periodo] || [];
     }
     for (const h of horariosOcupados) {
-      ocupacao[`${r.consultorio_id}|${r.data}|${h}`] = { nome: nomeMedico, bloqueado: false };
+      ocupacao[`${r.consultorio_id}|${r.data}|${h}`] = { nome: nomeMedico, bloqueado: false, rid: r.id };
     }
   }
 }
@@ -316,7 +348,7 @@ function htmlCelula(consultorioId, dataIso, hora) {
   if (ocupado) {
     const classe = ocupado.bloqueado ? 'bloqueado' : 'reservado';
     const rotulo = ocupado.bloqueado ? (ocupado.nome || 'Bloqueado') : ocupado.nome;
-    return `<div class="bloco-reserva ${classe}" style="top:${top}px; height:${altura}px;" ${attrs} data-tipo="${classe}" data-nome="${_esc(ocupado.nome)}">
+    return `<div class="bloco-reserva ${classe}" style="top:${top}px; height:${altura}px;" ${attrs} data-tipo="${classe}" data-nome="${_esc(ocupado.nome)}"${ocupado.rid ? ` data-rid="${ocupado.rid}"` : ''}>
       <div class="h">${hora}</div><div class="nome">${_esc(rotulo)}</div>
     </div>`;
   }
@@ -439,11 +471,16 @@ async function chamarApi(url, corpo) {
 
 // ---- Bloquear / desbloquear (clique, com o modo ligado) ------------------
 
-function alternarModoBloqueio() {
-  modoBloqueio = !modoBloqueio;
-  document.getElementById('btn-modo-bloqueio').classList.toggle('ativo', modoBloqueio);
-  document.getElementById('aviso-modo').classList.toggle('visivel', modoBloqueio);
-  document.getElementById('lista-consultorios').classList.toggle('modo-bloqueio', modoBloqueio);
+function alternarModo(nome) {
+  modoAtual = (modoAtual === nome) ? null : nome;
+  modoBloqueio = modoAtual === 'bloqueio';
+  const lista = document.getElementById('lista-consultorios');
+  [['bloqueio', 'btn-modo-bloqueio', 'aviso-modo'], ['reservar', 'btn-modo-reservar', 'aviso-modo-reservar'],
+   ['cancelar', 'btn-modo-cancelar', 'aviso-modo-cancelar']].forEach(([m, btn, aviso]) => {
+    document.getElementById(btn).classList.toggle('ativo', modoAtual === m);
+    document.getElementById(aviso).classList.toggle('visivel', modoAtual === m);
+    lista.classList.toggle('modo-' + m, modoAtual === m);
+  });
   fecharMenuNome();
 }
 
@@ -542,7 +579,15 @@ listaEvento.addEventListener('click', (e) => {
   const botaoDia = e.target.closest && e.target.closest('.btn-dia');
   if (botaoDia) { alternarDiaOculto(botaoDia); return; }
   const el = _celulaDoEvento(e);
-  if (el && modoBloqueio) clicarCelula(el);
+  if (!el) return;
+  if (modoAtual === 'bloqueio') clicarCelula(el);
+  else if (modoAtual === 'reservar') {
+    if (el.dataset.tipo === 'livre') abrirReservar(el);
+    else avisar(el.dataset.tipo === 'reservado' ? `Esse horário já tem reserva de ${el.dataset.nome}.` : 'Esse horário está bloqueado pelo administrador. Desbloqueie antes de reservar.', true);
+  } else if (modoAtual === 'cancelar') {
+    if (el.dataset.tipo === 'reservado' && el.dataset.rid) abrirCancelar(el);
+    else avisar('Clique num horário reservado por um médico (azul) para cancelar.', true);
+  }
 });
 listaEvento.addEventListener('contextmenu', (e) => {
   const el = _celulaDoEvento(e);
@@ -551,7 +596,7 @@ listaEvento.addEventListener('contextmenu', (e) => {
   abrirMenuNome(el, e.clientX, e.clientY);
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') fecharMenuNome();
+  if (e.key === 'Escape') { fecharMenuNome(); fecharModalAcao(); }
   if (e.key === 'Enter' && celulaDoMenu && document.activeElement === document.getElementById('menu-nome-input')) {
     salvarNome(document.getElementById('menu-nome-input').value);
   }
@@ -565,11 +610,12 @@ document.addEventListener('mousedown', (e) => {
 function dicaDaCelula(el) {
   const tipo = el.dataset.tipo;
   const modo = modoBloqueio ? ' (modo bloqueio ligado: clique para ' : ' (';
-  if (tipo === 'reservado') return `Reservado por ${el.dataset.nome}. Para liberar o horário, cancele a reserva.`;
+  if (tipo === 'reservado') return `Reservado por ${el.dataset.nome}. Para liberar o horário, ligue "Cancelar" e clique aqui.`;
   if (tipo === 'bloqueado') {
     const quem = el.dataset.nome ? `Bloqueado para ${el.dataset.nome}.` : 'Bloqueado pelo administrador.';
     return `${quem} Botão direito: ${el.dataset.nome ? 'editar o nome' : 'dar nome de médico'}. ${modoBloqueio ? 'Clique para desbloquear.' : 'Ligue "Bloquear/desbloquear horários" para desbloquear com um clique.'}`;
   }
+  if (modoAtual === 'reservar') return 'Livre. Clique para escolher o médico e reservar este horário.';
   return `Livre. Botão direito: dar nome de médico (bloqueia o horário). ${modoBloqueio ? 'Clique para bloquear.' : 'Ligue "Bloquear/desbloquear horários" para bloquear com um clique.'}`;
 }
 
@@ -599,6 +645,142 @@ function dicaDaCelula(el) {
   document.addEventListener('mouseleave', () => { caixa.style.display = 'none'; });
   document.addEventListener('click', () => { caixa.style.display = 'none'; }, true);
 })();
+
+// ---- Reservar / Cancelar em nome do médico (04/11/2026) -----------------------------
+
+let listaMedicosCache = null;
+function nomeConsultorio(id) { const c = (gradeAtual.consultorios || []).find(k => k.id === id); return c ? c.nome : ''; }
+function abrirModalAcao(html) {
+  document.getElementById('modal-acao').innerHTML = html;
+  document.getElementById('modal-acao-fundo').classList.add('aberto');
+}
+function fecharModalAcao() { document.getElementById('modal-acao-fundo').classList.remove('aberto'); }
+document.getElementById('modal-acao-fundo').addEventListener('mousedown', (e) => {
+  if (e.target.id === 'modal-acao-fundo') fecharModalAcao();
+});
+
+let reservaEmAndamento = null;   // { c, dt, h, debitar }
+
+async function abrirReservar(el) {
+  reservaEmAndamento = { c: el.dataset.c, dt: el.dataset.dt, h: el.dataset.h, debitar: true };
+  const r = reservaEmAndamento;
+  abrirModalAcao(`<h3>Reservar horário</h3>
+    <div class="sub">${_esc(nomeConsultorio(r.c))} — ${_dataBR(r.dt)} às ${r.h}</div>
+    <input type="text" id="busca-medico" placeholder="Buscar médico por nome" autocomplete="off" oninput="filtrarMedicos()">
+    <div class="lista-medicos-modal" id="lista-medicos-modal"><div style="padding:12px;color:var(--muted)">Carregando médicos...</div></div>
+    <label class="caixa-opcao"><input type="checkbox" id="opt-debitar" checked onchange="reservaEmAndamento.debitar = this.checked"> Debitar no saldo de horas do cliente</label>
+    <div class="botoes-modal"><button type="button" onclick="fecharModalAcao()">Fechar</button></div>`);
+  try {
+    if (!listaMedicosCache) {
+      const resp = await fetch('/admin/api/matriz/medicos');
+      if (!resp.ok) throw new Error();
+      listaMedicosCache = (await resp.json()).medicos;
+    }
+    filtrarMedicos();
+    const b = document.getElementById('busca-medico'); if (b) b.focus();
+  } catch (e) {
+    document.getElementById('lista-medicos-modal').innerHTML = '<div style="padding:12px;color:#B2402B">Não consegui carregar a lista de médicos. Feche e tente de novo.</div>';
+  }
+}
+
+function filtrarMedicos() {
+  const termo = (document.getElementById('busca-medico').value || '').trim().toLowerCase();
+  const alvo = document.getElementById('lista-medicos-modal');
+  const achados = (listaMedicosCache || []).filter(m => !termo || m.nome.toLowerCase().includes(termo)).slice(0, 80);
+  alvo.innerHTML = achados.length
+    ? achados.map(m => `<button type="button" class="item-medico" onclick="escolherMedico('${m.id}')"><span>${_esc(m.nome)}</span><small>${m.saldo_horas}h de saldo</small></button>`).join('')
+    : '<div style="padding:12px;color:var(--muted)">Nenhum médico encontrado.</div>';
+}
+
+function escolherMedico(id) {
+  const r = reservaEmAndamento;
+  const m = (listaMedicosCache || []).find(x => x.id === id);
+  if (!r || !m) return;
+  r.medico = m;
+  const debitoTxt = r.debitar ? '1 hora (será debitada do saldo do médico)' : 'nenhuma — reserva SEM débito no saldo';
+  abrirModalAcao(`<h3>Confirmar reserva</h3>
+    <div class="resumo-acao"><b>Médico:</b> ${_esc(m.nome)}<br><b>Consultório:</b> ${_esc(nomeConsultorio(r.c))}<br>
+      <b>Dia:</b> ${_dataBR(r.dt)}<br><b>Horário:</b> ${r.h}<br>
+      <b>Saldo de horas a ser debitado:</b> ${debitoTxt}<br><b>Saldo atual do médico:</b> ${m.saldo_horas}h</div>
+    <div class="botoes-modal">
+      <button type="button" onclick="abrirReservar({dataset:{c:'${r.c}',dt:'${r.dt}',h:'${r.h}'}})">Voltar</button>
+      <button type="button" class="principal" id="btn-confirmar-acao" onclick="confirmarReserva()">Confirmar</button>
+    </div>`);
+}
+
+async function confirmarReserva() {
+  const r = reservaEmAndamento;
+  const btn = document.getElementById('btn-confirmar-acao');
+  btn.disabled = true;
+  try {
+    const x = await chamarApi('/admin/api/matriz/reservar', { medico_id: r.medico.id, consultorio_id: r.c, data: r.dt, horario: r.h, debitar: r.debitar });
+    ocupacao[`${r.c}|${r.dt}|${r.h}`] = { nome: r.medico.nome, bloqueado: false, rid: x.reserva_id };
+    repintarCelula(r.c, r.dt, r.h);
+    if (listaMedicosCache) {
+      const m = listaMedicosCache.find(k => k.id === r.medico.id);
+      if (m && typeof x.saldo_horas === 'number') m.saldo_horas = x.saldo_horas;
+    }
+    fecharModalAcao();
+    avisar(`Horário reservado para ${r.medico.nome}` + (x.debitado ? ' (1 hora debitada).' : ' (sem débito).'));
+  } catch (err) {
+    btn.disabled = false;
+    avisar(err.message, true);
+  }
+}
+
+let cancelamentoEmAndamento = null;
+async function abrirCancelar(el) {
+  const rid = el.dataset.rid;
+  cancelamentoEmAndamento = { rid };
+  abrirModalAcao('<h3>Cancelar reserva</h3><div class="sub">Carregando...</div>');
+  try {
+    const resp = await fetch('/admin/api/matriz/reserva/' + encodeURIComponent(rid));
+    const x = await resp.json();
+    if (!resp.ok) throw new Error(x.erro || 'Não consegui carregar a reserva.');
+    cancelamentoEmAndamento.info = x;
+    const horario = x.hora_fim ? `${x.hora_inicio} às ${x.hora_fim}` : x.hora_inicio;
+    let opcao;
+    if (x.dentro_de_12h) {
+      opcao = `<div class="aviso-prazo">O saldo NÃO será devolvido: o cancelamento está sendo feito a menos de 12 horas da hora da consulta.</div>
+        <label class="caixa-opcao"><input type="checkbox" id="opt-reembolsar" disabled> Reembolsar hora para o médico</label>`;
+    } else if (!x.houve_debito) {
+      opcao = `<div class="aviso-prazo" style="background:#FFF4E5;border-color:#F2C27A;color:#7A4B00">Esta reserva foi feita sem débito de horas, então não há o que devolver.</div>
+        <label class="caixa-opcao"><input type="checkbox" id="opt-reembolsar" disabled> Reembolsar hora para o médico</label>`;
+    } else {
+      opcao = `<label class="caixa-opcao"><input type="checkbox" id="opt-reembolsar" checked> Reembolsar hora para o médico</label>`;
+    }
+    abrirModalAcao(`<h3>Cancelar reserva</h3>
+      <div class="resumo-acao"><b>Médico:</b> ${_esc(x.medico)}<br><b>Consultório:</b> ${_esc(x.consultorio)}<br>
+        <b>Dia:</b> ${_dataBR(x.data)}<br><b>Horário:</b> ${horario}</div>
+      ${opcao}
+      <div class="botoes-modal">
+        <button type="button" onclick="fecharModalAcao()">Voltar</button>
+        <button type="button" class="perigo" id="btn-confirmar-acao" onclick="confirmarCancelamento()">Confirmar</button>
+      </div>`);
+  } catch (err) {
+    fecharModalAcao();
+    avisar(err.message, true);
+  }
+}
+
+async function confirmarCancelamento() {
+  const c = cancelamentoEmAndamento;
+  const btn = document.getElementById('btn-confirmar-acao');
+  btn.disabled = true;
+  try {
+    const caixa = document.getElementById('opt-reembolsar');
+    const x = await chamarApi('/admin/api/matriz/reserva/cancelar', { reserva_id: c.rid, reembolsar: !!(caixa && caixa.checked) });
+    const chaves = Object.keys(ocupacao).filter(k => ocupacao[k].rid === c.rid);
+    chaves.forEach(k => delete ocupacao[k]);
+    chaves.forEach(k => { const [cid, dt, h] = k.split('|'); repintarCelula(cid, dt, h); });
+    if (listaMedicosCache) listaMedicosCache = null;   // saldos mudaram
+    fecharModalAcao();
+    avisar(x.reembolsado ? 'Reserva cancelada e hora devolvida ao médico.' : 'Reserva cancelada (saldo não devolvido).');
+  } catch (err) {
+    btn.disabled = false;
+    avisar(err.message, true);
+  }
+}
 
 async function carregar() {
   const periodoEl = document.getElementById('periodo-atual');

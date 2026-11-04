@@ -174,7 +174,7 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
     cliente_busca = (cliente_busca or "").strip().lower()
     linhas = []
 
-    def _adicionar(ocorrencia_bruta, op, medico_nome, cons_id, cons_nome, qtd, sinal, feito_por_admin, nome_admin, valor, saldo_apos=None):
+    def _adicionar(ocorrencia_bruta, op, medico_nome, cons_id, cons_nome, qtd, sinal, feito_por_admin, nome_admin, valor, saldo_apos=None, rotulo=None):
         ocorrencia = _iso_local(ocorrencia_bruta)
         if not ocorrencia:
             return
@@ -195,7 +195,7 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
                 return
         linhas.append({
             "ocorrencia": ocorrencia, "operador": usuario_nome, "cliente": medico_nome,
-            "operacao": op, "tipo": _ROTULO_OPERACAO.get(op, op),
+            "operacao": op, "tipo": rotulo or _ROTULO_OPERACAO.get(op, op),
             "usuario_admin": usuario_nome if feito_por_admin else "",
             "consultorio": cons_nome, "qtd_horas": qtd, "sinal": sinal, "valor": valor,
             "saldo_apos_rs": saldo_apos,   # saldo (R$) logo após a transação; None no cancelamento sem transação
@@ -207,9 +207,10 @@ def listar_transacoes(data_inicio: str | None = None, data_fim: str | None = Non
         cons_id, cons_nome = consultorio_da_reserva.get(str(t.get("reserva_id")), (None, "—"))
         valor = float(t.get("valor") or 0)
         _adicionar(t.get("criado_em"), op, medico_nome, cons_id, cons_nome,
-                   t.get("quantidade_horas") or 0, "-" if valor < 0 else "+",
+                   t.get("quantidade_horas") or 0, "-" if valor < 0 else ("+" if valor > 0 else ""),
                    op == "ajuste_admin", t.get("criado_por"), t.get("valor"),
-                   float(t["saldo_apos"]) if t.get("saldo_apos") is not None else None)
+                   float(t["saldo_apos"]) if t.get("saldo_apos") is not None else None,
+                   "Agendamento (sem débito)" if op == "agendamento" and valor == 0 else None)
 
     # cancelamentos (evento da reserva, com ou sem reembolso)
     if not operacao or operacao == "cancelamento":

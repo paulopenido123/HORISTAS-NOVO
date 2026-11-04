@@ -1412,6 +1412,94 @@ def _celula_indisponivel_semana_padrao(consultorio_id, data_iso, horario):
         template_service.listar_bloqueios(), consultorio_id, template_service.dia_semana_de(data_iso), horario)
 
 
+@admin_bp.route('/api/matriz/medicos', methods=['GET'])
+@_admin
+def api_matriz_medicos():
+    """Lista de médicos para a tela "Reservar" da Visualizar agenda (04/11/2026):
+    id, nome e saldo em horas (calculado do saldo em R$ já trazido, sem consulta
+    extra por médico). A busca por nome é feita na própria tela."""
+    preco_h = creditos_db.preco_hora_avulsa()
+    lista = []
+    for m in db.listar_medicos_ativos():
+        if not m.get('nome'):
+            continue
+        saldo = float(m.get('saldo_creditos') or 0)
+        lista.append({'id': m['id'], 'nome': m['nome'],
+                      'saldo_horas': int(saldo // preco_h) if preco_h > 0 else 0})
+    return {'medicos': lista}
+
+
+@admin_bp.route('/api/matriz/reservar', methods=['POST'])
+@_admin
+def api_matriz_reservar():
+    """Botão "Reservar" da Visualizar agenda (04/11/2026): o admin reserva 1 hora
+    em nome de um médico. `debitar` (padrão verdadeiro) liga/desliga o débito no
+    saldo de horas do cliente. Mesmas regras de conflito/data da reserva do
+    médico (reserva_service.reservar_por_hora com criado_por_admin=True)."""
+    body = request.get_json(force=True) or {}
+    medico_id, consultorio_id = body.get('medico_id'), body.get('consultorio_id')
+    data_reserva, horario = body.get('data'), body.get('horario')
+    debitar = body.get('debitar', True) is not False
+    if not all([medico_id, consultorio_id, data_reserva, horario]):
+        return {'erro': 'Escolha o médico, o consultório, o dia e o horário.'}, 400
+    try:
+        r = reserva_service.reservar_por_hora(medico_id, consultorio_id, data_reserva, str(horario)[:5], 1,
+                                              criado_por_admin=True, debitar=debitar)
+    except reserva_service.SaldoInsuficienteError as e:
+        return {'erro': f'Saldo insuficiente: o médico tem {e.horas_disponiveis}h e esta reserva precisa de '
+                        f'{e.horas_necessarias}h. Desmarque "Debitar no saldo de horas do cliente" para reservar sem debitar.'}, 402
+    except reserva_service.ConflitoDeReservaError as e:
+        return {'erro': str(e)}, 409
+    except ValueError as e:
+        return {'erro': str(e)}, 400
+    reserva = r['reserva']
+    return {'status': 'reservado', 'reserva_id': reserva['id'], 'debitado': debitar,
+            'saldo_horas': r['saldo_horas']}, 201
+
+
+@admin_bp.route('/api/matriz/reserva/<reserva_id>', methods=['GET'])
+@_admin
+def api_matriz_reserva_info(reserva_id):
+    """Dados da reserva para a tela "Cancelar" da Visualizar agenda: médico,
+    consultório, dia/horário e se o cancelamento ainda dá direito a reembolso
+    (faltando 12h ou mais e tendo havido débito)."""
+    reserva = db.get_reserva_by_id(reserva_id)
+    if not reserva or reserva.get('status') == 'cancelada':
+        return {'erro': 'Reserva não encontrada ou já cancelada.'}, 404
+    medico = db.get_medico_by_id(reserva['medico_id']) or {}
+    cons = db.get_client().table('consultorios').select('nome').eq('id', reserva['consultorio_id']).execute().data
+    inicio = reserva_service._hora_inicio_da_reserva(reserva)
+    qtd = reserva_service._quantidade_horas_da_reserva(reserva) or 1
+    consumo = db.obter_transacao_consumo_da_reserva(reserva_id)
+    houve_debito = bool(consumo) and abs(float(consumo.get('valor') or 0)) > 0
+    return {
+        'reserva_id': reserva_id, 'medico': medico.get('nome') or '—',
+        'consultorio': cons[0]['nome'] if cons else '—',
+        'data': _data_str(reserva['data']), 'hora_inicio': inicio,
+        'hora_fim': db.somar_horas(inicio, qtd) if reserva.get('tipo_reserva') == 'hora' else None,
+        'horas': qtd,
+        'dentro_de_12h': reserva_service.reserva_dentro_de_12h(reserva),
+        'houve_debito': houve_debito,
+    }
+
+
+@admin_bp.route('/api/matriz/reserva/cancelar', methods=['POST'])
+@_admin
+def api_matriz_reserva_cancelar():
+    """Botão "Cancelar" da Visualizar agenda (04/11/2026). `reembolsar` (padrão
+    verdadeiro): devolve as horas ao médico, exceto se faltar menos de 12h."""
+    body = request.get_json(force=True) or {}
+    reserva_id = body.get('reserva_id')
+    if not reserva_id:
+        return {'erro': 'Reserva não informada.'}, 400
+    try:
+        r = reserva_service.cancelar_reserva_admin(reserva_id, reembolsar=body.get('reembolsar', True) is not False)
+    except ValueError as e:
+        return {'erro': str(e)}, 400
+    return {'status': 'cancelada', 'reembolsado': r['reembolsado'],
+            'horas_reembolsadas': r['horas_reembolsadas'], 'dentro_de_12h': r['dentro_de_12h']}
+
+
 @admin_bp.route('/api/matriz/celula/bloquear', methods=['POST'])
 @_admin
 def api_matriz_celula_bloquear():

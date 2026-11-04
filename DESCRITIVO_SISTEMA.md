@@ -480,6 +480,15 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v98 — Visualizar agenda: botões "Reservar" e "Cancelar"
+
+- **Reservar** (`admin_matriz_visualizar_agenda.html`): liga o modo, o admin clica num horário **livre** → tela com lista de médicos + busca por nome + caixa **"Debitar no saldo de horas do cliente"** (já marcada) → clica no médico → tela de confirmação (médico, consultório, dia/hora, horas a debitar, saldo atual) → **Confirmar** e a célula passa a ficar reservada (1 hora).
+- **Cancelar**: liga o modo, clica num horário **reservado** → tela com médico, dia/hora e a caixa **"Reembolsar hora para o médico"** (marcada). Se faltar **menos de 12h**, a caixa fica desmarcada/desabilitada com o aviso de que o saldo não será devolvido; se a reserva foi feita sem débito, também não há o que devolver. **Confirmar** cancela e devolve (ou não) a hora.
+- Os três modos (Bloquear, Reservar, Cancelar) são exclusivos entre si.
+- **Rotas** (`admin.py`, `@_admin`): `GET /admin/api/matriz/medicos`, `POST /admin/api/matriz/reservar`, `GET /admin/api/matriz/reserva/<id>` (dados p/ cancelar), `POST /admin/api/matriz/reserva/cancelar`.
+- **Regras** (`reserva_service.py`): `reservar_por_hora(..., debitar=True)` — sem débito não exige saldo e grava transação de valor 0 (aparece no histórico como "Agendamento (sem débito)"; cancelar essa reserva não reembolsa nada). `cancelar_reserva_admin(id, reembolsar=True)`; `reserva_dentro_de_12h` expõe a regra de 12h. Reserva do admin ignora autorização/cadastro incompleto do médico (regra já existente), mas respeita data passada, conflitos e Semana Padrão.
+- Perfil Secretária também pode reservar/cancelar (a tela de Visualizar agenda já era dela). Sem migração de banco.
+
 ## v97 — Histórico com saldo na página do próprio médico
 
 - O quadro **Histórico** do painel do médico (`painel_medico.html`) agora mostra o mesmo extrato do admin: data/hora, operação (compra, agendamento, cancelamento, reembolso, ajuste), consultório, horas, **saldo após** (em horas) e quem fez ("Você" ou o nome do usuário do admin). Antes mostrava só recarga/uso/ajuste, as últimas 50 e sem cancelamentos.

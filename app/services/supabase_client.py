@@ -412,10 +412,33 @@ def listar_clientes_medico(medico_id: str) -> list[dict]:
     return resp.data
 
 
-def listar_todos_consultorios() -> list[dict]:
-    """Todos os consultórios ativos, para a página pública/admin."""
+def listar_todos_consultorios(unidade_id: str | None = None) -> list[dict]:
+    """Todos os consultórios ativos, para a página pública/admin. `unidade_id` (v102) filtra por unidade."""
     resp = get_client().table("consultorios").select("*").eq("ativo", True).order("nome").execute()
-    return ordenar_consultorios(resp.data)
+    lista = resp.data
+    if unidade_id:
+        lista = [c for c in lista if c.get("unidade_id") == unidade_id]
+    return ordenar_consultorios(lista)
+
+
+# ---------- Unidades / endereços (v102) ----------
+# Tudo aqui é "à prova de migração pendente": se a tabela `unidades` ainda não existe, devolve vazio e o
+# sistema se comporta como antes (um endereço só).
+def listar_unidades() -> list[dict]:
+    try:
+        return get_client().table("unidades").select("*").eq("ativo", True).order("ordem").execute().data
+    except Exception as e:
+        print(f"[unidades] tabela indisponível (rode sql/migration_unidades.sql): {e}")
+        return []
+
+
+def mapa_endereco_por_consultorio() -> dict:
+    """{consultorio_id: endereço da unidade dele} -- para mostrar o endereço certo em reservas e e-mails."""
+    unidades = {u["id"]: u["endereco"] for u in listar_unidades()}
+    if not unidades:
+        return {}
+    cons = get_client().table("consultorios").select("*").execute().data
+    return {c["id"]: unidades[c["unidade_id"]] for c in cons if c.get("unidade_id") in unidades}
 
 
 def andar_a_partir_do_nome(nome: str) -> str | None:
@@ -434,19 +457,17 @@ def andar_a_partir_do_nome(nome: str) -> str | None:
     return digitos[:2] if len(digitos) > 3 else digitos[:1]
 
 
-def criar_consultorio(nome: str, descricao: str, preco_periodo: float, andar: str = "") -> dict:
+def criar_consultorio(nome: str, descricao: str, preco_periodo: float, andar: str = "", unidade_id: str | None = None) -> dict:
     # `andar` deixou de ser digitado no formulário -- agora é sempre
     # derivado do nome (ver andar_a_partir_do_nome). O parâmetro
     # continua aceito (e tem prioridade se vier preenchido) pra uso
     # futuro por outra rotina que precise passar um andar explícito.
     andar_final = andar.strip() if (andar or "").strip() else andar_a_partir_do_nome(nome)
-    resp = (
-        get_client()
-        .table("consultorios")
-        .insert({"nome": nome, "descricao": descricao, "preco_periodo": preco_periodo,
-                 "fotos": [], "ativo": True, "andar": andar_final})
-        .execute()
-    )
+    dados = {"nome": nome, "descricao": descricao, "preco_periodo": preco_periodo,
+             "fotos": [], "ativo": True, "andar": andar_final}
+    if unidade_id:
+        dados["unidade_id"] = unidade_id
+    resp = get_client().table("consultorios").insert(dados).execute()
     return resp.data[0]
 
 
@@ -690,7 +711,7 @@ def get_consultorio_by_id(consultorio_id: str) -> dict | None:
     return resp.data[0] if resp.data else None
 
 
-def grade_de_turnos(data_inicio: str, data_fim: str) -> dict:
+def grade_de_turnos(data_inicio: str, data_fim: str, unidade_id: str | None = None) -> dict:
     """
     Monta a grade completa: para cada consultório, para cada dia no
     intervalo, para cada período (manha/tarde/noite), diz se está livre
@@ -702,6 +723,9 @@ def grade_de_turnos(data_inicio: str, data_fim: str) -> dict:
     consultorios = ordenar_consultorios(
         client.table("consultorios").select("*").eq("ativo", True).order("nome").execute().data
     )
+    if unidade_id:  # v102: só os consultórios dessa unidade (e só as reservas deles)
+        consultorios = [c for c in consultorios if c.get("unidade_id") == unidade_id]
+    ids_visiveis = {c["id"] for c in consultorios}
 
     reservas = (
         client.table("reservas")
@@ -712,6 +736,8 @@ def grade_de_turnos(data_inicio: str, data_fim: str) -> dict:
         .execute()
         .data
     )
+    if unidade_id:
+        reservas = [r for r in reservas if r.get("consultorio_id") in ids_visiveis]
 
     return {"consultorios": consultorios, "reservas": reservas}
 

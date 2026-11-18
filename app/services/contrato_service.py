@@ -35,6 +35,15 @@ rastreável qual versão cada médico aceitou de fato.
 
 CONTRATO_VERSAO = "2.0 (23/09/2026)"
 
+# Contratada que aparece no PDF enviado à Autentique (modelo "Assinatura Somente Cliente", v103).
+CONTRATADA_ASSINATURA_NOME = "BIOMAX SERVICES LTDA"
+CONTRATADA_ASSINATURA_CNPJ = "29.478.011/0001-63"
+CONTRATADA_ASSINATURA_TEXTO = (
+    "<b>CONTRATADO:</b> BIOMAX SERVICES LTDA, pessoa jurídica de direito privado, inscrita no CNPJ sob o "
+    "nº 29.478.011/0001-63, com sede na Rua Gonçalves Dias, nº 82, 4º andar, Funcionários, Belo "
+    "Horizonte/MG, CEP 30.140-090, neste ato representada por seu administrador."
+)
+
 CONTRATO_TITULO = "CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE COWORKING E CESSÃO DE INFRAESTRUTURA"
 
 CONTRATO_PREAMBULO = [

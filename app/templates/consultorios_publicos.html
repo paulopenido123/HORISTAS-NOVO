@@ -97,19 +97,19 @@
     </a>
     <a class="card unidade" href="{{ url_for('consultorios_barao_homem_de_melo') }}">
       <span class="rotulo">📍 Unidade</span>
-      <h3>Av. Barão Homem de Melo, 4494, 13º andar</h3>
-      <p>Belo Horizonte, MG</p>
+      <h3>Av. Barão Homem de Melo, 4494, Sl 1403</h3>
+      <p>Estoril, Belo Horizonte, MG — em frente ao Avangarden</p>
       <span class="breve">Novo local em breve</span>
     </a>
   </div>
 </main>
 
-{% elif modo == 'barao' %}
+{% elif modo == 'barao' and not fotos %}
 <section class="hero"><div class="hero-inner">
   <a class="voltar" href="{{ url_for('consultorios_publicos') }}">← Voltar aos endereços</a>
   <div class="eyebrow">Unidade</div>
-  <h1>Av. Barão Homem de Melo, 4494, 13º andar</h1>
-  <p>Belo Horizonte, MG</p>
+  <h1>Av. Barão Homem de Melo, 4494, Sl 1403</h1>
+  <p>Estoril, Belo Horizonte, MG — em frente ao Avangarden.</p>
 </div></section>
 <main class="content">
   <div class="card em-breve">
@@ -125,8 +125,13 @@
 <section class="hero"><div class="hero-inner">
   <a class="voltar" href="{{ url_for('consultorios_publicos') }}">← Voltar aos endereços</a>
   <div class="eyebrow">Unidade</div>
+  {% if modo == 'barao' %}
+  <h1>Av. Barão Homem de Melo, 4494, Sl 1403</h1>
+  <p>Estoril, Belo Horizonte, MG — em frente ao Avangarden. Conheça os consultórios, escolha a estrutura que combina com seu atendimento e reserve somente o tempo necessário.</p>
+  {% else %}
   <h1>Rua Gonçalves Dias, 82</h1>
   <p>Funcionários, Belo Horizonte, MG. Conheça alguns de nossos consultórios, escolha a estrutura que combina com seu atendimento e reserve somente o tempo necessário.</p>
+  {% endif %}
 </div></section>
 <main class="content">
   <div class="carrossel" id="carrossel">

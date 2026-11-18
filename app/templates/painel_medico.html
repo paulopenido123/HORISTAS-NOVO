@@ -437,7 +437,7 @@ if ("serviceWorker" in navigator) {
           <button type="button" class="btn-mais" aria-label="Mais opções" onclick="alternarMenuMais(this)">&#8942;</button>
           <div class="menu-mais-lista">
             <button type="button" class="btn-confirmada" onclick="this.nextElementSibling.classList.toggle('aberto')">Reserva confirmada</button>
-            <div class="det-reserva"><strong>SL {{ r.consultorios.nome if r.consultorios else '—' }}</strong><br>{{ endereco_lifemax }}</div>
+            <div class="det-reserva"><strong>SL {{ r.consultorios.nome if r.consultorios else '—' }}</strong><br>{{ enderecos_consultorio.get(r.consultorio_id) or endereco_lifemax }}</div>
             <button type="button" class="btn-cancelar" onclick="cancelarReserva(this)">Cancelar reserva</button>
           </div>
         </div>

@@ -480,6 +480,22 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v103 — Contrato da Autentique no modelo "Biomax / assinatura só do cliente"
+- Modelo enviado pelo Paulo (`Contrato_Biomax_Authentic_Assinatura_Somente_Cliente.docx`). As cláusulas 1ª a 9ª foram comparadas por programa com o texto do sistema: idênticas (32 de 32 linhas).
+- PDF enviado à Autentique (`pdf_service.gerar_pdf_contrato(..., assinatura_externa=True)`) agora segue o modelo: contratada **BIOMAX SERVICES LTDA** (CNPJ 29.478.011/0001-63), dados do contratante (nome, CPF/CNPJ, registro, especialidade, endereço, e-mail, telefone) preenchidos dentro do texto, e fecho "Declarações e assinatura eletrônica" com assinatura só do contratante. Texto da contratada em `contrato_service.CONTRATADA_ASSINATURA_*`.
+- O aceite interno (tela de termo e PDF "Baixar contrato" dos clientes atuais) NÃO mudou: continua citando Lifemax Coworking Eireli, versão 2.0.
+- "Local e data" sai como "Belo Horizonte/MG, na data da assinatura eletrônica registrada pela plataforma" (a data real fica no certificado da Autentique).
+- Sem mudança de banco. Arquivos: services/pdf_service.py, services/contrato_service.py.
+
+## v102 — Duas unidades (Funcionários e Estoril)
+- Nova tabela `unidades` (nome, endereço, referência, ordem) e coluna `consultorios.unidade_id`. Migração: `sql/migration_unidades.sql` (cria as 2 unidades — Funcionários: Rua Gonçalves Dias, 82; Estoril: Av. Barão Homem de Melo, 4494, Sl 1403, em frente ao Avangarden — e coloca todos os consultórios existentes em Funcionários). Pode ser rodada mais de uma vez.
+- Médico: ao clicar em "Reservar consultórios" (`/turnos`) aparece primeiro a tela com os dois endereços (`turnos_unidades.html`); ao escolher, abre a grade só daquela unidade (`/turnos?unidade=ID`, `/api/turnos/grade?unidade=ID`), com faixa do endereço e link "Trocar unidade". O saldo de horas vale nas duas unidades.
+- Admin > Consultórios: seletor de unidade ao cadastrar (obrigatório), ao editar (permite mover o consultório de unidade) e filtro por unidade na lista. Admin > Visualizar agenda: filtro por unidade (`/admin/api/matriz/grade?unidade=ID`). Secretária: permissões inalteradas.
+- Endereço correto da unidade no painel do médico (reservas) e na mensagem/e-mail de confirmação de consulta (`mapa_endereco_por_consultorio`).
+- Páginas públicas: `/consultorios` mostra os 2 endereços (Estoril atualizado); fotos filtradas por unidade; Estoril mostra "em breve" até ter fotos.
+- Segurança: se a migração ainda não foi rodada, tudo funciona como antes (sem tela de unidades, um endereço só).
+- Arquivos: sql/migration_unidades.sql, services/supabase_client.py, services/reserva_service.py, routes/turnos.py, routes/admin.py, routes/medico_painel.py, app/__init__.py, templates turnos_unidades.html (novo), turnos.html, admin_consultorios.html, admin_matriz_visualizar_agenda.html, painel_medico.html, consultorios_publicos.html.
+
 ## v101 — Contrato digital (Autentique) obrigatório para reservar
 
 - **Quem assina**: só o médico que se cadastra SOZINHO (`/primeiro-acesso` → `criar_medico(..., exige_contrato=True)`). Clientes antigos, cadastrados ou importados pelo admin **não exigem** (`medicos.exige_contrato=false`, padrão da coluna). O admin pode **Dispensar contrato** (só perfil Administrador).

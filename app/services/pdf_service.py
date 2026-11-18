@@ -95,17 +95,33 @@ def gerar_pdf_contrato(medico: dict, assinatura_externa: bool = False) -> io.Byt
     )
 
     story = []
+    endereco_partes = [medico.get("endereco_rua"), medico.get("endereco_numero"), medico.get("endereco_bairro"),
+                       medico.get("endereco_cidade"), medico.get("endereco_estado")]
+    endereco_fmt = ", ".join(p for p in endereco_partes if p) or "não informado"
     story.append(Paragraph(contrato_service.CONTRATO_TITULO, estilos["titulo"]))
-    story.append(Paragraph(f"Versão do contrato: {contrato_service.CONTRATO_VERSAO}", estilos["subtitulo"]))
-    story.append(Spacer(1, 6))
-
-    # Preâmbulo: os 2 primeiros itens são o título/subtítulo da LifeMax
-    # (negrito, centralizado), o resto são parágrafos normais.
-    for i, texto in enumerate(contrato_service.CONTRATO_PREAMBULO):
-        if i < 2:
-            story.append(Paragraph(f"<b>{texto}</b>", estilos["subtitulo"]))
-        else:
-            story.append(Paragraph(texto, estilos["preambulo"]))
+    if assinatura_externa:
+        # Modelo "Contrato_Biomax_Authentic_Assinatura_Somente_Cliente" (v103): contratada = Biomax Services Ltda,
+        # dados do contratante dentro do texto, assinatura eletrônica só do contratante.
+        story.append(Paragraph(f"<b>{contrato_service.CONTRATADA_ASSINATURA_NOME}  |  CNPJ {contrato_service.CONTRATADA_ASSINATURA_CNPJ}</b>", estilos["subtitulo"]))
+        story.append(Paragraph(f"Modelo para assinatura eletrônica  •  Base contratual: versão {contrato_service.CONTRATO_VERSAO}", estilos["subtitulo"]))
+        story.append(Spacer(1, 6))
+        story.append(Paragraph(contrato_service.CONTRATADA_ASSINATURA_TEXTO, estilos["preambulo"]))
+        story.append(Paragraph(
+            f"<b>CONTRATANTE:</b> {medico.get('nome') or '—'}, CPF/CNPJ {medico.get('cpf_cnpj') or 'não informado'}, "
+            f"registro profissional {medico.get('crm') or 'não informado'}, especialidade {medico.get('especialidade') or 'não informada'}, "
+            f"endereço {endereco_fmt}, e-mail {medico.get('email') or 'não informado'} e telefone {medico.get('telefone') or 'não informado'}, "
+            "doravante denominado CONTRATANTE.", estilos["preambulo"]))
+        story.append(Paragraph(contrato_service.CONTRATO_PREAMBULO[-1], estilos["preambulo"]))
+    else:
+        story.append(Paragraph(f"Versão do contrato: {contrato_service.CONTRATO_VERSAO}", estilos["subtitulo"]))
+        story.append(Spacer(1, 6))
+        # Preâmbulo: os 2 primeiros itens são o título/subtítulo da LifeMax
+        # (negrito, centralizado), o resto são parágrafos normais.
+        for i, texto in enumerate(contrato_service.CONTRATO_PREAMBULO):
+            if i < 2:
+                story.append(Paragraph(f"<b>{texto}</b>", estilos["subtitulo"]))
+            else:
+                story.append(Paragraph(texto, estilos["preambulo"]))
 
     for titulo_secao, itens in contrato_service.CONTRATO_SECOES:
         story.append(Paragraph(titulo_secao, estilos["secao"]))
@@ -122,26 +138,35 @@ def gerar_pdf_contrato(medico: dict, assinatura_externa: bool = False) -> io.Byt
             else:
                 story.append(Paragraph(item, estilos["corpo"]))
 
-    # ---- Bloco de aceite, preenchido com os dados reais deste médico ----
+    # ---- Bloco final ----
+    if assinatura_externa:
+        story.append(Paragraph("DECLARAÇÕES E ASSINATURA ELETRÔNICA", estilos["secao"]))
+        story.append(Paragraph(
+            "O CONTRATANTE declara ter lido e concordado com as condições deste instrumento. A assinatura eletrônica "
+            "será coletada exclusivamente do CONTRATANTE por meio da plataforma de assinatura utilizada, com registro "
+            "das evidências de autenticação e integridade disponibilizadas pela plataforma.", estilos["corpo"]))
+        story.append(Paragraph("Local e data: Belo Horizonte/MG, na data da assinatura eletrônica registrada pela plataforma.", estilos["corpo"]))
+        story.append(Spacer(1, 14))
+        story.append(Paragraph("<b>ASSINATURA DO CONTRATANTE</b>", estilos["dados_aceite"]))
+        story.append(Paragraph(f"Nome: {medico.get('nome') or '—'}", estilos["dados_aceite"]))
+        story.append(Paragraph(f"CPF/CNPJ: {medico.get('cpf_cnpj') or 'não informado'}", estilos["dados_aceite"]))
+        story.append(Paragraph("Assinatura eletrônica: registrada pela plataforma Autentique (data, hora, IP e certificado no registro anexo).", estilos["dados_aceite"]))
+        story.append(Spacer(1, 10))
+        story.append(Paragraph(
+            f"{contrato_service.CONTRATADA_ASSINATURA_NOME} figura como CONTRATADA, devidamente identificada no preâmbulo deste "
+            "instrumento. A coleta de assinatura eletrônica será realizada exclusivamente do CONTRATANTE.", estilos["corpo"]))
+        doc.build(story)
+        buffer.seek(0)
+        return buffer
+
     story.append(PageBreak())
-    story.append(Paragraph("ASSINATURA DIGITAL" if assinatura_externa else "ACEITE DIGITAL", estilos["aceite_titulo"]))
-    story.append(Paragraph(
-        "Ao assinar digitalmente este contrato, o profissional declara que:" if assinatura_externa
-        else "Ao aceitar eletronicamente na plataforma, o profissional declarou que:",
-        estilos["corpo"],
-    ))
+    story.append(Paragraph("ACEITE DIGITAL", estilos["aceite_titulo"]))
+    story.append(Paragraph("Ao aceitar eletronicamente na plataforma, o profissional declarou que:", estilos["corpo"]))
     story.append(Spacer(1, 4))
     for declaracao in contrato_service.CONTRATO_DECLARACOES:
-        # "[X]" em vez de ☑ -- Helvetica (fonte base do PDF) não tem esse
-        # glifo Unicode e ele viraria um caractere errado no documento
-        # final (mesmo problema descrito na skill de PDF sobre símbolos
-        # fora do alfabeto latino básico).
         story.append(Paragraph(f"[X] {declaracao}", estilos["aceite_item"]))
 
     story.append(Spacer(1, 14))
-    endereco_partes = [medico.get("endereco_rua"), medico.get("endereco_numero"), medico.get("endereco_bairro"),
-                       medico.get("endereco_cidade"), medico.get("endereco_estado")]
-    endereco_fmt = ", ".join(p for p in endereco_partes if p) or "não informado"
     dados = [
         ("Nome do profissional", medico.get("nome") or "—"),
         ("CPF/CNPJ", medico.get("cpf_cnpj") or "não informado"),
@@ -151,22 +176,17 @@ def gerar_pdf_contrato(medico: dict, assinatura_externa: bool = False) -> io.Byt
         ("Endereço", endereco_fmt),
         ("Telefone", medico.get("telefone") or "não informado"),
         ("E-mail", medico.get("email") or "não informado"),
-        *([("Versão do contrato", contrato_service.CONTRATO_VERSAO),
-           ("Assinatura", "Assinatura eletrônica registrada pela plataforma Autentique (data, hora, IP e certificado no registro anexo)")]
-          if assinatura_externa else [
         ("Data e hora do aceite", _formatar_data_br(medico.get("termo_aceito_em"))),
         ("IP / identificação eletrônica", medico.get("termo_aceito_ip") or "não registrado"),
         ("Versão do contrato aceita", medico.get("termo_versao") or "não registrada (aceite anterior ao controle de versão)"),
         ("Aceite eletrônico", "ACEITO E CONCORDO" if medico.get("termo_aceito") else "PENDENTE"),
-        ]),
     ]
     for rotulo, valor in dados:
         story.append(Paragraph(f"<b>{rotulo}:</b> {valor}", estilos["dados_aceite"]))
 
     story.append(Spacer(1, 10))
     gerado_em = datetime.now(timezone.utc).strftime("%d/%m/%Y às %H:%M UTC")
-    complemento = ("a partir dos dados do cadastro, para assinatura digital" if assinatura_externa
-                   else "a partir do aceite eletrônico registrado")
+    complemento = "a partir do aceite eletrônico registrado"
     story.append(Paragraph(
         f"<i>Documento gerado automaticamente pela plataforma LifeMax em {gerado_em}, "
         f"{complemento} -- não requer assinatura física.</i>",

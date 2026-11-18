@@ -36,7 +36,16 @@ def pagina_turnos():
     # mesma conversão em HORAS usada em todo o resto do sistema (ver
     # creditos_service.saldo_em_horas_medico, painel_medico.html).
     saldo_horas = creditos_db.saldo_em_horas_medico(medico["id"]) if medico else 0
-    return render_template("turnos.html", medico=medico, saldo_horas=saldo_horas)
+    # v102: duas unidades -- primeiro o médico escolhe o endereço; depois vê os consultórios dele.
+    unidades = db.listar_unidades()
+    unidade_id = request.args.get("unidade")
+    unidade = next((u for u in unidades if u["id"] == unidade_id), None)
+    if unidades and unidade is None:
+        todos = db.listar_todos_consultorios()
+        contagem = {u["id"]: sum(1 for c in todos if c.get("unidade_id") == u["id"]) for u in unidades}
+        return render_template("turnos_unidades.html", medico=medico, saldo_horas=saldo_horas,
+                               unidades=unidades, contagem=contagem)
+    return render_template("turnos.html", medico=medico, saldo_horas=saldo_horas, unidade=unidade)
 
 
 @turnos_bp.route("/api/turnos/medicos", methods=["GET"])
@@ -58,7 +67,7 @@ def api_grade():
     data_inicio = date.fromisoformat(data_inicio_str)
     data_fim = data_inicio + timedelta(days=dias - 1)
 
-    grade = db.grade_de_turnos(data_inicio.isoformat(), data_fim.isoformat())
+    grade = db.grade_de_turnos(data_inicio.isoformat(), data_fim.isoformat(), unidade_id=request.args.get("unidade") or None)
 
     # Privacidade -- pedido do Paulo em 14/09/2026: o médico pode ver que
     # um horário está ocupado e ver só o primeiro nome de quem reservou

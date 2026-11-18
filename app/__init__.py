@@ -88,21 +88,29 @@ def create_app():
     def consultorios_publicos():
         return render_template("consultorios_publicos.html", modo="unidades")
 
+    def _fotos_da_unidade(nome_unidade):
+        """Fotos dos consultórios ativos de uma unidade (v102). Sem a tabela de unidades,
+        tudo é da Rua Gonçalves Dias (comportamento antigo)."""
+        from app.services import supabase_client as db
+        try:
+            unidades = db.listar_unidades()
+            if not unidades:
+                cons = db.listar_todos_consultorios() if nome_unidade == "Funcionários" else []
+            else:
+                uid = next((u["id"] for u in unidades if u["nome"] == nome_unidade), None)
+                cons = db.listar_todos_consultorios(unidade_id=uid) if uid else []
+        except Exception:
+            cons = []
+        return [foto for c in cons for foto in (c.get("fotos") or [])]
+
     @app.route("/consultorios/rua-goncalves-dias")
     def consultorios_goncalves_dias():
-        from app.services import supabase_client as db
-        # A página mostra um carrossel só, com as fotos de TODOS os
-        # consultórios ativos juntas (pedido do Paulo em 11/09/2026).
-        try:
-            consultorios = db.listar_todos_consultorios()
-        except Exception:
-            consultorios = []
-        fotos = [foto for c in consultorios for foto in (c.get("fotos") or [])]
-        return render_template("consultorios_publicos.html", modo="goncalves", fotos=fotos)
+        # Um carrossel só, com as fotos de todos os consultórios ativos da unidade.
+        return render_template("consultorios_publicos.html", modo="goncalves", fotos=_fotos_da_unidade("Funcionários"))
 
     @app.route("/consultorios/av-barao-homem-de-melo")
     def consultorios_barao_homem_de_melo():
-        return render_template("consultorios_publicos.html", modo="barao")
+        return render_template("consultorios_publicos.html", modo="barao", fotos=_fotos_da_unidade("Estoril"))
 
     @app.route("/health")
     def health():

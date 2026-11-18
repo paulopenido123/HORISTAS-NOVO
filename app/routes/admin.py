@@ -889,11 +889,22 @@ def consultorios():
             # em 10/09/2026: o andar já é o começo do número da sala (ex:
             # "402" -> andar 4, "1101" -> andar 11), então criar_consultorio
             # calcula sozinho (ver db.andar_a_partir_do_nome).
-            db.criar_consultorio(nome, descricao, 0)
-            flash('Consultório criado.', 'ok')
-            return redirect(url_for('admin.consultorios'))
+            unidades_validas = {u['id'] for u in db.listar_unidades()}
+            unidade_id = request.form.get('unidade_id') or None
+            if unidades_validas and unidade_id not in unidades_validas:
+                erro = 'Escolha a unidade (endereço) do consultório.'
+            else:
+                db.criar_consultorio(nome, descricao, 0, unidade_id=unidade_id)
+                flash('Consultório criado.', 'ok')
+                return redirect(url_for('admin.consultorios', unidade=unidade_id or ''))
+    unidades = db.listar_unidades()
+    filtro_unidade = request.args.get('unidade') or ''
     lista = db.ordenar_consultorios(db.get_client().table('consultorios').select('*').order('nome').execute().data)
-    return render_template('admin_consultorios.html', consultorios=lista, erro=erro)
+    if filtro_unidade:
+        lista = [c for c in lista if c.get('unidade_id') == filtro_unidade]
+    return render_template('admin_consultorios.html', consultorios=lista, erro=erro,
+                           unidades=unidades, filtro_unidade=filtro_unidade,
+                           nome_unidade={u['id']: u['nome'] for u in unidades})
 
 
 @admin_bp.route('/consultorios/<consultorio_id>/editar', methods=['POST'])
@@ -912,6 +923,8 @@ def editar_consultorio(consultorio_id):
         'andar': db.andar_a_partir_do_nome(nome),
         'ativo': request.form.get('ativo') == 'on',
     }
+    if request.form.get('unidade_id') in {u['id'] for u in db.listar_unidades()}:
+        dados['unidade_id'] = request.form.get('unidade_id')  # v102: mover o consultório de unidade
     db.get_client().table('consultorios').update(dados).eq('id', consultorio_id).execute()
     flash('Consultório atualizado.', 'ok')
     return redirect(url_for('admin.consultorios'))
@@ -1001,7 +1014,7 @@ def matriz_visualizar_agenda():
     replicada de verdade (matriz_reservas_admin), com rolagem horizontal
     E vertical, sem setas de avançar/voltar -- ver
     admin_matriz_visualizar_agenda.html."""
-    return render_template('admin_matriz_visualizar_agenda.html')
+    return render_template('admin_matriz_visualizar_agenda.html', unidades=db.listar_unidades())
 
 
 @admin_bp.route('/api/matriz/grade', methods=['GET'])
@@ -1022,7 +1035,7 @@ def api_matriz_grade():
     # grade_de_turnos já retorna o nome de cada médico (join com
     # medicos(nome)) -- diferente da rota do médico em /api/turnos/grade,
     # aqui NÃO precisamos ocultar nomes: é a visão do administrador.
-    grade = db.grade_de_turnos(data_inicio.isoformat(), data_fim.isoformat())
+    grade = db.grade_de_turnos(data_inicio.isoformat(), data_fim.isoformat(), unidade_id=request.args.get('unidade') or None)
     grade['data_inicio'] = data_inicio.isoformat()
     grade['data_fim'] = data_fim.isoformat()
     grade['dias'] = dias

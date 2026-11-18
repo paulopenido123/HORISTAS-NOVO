@@ -52,7 +52,12 @@ def painel():
     horas_minimas = int(precos.get("horas_minimas", 1))
     preco_minimo = creditos_db.calcular_preco_horas(horas_minimas)
     campos_faltando = reserva_service._campos_pessoais_faltando(medico)
-    return render_template("painel_medico.html", medico=medico, saldo=saldo, saldo_horas=saldo_horas,
+    try:
+        from app.services import supabase_client as _db
+        enderecos_consultorio = _db.mapa_endereco_por_consultorio()
+    except Exception:
+        enderecos_consultorio = {}
+    return render_template("painel_medico.html", enderecos_consultorio=enderecos_consultorio, medico=medico, saldo=saldo, saldo_horas=saldo_horas,
                             transacoes=transacoes, precos=precos,
                             horas_minimas=horas_minimas, preco_minimo=preco_minimo,
                             pacotes_horas=pacotes_horas,

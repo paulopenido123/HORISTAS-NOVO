@@ -714,6 +714,10 @@ def montar_confirmacao_consulta(reserva_id: str, medico_id: str, nome_paciente: 
     sala = consultorio["nome"] if consultorio else "Consultório"
     if consultorio and not sala.strip().lower().startswith("sala"):
         sala = f"Sala {sala.strip()}"
+    try:  # v102: endereço da unidade do consultório (sem a tabela unidades, mantém o endereço antigo)
+        endereco = db.mapa_endereco_por_consultorio().get(reserva["consultorio_id"]) or ENDERECO_CONFIRMACAO
+    except Exception:
+        endereco = ENDERECO_CONFIRMACAO
     d = str(reserva["data"])[:10]
     data_br = f"{d[8:10]}/{d[5:7]}/{d[0:4]}"
     nome_medico = medico["nome"] if medico else ""
@@ -724,7 +728,7 @@ def montar_confirmacao_consulta(reserva_id: str, medico_id: str, nome_paciente: 
         f"Sua consulta com {nome_medico} está confirmada.\n\n"
         f"Data: {data_br}\n"
         + (f"Horário: {horario}\n" if horario else "") +
-        f"Endereço: {ENDERECO_CONFIRMACAO} — {sala}\n\n"
+        f"Endereço: {endereco} — {sala}\n\n"
         f"Qualquer dúvida, fale com o seu médico."
     )
     return {"assunto": f"Confirmação de consulta — {data_br}", "mensagem": mensagem}

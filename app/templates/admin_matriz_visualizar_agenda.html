@@ -189,6 +189,10 @@
       <span data-dica="Horário cinza: indisponível pela regra fixa (domingo, sábado à tarde/noite)."><span class="dot bege"></span> Indisponível</span>
       <span data-dica="Dia com o botão vermelho: oculto. Os médicos não veem esse dia nem conseguem reservar nele."><span class="dot oculto"></span> Dia oculto para os médicos</span>
     </div>
+    {% if unidades %}<div><label for="filtro-unidade" style="font-size:13px;font-weight:700;margin-right:6px">Unidade:</label>
+      <select id="filtro-unidade" style="padding:7px 10px;border:1px solid #d8e3e7;border-radius:8px">
+        <option value="">Todas</option>{% for u in unidades %}<option value="{{ u.id }}">{{ u.nome }}</option>{% endfor %}
+      </select></div>{% endif %}
     <div class="periodo-atual" id="periodo-atual">Carregando...</div>
   </div>
 
@@ -782,6 +786,8 @@ async function confirmarCancelamento() {
   }
 }
 
+document.addEventListener('change', (e) => { if (e.target && e.target.id === 'filtro-unidade') carregar(); });
+
 async function carregar() {
   const periodoEl = document.getElementById('periodo-atual');
   const listaEl = document.getElementById('lista-consultorios');
@@ -802,7 +808,8 @@ async function carregar() {
     const fFim = formatarDataCurta(intervalo.data_fim);
     periodoEl.textContent = `${fIni.numero}/${fIni.mes} até ${fFim.numero}/${fFim.mes} (${dias} dia${dias > 1 ? 's' : ''})`;
 
-    const resp = await fetch(`/admin/api/matriz/grade?data_inicio=${intervalo.data_inicio}&dias=${dias}`);
+    const _un = (document.getElementById('filtro-unidade') || {}).value || '';
+    const resp = await fetch(`/admin/api/matriz/grade?data_inicio=${intervalo.data_inicio}&dias=${dias}${_un ? '&unidade=' + encodeURIComponent(_un) : ''}`);
     gradeAtual = await resp.json();
     document.getElementById('lista-medicos').innerHTML = (gradeAtual.medicos_nomes || []).map(n => `<option value="${_esc(n)}">`).join('');
     renderizarGrade();

@@ -80,6 +80,256 @@ alter table agenda_pacientes enable row level security;
 
 
 -- ============================================================
+-- consulta_extrato_medico.sql
+-- ============================================================
+
+-- Extrato de horas de um médico (SOMENTE LEITURA -- não altera nada).
+-- Neon > SQL Editor: cole, rode UMA consulta por vez (selecione e clique Run).
+-- Para outro médico, troque o texto %Grateki% abaixo.
+
+-- 1) Confirma quem é o médico (deve voltar 1 linha; se voltar mais de uma, me avise)
+select id, nome, email, telefone, saldo_creditos as saldo_reais
+from medicos
+where nome ilike '%Grateki%';
+
+-- 2) Todas as movimentações (compras, usos, reembolsos, ajustes do admin)
+select to_char(t.criado_em at time zone 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') as data,
+       t.tipo, t.quantidade_horas as horas, t.valor as reais, t.saldo_apos,
+       t.descricao, t.criado_por
+from creditos_transacoes t
+join medicos m on m.id = t.medico_id
+where m.nome ilike '%Grateki%' and t.carteira = 'salas'
+order by t.criado_em;
+
+-- 3) Totais
+select count(*) filter (where t.tipo='compra')                      as qtd_compras,
+       coalesce(sum(t.quantidade_horas) filter (where t.tipo='compra'),0)  as horas_compradas,
+       coalesce(sum(t.valor) filter (where t.tipo='compra'),0)             as reais_pagos,
+       coalesce(sum(t.quantidade_horas) filter (where t.tipo='consumo'),0) as horas_consumo,
+       coalesce(sum(t.quantidade_horas) filter (where t.tipo='ajuste'),0)  as horas_ajustes_e_reembolsos
+from creditos_transacoes t
+join medicos m on m.id = t.medico_id
+where m.nome ilike '%Grateki%' and t.carteira = 'salas';
+
+
+-- ============================================================
+-- correcao_pacotes_credito_a_menos.sql
+-- ============================================================
+
+-- CORREÇÃO: credita a diferença das compras de pacote que entraram com horas a menos.
+-- ANTES: rode sql/diagnostico_pacotes_credito_a_menos.sql, confira a lista e faça um BACKUP
+-- (Admin > Backup). Rode este script UMA vez, inteiro, no Neon SQL Editor (pode rodar de novo: ele
+-- não repete quem já foi corrigido).
+-- O que faz, para cada compra de pacote com diferença:
+--   1) grava uma linha "Correção de crédito do pacote" (logo após a compra, no histórico);
+--   2) soma a diferença no saldo_apos das movimentações seguintes do médico (histórico coerente);
+--   3) soma a diferença no saldo atual do médico.
+begin;
+
+alter table creditos_transacoes add column if not exists criado_por text;
+
+create temp table corr on commit drop as
+select t.id as compra_id, t.medico_id, t.pagamento_id, t.criado_em, t.quantidade_horas,
+       round(t.quantidade_horas * a.preco - t.valor, 2) as diff, a.preco
+from creditos_transacoes t
+cross join (select valor_hora as preco from pacotes_horas_avulsas where ativo order by horas limit 1) a
+where t.tipo = 'compra' and t.carteira = 'salas' and t.quantidade_horas is not null
+  and t.quantidade_horas * a.preco - t.valor > 0.005
+  and not exists (
+    select 1 from creditos_transacoes x
+    where x.medico_id = t.medico_id and x.tipo = 'ajuste' and x.reserva_id is null
+      and x.pagamento_id is not distinct from t.pagamento_id
+      and x.descricao like 'Correção de crédito do pacote%');
+
+-- 2) histórico: movimentações do médico depois de cada compra corrigida
+update creditos_transacoes t
+set saldo_apos = t.saldo_apos + d.soma
+from (
+  select x.id, sum(c.diff) as soma
+  from creditos_transacoes x
+  join corr c on c.medico_id = x.medico_id and x.criado_em > c.criado_em
+  where x.carteira = 'salas'
+  group by x.id
+) d
+where t.id = d.id;
+
+-- 1) linhas de correção (saldo_apos já considera as correções anteriores do mesmo médico)
+insert into creditos_transacoes (medico_id, tipo, valor, saldo_apos, descricao, pagamento_id,
+                                 quantidade_horas, categoria, carteira, criado_em, criado_por)
+select c.medico_id, 'ajuste', c.diff,
+       (select t.saldo_apos from creditos_transacoes t where t.id = c.compra_id) + c.diff,
+       'Correção de crédito do pacote de ' || c.quantidade_horas || 'h (diferença do desconto por volume)',
+       c.pagamento_id, greatest(round(c.diff / c.preco), 1)::int, 'horas', 'salas',
+       c.criado_em + interval '1 second', 'Correção automática'
+from corr c;
+
+-- 3) saldo atual
+update medicos m set saldo_creditos = m.saldo_creditos + s.soma
+from (select medico_id, sum(diff) as soma from corr group by medico_id) s
+where m.id = s.medico_id;
+
+-- conferência: lista o que foi corrigido
+select m.nome, c.quantidade_horas as pacote_h, c.diff as reais_creditados_a_mais, m.saldo_creditos as saldo_novo_reais
+from corr c join medicos m on m.id = c.medico_id order by m.nome;
+
+commit;
+
+
+-- ============================================================
+-- correcao_pagamento_gabriela_390.sql
+-- ============================================================
+
+-- SÓ RODAR DEPOIS de confirmar no Asaas que a cobrança pay_fjnqfsdnq9rvoapj
+-- está como "Recebida" ou "Confirmada". Idempotente: se já estiver "pago", não faz nada.
+-- Faça o mesmo que o webhook: marca pago, credita R$ 390 (6h x R$ 65) e grava a transação.
+with p as (
+  update pagamentos_pix set status = 'pago', pago_em = now()
+  where id = '73c80df8-0030-47bc-a33c-36d4e8029b30' and status = 'pendente'
+  returning id, medico_id
+),
+m as (
+  update medicos set saldo_creditos = saldo_creditos + 390, alerta_saldo_baixo_enviado = false
+  where id = (select medico_id from p)
+  returning id, saldo_creditos
+)
+insert into creditos_transacoes
+  (medico_id, tipo, valor, saldo_apos, descricao, pagamento_id, quantidade_horas, categoria, carteira)
+select m.id, 'compra', 390, m.saldo_creditos,
+       'Recarga via pix (Asaas) — pacote de 6h (crédito manual após conferência)',
+       (select id from p), 6, 'horas', 'salas'
+from m;
+
+
+-- ============================================================
+-- diagnostico_pacotes_credito_a_menos.sql
+-- ============================================================
+
+-- DIAGNÓSTICO (somente leitura): quem comprou pacote e recebeu menos horas do que comprou.
+-- Neon > SQL Editor: cole tudo e clique Run. Não altera nada.
+-- Causa: o saldo é guardado em R$ e o pacote maior tem desconto por hora; antes da v96 o sistema
+-- creditava só o valor pago. Corrigido = horas compradas x preço da hora avulsa (pacote de menor qtd. de horas).
+with avulsa as (
+  select valor_hora as preco from pacotes_horas_avulsas where ativo order by horas limit 1
+)
+select m.nome,
+       to_char(t.criado_em at time zone 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') as data_compra,
+       t.quantidade_horas as horas_compradas,
+       t.valor as reais_creditados,
+       round(t.quantidade_horas * a.preco, 2) as reais_corretos,
+       round(t.quantidade_horas * a.preco - t.valor, 2) as diferenca_reais,
+       round((t.quantidade_horas * a.preco - t.valor) / a.preco, 1) as horas_a_menos
+from creditos_transacoes t
+join medicos m on m.id = t.medico_id
+cross join avulsa a
+where t.tipo = 'compra' and t.carteira = 'salas' and t.quantidade_horas is not null
+  and t.quantidade_horas * a.preco - t.valor > 0.005
+order by t.criado_em;
+
+
+-- ============================================================
+-- diagnostico_pagamento_nao_creditado.sql
+-- ============================================================
+
+-- SOMENTE LEITURA. Rode no Neon (SQL Editor), um bloco por vez.
+
+-- 1) Pagamentos de R$ 390 (pacote de 6h) dos últimos 30 dias e se geraram crédito
+select p.id, m.nome, p.valor, p.horas_pacote, p.forma_pagamento, p.status,
+       p.criado_em at time zone 'America/Sao_Paulo' as criado_em_br,
+       p.pago_em  at time zone 'America/Sao_Paulo' as pago_em_br,
+       p.asaas_payment_id,
+       (select count(*) from creditos_transacoes t where t.pagamento_id = p.id) as qtd_transacoes
+from pagamentos_pix p join medicos m on m.id = p.medico_id
+where p.valor = 390 and p.criado_em > now() - interval '30 days'
+order by p.criado_em desc;
+
+-- 2) TODOS os pagamentos "pago" sem crédito, ou "pendente" há mais de 1 hora (os suspeitos)
+select p.id, m.nome, p.valor, p.horas_pacote, p.status,
+       p.criado_em at time zone 'America/Sao_Paulo' as criado_em_br,
+       p.asaas_payment_id,
+       (select count(*) from creditos_transacoes t where t.pagamento_id = p.id) as qtd_transacoes
+from pagamentos_pix p join medicos m on m.id = p.medico_id
+where (p.status = 'pago' and not exists (select 1 from creditos_transacoes t where t.pagamento_id = p.id))
+   or (p.status = 'pendente' and p.criado_em < now() - interval '1 hour' and p.criado_em > now() - interval '30 days')
+order by p.criado_em desc;
+
+-- 3) Pagamentos creditados em duplicidade (mais de 1 transação para o mesmo pagamento)
+select pagamento_id, count(*) from creditos_transacoes
+where pagamento_id is not null and tipo = 'compra'
+group by pagamento_id having count(*) > 1;
+
+
+-- ============================================================
+-- limpeza_testes_receitas.sql
+-- ============================================================
+
+-- =====================================================================
+-- Limpeza dos 3 pagamentos de TESTE (pedido do Paulo em 25/10/2026)
+--   22/10/2026  Paulo  Pix  Pacote de 6h        R$ 390,00
+--   23/09/2026  Paulo  Pix  Recarga de horas    R$  20,00
+--   11/09/2026  Paulo  Pix  Recarga de horas    R$  20,00
+--
+-- O que faz:
+--  * apaga esses 3 pagamentos  -> somem de Admin > Relatórios > Receitas
+--  * apaga SÓ a transação da compra de 6h de 22/10 -> "Horas vendidas"
+--    de outubro cai de 30 para 24
+-- O que NÃO mexe: saldo atual de qualquer médico, reservas, outros
+-- pagamentos, outras transações.
+--
+-- COMO USAR (no Neon > SQL Editor):
+--  1) Rode o PASSO 1 (SELECT). Deve listar EXATAMENTE 3 linhas, as de cima.
+--     Se vier outra quantidade, NÃO rode o passo 2 e me avise.
+--  2) Rode o PASSO 2. Deve mostrar: pagamentos_apagados = 3 e
+--     transacoes_apagadas = 1. (Se o passo 1 não deu 3, o passo 2 não apaga nada.)
+-- Se o passo 1 der ERRO de coluna inexistente ou vier VAZIO, confira no Neon se está
+-- no projeto/banco/branch correto (o mesmo do site horistas-novo) antes de qualquer coisa.
+-- Este script é de uso único; não rode o passo 2 duas vezes.
+-- =====================================================================
+
+-- PASSO 1 -- conferir (não altera nada)
+select p.id, m.nome, p.valor, p.status,
+       (coalesce(p.pago_em, p.criado_em) at time zone 'America/Sao_Paulo') as quando
+from pagamentos_pix p join medicos m on m.id = p.medico_id
+where p.status = 'pago'
+  and m.nome ilike 'paulo%'
+  and (
+        (p.valor = 390
+          and (coalesce(p.pago_em, p.criado_em) at time zone 'America/Sao_Paulo')::date = date '2026-10-22')
+     or (p.valor = 20
+          and (coalesce(p.pago_em, p.criado_em) at time zone 'America/Sao_Paulo')::date in (date '2026-09-23', date '2026-09-11'))
+  )
+order by quando desc;
+
+-- PASSO 2 -- apagar (só roda se o passo 1 tiver achado exatamente 3)
+with alvo as (
+  select p.id, p.valor
+  from pagamentos_pix p join medicos m on m.id = p.medico_id
+  where p.status = 'pago'
+    and m.nome ilike 'paulo%'
+    and (
+          (p.valor = 390
+            and (coalesce(p.pago_em, p.criado_em) at time zone 'America/Sao_Paulo')::date = date '2026-10-22')
+       or (p.valor = 20
+            and (coalesce(p.pago_em, p.criado_em) at time zone 'America/Sao_Paulo')::date in (date '2026-09-23', date '2026-09-11'))
+    )
+),
+trava as (select 1 as ok where (select count(*) from alvo) = 3),
+t as (
+  delete from creditos_transacoes
+  where tipo = 'compra'
+    and pagamento_id in (select id from alvo where valor = 390)
+    and exists (select 1 from trava)
+  returning id
+),
+d as (
+  delete from pagamentos_pix
+  where id in (select id from alvo) and exists (select 1 from trava)
+  returning id
+)
+select (select count(*) from d) as pagamentos_apagados,
+       (select count(*) from t) as transacoes_apagadas;
+
+
+-- ============================================================
 -- migration_agenda_bloqueios.sql
 -- ============================================================
 
@@ -717,6 +967,42 @@ alter table medicos add column if not exists rede_lifemax_consentimento_em times
 
 comment on column medicos.telefone_publico is 'Telefone de contato exibido no perfil público da Rede Lifemax -- diferente do telefone de login, nunca exibido';
 comment on column medicos.rede_lifemax_consentimento is 'Médico marcou "Autorizo a Lifemax a divulgar os dados por mim aqui inseridos" -- LGPD';
+
+
+-- ============================================================
+-- migration_documentos_medico.sql
+-- ============================================================
+
+-- v100: documento de identidade/profissional do médico (CRM, RG, CNH...), enviado por ele em
+-- "Meus dados" e visível SOMENTE para o administrador. Guardado no próprio banco (bytea), nunca em
+-- bucket público. Um documento por médico (reenviar substitui). Rodar no Neon (SQL Editor).
+create table if not exists documentos_medico (
+    medico_id uuid primary key references medicos(id) on delete cascade,
+    nome_arquivo text not null,
+    content_type text not null,
+    tamanho integer not null,
+    conteudo bytea not null,
+    enviado_em timestamptz not null default now()
+);
+alter table documentos_medico enable row level security;
+
+
+-- ============================================================
+-- migration_emails_enviados.sql
+-- ============================================================
+
+-- v99: registro de todo e-mail que o sistema tenta enviar (alimenta o botão
+-- "Histórico contato" em Admin > Clientes). Rodar no Neon (SQL Editor).
+create table if not exists emails_enviados (
+    id uuid primary key default uuid_generate_v4(),
+    destinatarios text not null,            -- endereços separados por vírgula, em minúsculas
+    assunto text,
+    status text not null check (status in ('enviado', 'falhou', 'nao_configurado')),
+    erro text,
+    criado_em timestamptz not null default now()
+);
+create index if not exists idx_emails_enviados_criado on emails_enviados (criado_em desc);
+alter table emails_enviados enable row level security;
 
 
 -- ============================================================
@@ -2443,6 +2729,16 @@ create index if not exists idx_chamados_recepcao_andar on chamados_recepcao(anda
 
 
 -- ============================================================
+-- migration_telefone_opcional.sql
+-- ============================================================
+
+-- Primeiro acesso só com e-mail e senha (22/10/2026): o telefone deixa de ser obrigatório no
+-- cadastro inicial (continua obrigatório para reservar -- preenchido em "Meus dados").
+-- A restrição UNIQUE continua valendo (vários cadastros sem telefone = NULL são permitidos).
+alter table medicos alter column telefone drop not null;
+
+
+-- ============================================================
 -- migration_termo_uso.sql
 -- ============================================================
 
@@ -2469,6 +2765,17 @@ alter table medicos add column if not exists termo_versao text;
 
 
 -- ============================================================
+-- migration_transacoes_usuario.sql
+-- ============================================================
+
+-- Quem (usuário do admin) fez cada alteração manual de saldo de horas.
+-- Usado em Admin > Relatórios > Transações (coluna "Usuário").
+-- Seguro rodar mais de uma vez. Sem isso o sistema continua funcionando,
+-- mas as novas alterações de saldo não registram o nome de quem as fez.
+alter table creditos_transacoes add column if not exists criado_por text;
+
+
+-- ============================================================
 -- migration_tryout_medico.sql
 -- ============================================================
 
@@ -2482,6 +2789,45 @@ alter table medicos add column if not exists termo_versao text;
 -- guardado num contador separado, pra cancelar uma reserva de teste
 -- devolver a cortesia automaticamente (mesma lógica de sempre).
 alter table reservas add column if not exists tryout boolean not null default false;
+
+
+-- ============================================================
+-- migration_usuarios_admin.sql
+-- ============================================================
+
+-- Usuários do painel admin (22/10/2026): login por e-mail ou telefone + senha.
+create table if not exists usuarios_admin (
+    id uuid primary key default uuid_generate_v4(),
+    nome text not null,
+    email text not null,
+    telefone text,
+    senha_hash text,
+    ativo boolean not null default true,
+    criado_em timestamptz not null default now()
+);
+create unique index if not exists uq_usuarios_admin_email on usuarios_admin (lower(email));
+
+create table if not exists tokens_admin_usuarios (
+    id uuid primary key default uuid_generate_v4(),
+    usuario_id uuid not null references usuarios_admin(id) on delete cascade,
+    token_hash text not null unique,
+    expira_em timestamptz not null,
+    usado boolean not null default false,
+    criado_em timestamptz not null default now()
+);
+alter table usuarios_admin enable row level security;
+alter table tokens_admin_usuarios enable row level security;
+
+
+-- ============================================================
+-- migration_usuarios_admin_perfil.sql
+-- ============================================================
+
+-- Perfis do painel admin (22/10/2026): 'admin' (acesso total) e 'secretaria'
+-- (tudo, exceto Horas, Relatórios e Usuários).
+alter table usuarios_admin add column if not exists perfil text not null default 'admin';
+alter table usuarios_admin drop constraint if exists usuarios_admin_perfil_check;
+alter table usuarios_admin add constraint usuarios_admin_perfil_check check (perfil in ('admin', 'secretaria'));
 
 
 -- ============================================================
@@ -2530,43 +2876,3 @@ create table if not exists matriz_reservas_admin (
 create index if not exists idx_matriz_admin_consultorio_data on matriz_reservas_admin(consultorio_id, data);
 alter table matriz_reservas_admin enable row level security;
 
-
--- ===== migration_usuarios_admin.sql =====
--- Usuários do painel admin (22/10/2026): login por e-mail ou telefone + senha.
-create table if not exists usuarios_admin (
-    id uuid primary key default uuid_generate_v4(),
-    nome text not null,
-    email text not null,
-    telefone text,
-    senha_hash text,
-    ativo boolean not null default true,
-    criado_em timestamptz not null default now()
-);
-create unique index if not exists uq_usuarios_admin_email on usuarios_admin (lower(email));
-
-create table if not exists tokens_admin_usuarios (
-    id uuid primary key default uuid_generate_v4(),
-    usuario_id uuid not null references usuarios_admin(id) on delete cascade,
-    token_hash text not null unique,
-    expira_em timestamptz not null,
-    usado boolean not null default false,
-    criado_em timestamptz not null default now()
-);
-alter table usuarios_admin enable row level security;
-alter table tokens_admin_usuarios enable row level security;
-
--- ===== migration_telefone_opcional.sql =====
--- Primeiro acesso só com e-mail e senha (22/10/2026): o telefone deixa de ser obrigatório no
--- cadastro inicial (continua obrigatório para reservar -- preenchido em "Meus dados").
--- A restrição UNIQUE continua valendo (vários cadastros sem telefone = NULL são permitidos).
-alter table medicos alter column telefone drop not null;
-
--- ===== migration_usuarios_admin_perfil.sql =====
--- Perfis do painel admin (22/10/2026): 'admin' (acesso total) e 'secretaria'
--- (tudo, exceto Horas, Relatórios e Usuários).
-alter table usuarios_admin add column if not exists perfil text not null default 'admin';
-alter table usuarios_admin drop constraint if exists usuarios_admin_perfil_check;
-alter table usuarios_admin add constraint usuarios_admin_perfil_check check (perfil in ('admin', 'secretaria'));
-
--- migration_transacoes_usuario.sql
-alter table creditos_transacoes add column if not exists criado_por text;

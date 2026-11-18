@@ -477,6 +477,33 @@ def excluir_consultorio(consultorio_id: str) -> str:
         return "desativado"
 
 
+def excluir_medico(medico_id: str) -> None:
+    """Apaga de vez um cliente (botão Excluir em Admin > Clientes > Editar, v99).
+    Só permite quando é seguro: saldo zerado e nenhum histórico (reservas, compras,
+    transações, pacientes etc.) -- o banco recusa o DELETE por chave estrangeira
+    (pgcode 23503) e nada é apagado (um único DELETE é atômico). Levanta ValueError
+    com a mensagem para o admin; quem tem histórico deve ser só bloqueado."""
+    medico = get_medico_by_id(medico_id)
+    if medico is None:
+        raise ValueError("Cliente não encontrado.")
+    if round(float(medico.get("saldo_creditos") or 0), 2) != 0:
+        raise ValueError("Esse cliente ainda tem saldo de horas. Zere o saldo antes de excluir "
+                         "(ou use \"Bloquear acesso\" para só impedir reservas).")
+    client = get_client()
+    try:
+        client.table("medicos").delete().eq("id", medico_id).execute()
+    except Exception as e:
+        if getattr(e, "pgcode", None) == "23503":
+            raise ValueError("Esse cliente tem histórico no sistema (reservas, compras ou outros registros) "
+                             "e não pode ser apagado sem perder esse histórico. Use \"Bloquear acesso\".")
+        raise
+    # links de acesso/recuperação pendentes (sem chave estrangeira) -- limpeza para não sobrar token órfão
+    try:
+        client.table("tokens_recuperacao_senha").delete().eq("usuario_id", medico_id).execute()
+    except Exception as e:
+        print(f"[excluir_medico] token órfão não removido: {e}")
+
+
 def adicionar_fotos_consultorio(consultorio_id: str, novas_urls: list[str]) -> dict:
     """Anexa novas fotos à lista existente do consultório (não substitui)."""
     client = get_client()
@@ -542,7 +569,10 @@ def criar_medico(nome: str, telefone: str | None, especialidade: str = "", tipo_
                   endereco_complemento: str = "", endereco_bairro: str = "", endereco_cidade: str = "",
                   endereco_estado: str = "", convenios: list[str] | None = None,
                   autorizado: bool = True) -> dict:
-    """`autorizado=True` por padrão -- desde 23/09/2026 (pedido do Paulo,
+    """v100 (18/11/2026): o AUTO-CADASTRO público (/primeiro-acesso) volta a passar `autorizado=False` --
+    o médico novo entra e compra horas, mas só reserva depois que o administrador liberar em
+    Admin > Clientes. Quem o admin cadastra/importa continua nascendo autorizado (padrão True).
+    Histórico: `autorizado=True` por padrão -- desde 23/09/2026 (pedido do Paulo,
     itens 1 e 2) TODO médico novo nasce autorizado, seja pelo auto-cadastro
     público (/primeiro-acesso) ou pelo admin em /admin/clientes -- o que
     de fato trava a RESERVA agora é o cadastro incompleto (ver

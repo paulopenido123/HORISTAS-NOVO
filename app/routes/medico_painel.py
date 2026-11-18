@@ -204,8 +204,34 @@ def pagina_dados_pessoais():
     # reserva_service._campos_pessoais_faltando usada em todo o resto do
     # sistema.
     cadastro_completo_inicial = not reserva_service._campos_pessoais_faltando(medico)
+    from app.services import documentos_medico_service as docs_medico
     return render_template("painel_dados_pessoais.html", medico=medico,
-                            cadastro_completo_inicial=cadastro_completo_inicial)
+                            cadastro_completo_inicial=cadastro_completo_inicial,
+                            documento=docs_medico.obter_info(medico["id"]))
+
+
+@medico_painel_bp.route("/api/perfil/documento", methods=["POST"])
+@requer_login_medico
+def enviar_documento_medico():
+    """v100: o médico envia (ou substitui) o documento de identidade/profissional. Só o
+    administrador consegue abrir o arquivo; o médico vê apenas que já enviou e quando."""
+    from app.services import documentos_medico_service as docs_medico
+    arquivo = request.files.get("arquivo")
+    if arquivo is None:
+        return jsonify({"erro": "Escolha um arquivo para enviar."}), 400
+    dados = arquivo.read(docs_medico.TAMANHO_MAXIMO + 1)
+    medico_id = medico_logado_id()
+    try:
+        info = docs_medico.salvar(medico_id, arquivo.filename or "", dados)
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    try:
+        from app.services import notificacoes_operacionais_service as notif_op
+        medico = db.get_medico_by_id(medico_id)
+        notif_op.avisar_admins(f"📄 {medico['nome']} enviou o documento de identificação. Veja em Admin > Clientes.")
+    except Exception as e:
+        print(f"[documento_medico] Aviso aos admins falhou: {e}")
+    return jsonify({"resultado": "Documento enviado com sucesso.", "nome_arquivo": info["nome_arquivo"]})
 
 
 @medico_painel_bp.route("/api/perfil/dados-pessoais", methods=["POST"])

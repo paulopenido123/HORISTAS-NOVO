@@ -25,6 +25,8 @@ from app.services.pg_query import _ConnCtx
 
 VERSAO_FORMATO = 1
 _MARCA_B64 = "__b64__"
+# Dados sensíveis/pesados que não entram no arquivo de backup (v100: documentos de identidade dos médicos).
+_TABELAS_FORA_DO_BACKUP = {"documentos_medico"}
 
 
 def _tabelas(cur) -> list[str]:
@@ -100,6 +102,8 @@ def gerar_backup() -> tuple[bytes, dict]:
     with _ConnCtx() as conn:
         with conn.cursor() as cur:
             for t in _tabelas(cur):
+                if t in _TABELAS_FORA_DO_BACKUP:
+                    continue
                 cur.execute(f'select * from public."{t}"')
                 linhas = [{k: _para_json(v) for k, v in r.items()} for r in cur.fetchall()]
                 dados[t] = linhas

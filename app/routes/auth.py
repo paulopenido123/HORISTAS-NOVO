@@ -55,7 +55,7 @@ def primeiro_acesso():
                 try:
                     # Cadastro inicial só com e-mail e senha (telefone e demais dados vão em "Meus dados"
                     # -- enquanto faltarem, o sistema não deixa reservar; ver reserva_service).
-                    novo = db.criar_medico(nome, None, "", email=email_digitado)
+                    novo = db.criar_medico(nome, None, "", email=email_digitado, autorizado=False)
                 except Exception as e:
                     print(f"[primeiro_acesso] Falha ao criar cadastro: {e}")
                     erro = ("Não conseguimos concluir seu cadastro agora. Fale com a equipe Lifemax pelos telefones "
@@ -66,7 +66,7 @@ def primeiro_acesso():
                     try:
                         from app.services import notificacoes_operacionais_service as notif_op
                         notif_op.avisar_admins(f"👋 Novo cliente se cadastrou pelo site: {nome} ({email_digitado}). "
-                                               f"Ele ainda precisa completar os dados em Meus dados para reservar.")
+                                               f"Ele ainda precisa completar os dados e enviar o documento em Meus dados, e aguarda a sua liberação em Clientes para reservar.")
                     except Exception as e:
                         print(f"[primeiro_acesso] Aviso aos admins falhou: {e}")
                     return redirect(url_for("medico_painel.painel"))

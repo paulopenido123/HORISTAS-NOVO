@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, Response
 from app.services import supabase_client as db
 from app.services import auth_service
 from app.services import neon_storage
@@ -198,7 +198,9 @@ def clientes():
     pacotes_horas = creditos_db.listar_pacotes_horas()
     for m in lista:
         m['saldo_horas'] = creditos_db.estimar_horas_compraveis(m.get('saldo_creditos') or 0, pacotes_horas)
-    return render_template('admin_clientes.html', medicos=lista, busca=request.args.get('busca') or '')
+    from app.services import documentos_medico_service as docs_medico
+    return render_template('admin_clientes.html', medicos=lista, busca=request.args.get('busca') or '',
+                           docs=docs_medico.info_de_todos())
 
 
 @admin_bp.route('/clientes/<medico_id>/autorizacao', methods=['POST'])
@@ -525,7 +527,9 @@ def visualizar_cliente(medico_id):
         return redirect(url_for('admin.clientes'))
     medico['saldo_horas'] = creditos_db.saldo_em_horas_medico(medico_id)
     transacoes = creditos_db.listar_transacoes_medico(medico_id, limite=200)
-    return render_template('admin_cliente_visualizar.html', medico=medico, transacoes=transacoes)
+    from app.services import documentos_medico_service as docs_medico
+    return render_template('admin_cliente_visualizar.html', medico=medico, transacoes=transacoes,
+                           documento=docs_medico.obter_info(medico_id))
 
 
 @admin_bp.route('/clientes/<medico_id>/historico', methods=['GET'])
@@ -548,6 +552,86 @@ def historico_cliente(medico_id):
     medico['saldo_horas'] = creditos_db.saldo_em_horas_medico(medico_id)
     return render_template('admin_cliente_historico.html', medico=medico, linhas=linhas,
                            resumo=resumo, ordem=ordenar)
+
+
+@admin_bp.route('/clientes/<medico_id>/documento', methods=['GET'])
+@_admin_total
+def ver_documento_cliente(medico_id):
+    """v100: abre o documento enviado pelo médico. Só perfil Administrador; nunca fica em cache."""
+    from app.services import documentos_medico_service as docs_medico
+    doc = docs_medico.obter(medico_id)
+    if not doc:
+        flash('Este cliente ainda não enviou documento.', 'erro')
+        return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
+    resposta = Response(doc['conteudo'], mimetype=doc['content_type'])
+    resposta.headers['Content-Disposition'] = f'inline; filename="{doc["nome_arquivo"]}"'
+    resposta.headers['Cache-Control'] = 'no-store, private'
+    resposta.headers['X-Content-Type-Options'] = 'nosniff'
+    return resposta
+
+
+@admin_bp.route('/clientes/<medico_id>/documento/excluir', methods=['POST'])
+@_admin_total
+def excluir_documento_cliente(medico_id):
+    """v100: apaga o documento do médico (ele pode enviar outro depois)."""
+    from app.services import documentos_medico_service as docs_medico
+    medico = db.get_medico_by_id(medico_id)
+    if not medico:
+        flash('Cliente não encontrado.', 'erro')
+        return redirect(url_for('admin.clientes'))
+    docs_medico.excluir(medico_id)
+    flash(f'Documento de {medico["nome"]} excluído.', 'ok')
+    return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
+
+
+@admin_bp.route('/clientes/<medico_id>/historico-contato', methods=['GET'])
+@_admin
+def historico_contato_cliente(medico_id):
+    """Botão "Histórico contato" na lista de Clientes (v99): confirma quando foi o último
+    e-mail enviado e para qual endereço, mais a lista dos envios registrados para o e-mail
+    atual do cliente (tabela emails_enviados, alimentada por email_service.enviar_email).
+    "Enviado" = o servidor de e-mail aceitou; não garante que caiu na caixa de entrada."""
+    medico = db.get_medico_by_id(medico_id)
+    if not medico:
+        flash('Cliente não encontrado.', 'erro')
+        return redirect(url_for('admin.clientes'))
+    from app.services import email_service
+    from zoneinfo import ZoneInfo
+    resultado = email_service.historico_envios_para(medico.get('email') or '')
+    fuso = ZoneInfo('America/Sao_Paulo')
+    linhas = []
+    for l in resultado['linhas']:
+        quando = l.get('criado_em')
+        if isinstance(quando, str):
+            quando = datetime.fromisoformat(quando.replace('Z', '+00:00'))
+        if quando is not None:
+            if quando.tzinfo is None:
+                quando = quando.replace(tzinfo=timezone.utc)
+            quando = quando.astimezone(fuso).strftime('%d/%m/%Y %H:%M')
+        linhas.append(dict(l, quando=quando or '-'))
+    return render_template('admin_cliente_contato.html', medico=medico, linhas=linhas,
+                           tabela_ok=resultado['tabela_ok'])
+
+
+@admin_bp.route('/clientes/<medico_id>/excluir', methods=['POST'])
+@_admin_total
+def excluir_cliente(medico_id):
+    """Botão "Excluir cliente" na tela Editar (v99). Só perfil Administrador; exige digitar o
+    nome do cliente; só apaga se o cliente não tiver saldo nem histórico (ver db.excluir_medico)."""
+    medico = db.get_medico_by_id(medico_id)
+    if not medico:
+        flash('Cliente não encontrado.', 'erro')
+        return redirect(url_for('admin.clientes'))
+    if (request.form.get('confirmar_nome') or '').strip() != (medico.get('nome') or '').strip():
+        flash('O nome digitado não confere. Nada foi excluído.', 'erro')
+        return redirect(url_for('admin.editar_cliente', medico_id=medico_id))
+    try:
+        db.excluir_medico(medico_id)
+    except ValueError as e:
+        flash(str(e), 'erro')
+        return redirect(url_for('admin.editar_cliente', medico_id=medico_id))
+    flash(f'Cliente "{medico["nome"]}" excluído.', 'ok')
+    return redirect(url_for('admin.clientes'))
 
 
 @admin_bp.route('/clientes/<medico_id>/editar', methods=['GET', 'POST'])

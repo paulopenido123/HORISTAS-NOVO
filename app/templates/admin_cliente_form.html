@@ -23,11 +23,7 @@ button{padding:12px 22px;border:0;border-radius:8px;background:#0EA5A0;color:#ff
 </style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head><body>
 {% with titulo='Cliente', ativo='clientes' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
-  {% if modo == 'editar' %}
-  <a class="voltar" href="{{ url_for('admin.visualizar_cliente', medico_id=medico.id) }}">← Voltar pra Visualizar</a>
-  {% else %}
   <a class="voltar" href="{{ url_for('admin.clientes') }}">← Voltar pra Clientes</a>
-  {% endif %}
 
   {% with mensagens = get_flashed_messages(with_categories=true) %}
     {% for categoria, texto in mensagens %}
@@ -113,10 +109,24 @@ button{padding:12px 22px;border:0;border-radius:8px;background:#0EA5A0;color:#ff
       </div>
 
       <div class="acoes">
-        <button type="submit">{{ 'Cadastrar cliente' if modo == 'novo' else 'Salvar alterações' }}</button>
-        <a class="btn-alt" href="{{ url_for('admin.clientes') if modo == 'novo' else url_for('admin.visualizar_cliente', medico_id=medico.id) }}">Cancelar</a>
+        <button type="submit">{{ 'Cadastrar cliente' if modo == 'novo' else 'Confirmar' }}</button>
+        <a class="btn-alt" href="{{ url_for('admin.clientes') }}">Cancelar</a>
       </div>
     </form>
   </div>
+  {% if modo == 'editar' and admin_total %}
+  <div class="card" style="border-color:#f0c4bc">
+    <h3 style="margin-top:0;color:#B33">Excluir cliente</h3>
+    <p class="dica" style="font-size:13px">Só é possível excluir quem não tem saldo nem histórico (reservas, compras). Para quem já usou o sistema, use "Bloquear acesso" na lista de Clientes. A exclusão não pode ser desfeita.</p>
+    <form method="post" action="{{ url_for('admin.excluir_cliente', medico_id=medico.id) }}" onsubmit="return confirm('Excluir {{ medico.nome|e }} de vez? Isso não pode ser desfeito.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="campo">
+        <label for="confirmar_nome">Para confirmar, digite o nome exato do cliente: <strong>{{ medico.nome }}</strong></label>
+        <input type="text" id="confirmar_nome" name="confirmar_nome" autocomplete="off" required>
+      </div>
+      <div class="acoes"><button type="submit" style="background:#B33">Excluir cliente</button></div>
+    </form>
+  </div>
+  {% endif %}
 </div>
 </body></html>

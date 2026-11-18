@@ -40,6 +40,39 @@ RODAPE_EMAIL_AUTOMATICO = (
 )
 
 
+def _registrar_envio(destinatarios: list[str], assunto: str, status: str, erro: str | None = None) -> None:
+    """Grava em `emails_enviados` (sql/migration_emails_enviados.sql) a tentativa de envio, para o
+    botão "Histórico contato" do admin. Nunca pode quebrar o envio: se a tabela ainda não existe
+    (migração pendente) ou o banco falhar, só escreve no log."""
+    try:
+        from app.services.supabase_client import get_client
+        get_client().table("emails_enviados").insert({
+            "destinatarios": ", ".join(d.strip().lower() for d in destinatarios),
+            "assunto": (assunto or "")[:300],
+            "status": status,
+            "erro": (erro or None) and str(erro)[:500],
+        }).execute()
+    except Exception as e:
+        print(f"[email] Não consegui registrar o envio no histórico: {e}")
+
+
+def historico_envios_para(email: str, limite: int = 50) -> dict:
+    """Envios registrados para um endereço (mais recentes primeiro). Devolve
+    {"linhas": [...], "tabela_ok": bool}; tabela_ok=False quando a migração ainda não foi rodada."""
+    email = (email or "").strip().lower()
+    if not email:
+        return {"linhas": [], "tabela_ok": True}
+    try:
+        from app.services.supabase_client import get_client
+        linhas = (get_client().table("emails_enviados").select("*")
+                  .ilike("destinatarios", f"%{email}%").order("criado_em", desc=True)
+                  .limit(limite).execute().data)
+        return {"linhas": linhas, "tabela_ok": True}
+    except Exception as e:
+        print(f"[email] Histórico de envios indisponível: {e}")
+        return {"linhas": [], "tabela_ok": False}
+
+
 def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
                   anexos: list[tuple] | None = None,
                   imagens_inline: list[tuple] | None = None,
@@ -65,6 +98,8 @@ def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
     if not all([Config.SMTP_HOST, Config.SMTP_USER, Config.SMTP_PASSWORD, Config.EMAIL_FROM]):
         print("[email] SMTP não configurado — pulando envio de email. "
               "Configure SMTP_HOST, SMTP_USER, SMTP_PASSWORD, EMAIL_FROM no .env")
+        if destinatarios:
+            _registrar_envio(destinatarios, assunto, "nao_configurado", "SMTP não configurado no servidor")
         return False
 
     if not destinatarios:
@@ -111,9 +146,11 @@ def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
             server.starttls()
             server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
             server.sendmail(Config.EMAIL_FROM, destinatarios, msg.as_string())
+        _registrar_envio(destinatarios, assunto, "enviado")
         return True
     except Exception as e:
         print(f"[email] Erro ao enviar: {e}")
+        _registrar_envio(destinatarios, assunto, "falhou", f"{type(e).__name__}: {e}")
         return False
 
 

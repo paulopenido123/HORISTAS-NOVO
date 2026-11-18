@@ -95,6 +95,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
             {% else %}
             <span class="status-tag bloqueado">Aguardando liberação</span>
             {% endif %}
+            {% if docs.get(m.id) %}<span class="status-tag liberado" title="Enviado em {{ docs[m.id].enviado_em }}">📄 Documento enviado</span>{% else %}<span class="status-tag bloqueado" style="background:#FFF4DC;color:#9A6700">📄 Sem documento</span>{% endif %}
             <form class="form-autorizacao" method="post" action="{{ url_for('admin.autorizacao_cliente', medico_id=m.id) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="busca" value="{{ busca }}">
@@ -103,7 +104,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
               <button type="submit" class="btn-autorizacao bloquear" onclick="return confirm('Bloquear {{ m.nome }}? Ele não vai conseguir reservar consultório até ser liberado de novo.')">Bloquear acesso</button>
               {% else %}
               <input type="hidden" name="autorizado" value="1">
-              <button type="submit" class="btn-autorizacao liberar">Liberar acesso</button>
+              <button type="submit" class="btn-autorizacao liberar"{% if not docs.get(m.id) %} onclick="return confirm('{{ m.nome|e }} ainda não enviou o documento. Liberar o acesso mesmo assim?')"{% endif %}>Liberar acesso</button>
               {% endif %}
             </form>
           </td>
@@ -132,6 +133,8 @@ details.ajuste summary::-webkit-details-marker{display:none}
             <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.visualizar_cliente', medico_id=m.id) }}">🔍 Visualizar</a>
             <button type="button" class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px;" onclick="abrirModalLote('email', '{{ m.id }}')">📧 Configurar e-mail</button>
             <a class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.historico_cliente', medico_id=m.id) }}">📜 Histórico</a>
+            <a class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.historico_contato_cliente', medico_id=m.id) }}">📬 Histórico contato</a>
+            <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.editar_cliente', medico_id=m.id) }}">✏️ Editar</a>
             <details class="ajuste">
               <summary>Enviar link de acesso</summary>
               <form class="form-ajuste" method="post" action="{{ url_for('admin.enviar_link_cliente', medico_id=m.id) }}">

@@ -224,6 +224,21 @@
       <textarea id="observacoes_atendimento" name="observacoes_atendimento">{{ medico.observacoes_atendimento or '' }}</textarea>
     </div>
   </form>
+
+  <div class="card" id="card-documento">
+    <h2>Documento profissional</h2>
+    <p style="font-size:13px;color:var(--ink-muted);margin-bottom:12px">
+      Envie uma foto ou PDF do seu documento de identidade, de preferência a carteira do CRM (ou correspondente).
+      Ele fica arquivado com segurança no sistema e <strong>só o administrador da Lifemax</strong> tem acesso.
+    </p>
+    <div id="doc-status" style="font-size:13.5px;font-weight:600;margin-bottom:10px">
+      {% if documento %}✅ Documento enviado ({{ documento.nome_arquivo }}). Se quiser, envie outro para substituir.{% else %}⚠️ Documento ainda não enviado.{% endif %}
+    </div>
+    <input type="file" id="doc-arquivo" accept="application/pdf,image/jpeg,image/png,image/*" style="font-size:13px;max-width:100%">
+    <div style="margin-top:12px"><button type="button" class="btn" id="btn-doc">📤 Enviar documento</button></div>
+    <div id="doc-msg" style="font-size:13px;margin-top:10px"></div>
+    <p style="font-size:11.5px;color:var(--ink-faint);margin-top:10px">Formatos: PDF, JPG ou PNG, até 4 MB. Os dados são usados só para validar o seu cadastro profissional (LGPD).</p>
+  </div>
 </div>
 
 <div class="modal-overlay" id="modal-parabens">
@@ -366,5 +381,40 @@ function _autoSalvarAntesDeSair(link) {
 document.querySelectorAll('#link-sair, #link-voltar, .nav-inf a').forEach(_autoSalvarAntesDeSair);
 </script>
 
+<script>
+// v100: envio do documento. Fotos são reduzidas no próprio aparelho (máx. 1800 px, JPEG) antes de enviar.
+(function () {
+  const inp = document.getElementById('doc-arquivo'), btn = document.getElementById('btn-doc');
+  const msg = document.getElementById('doc-msg'), st = document.getElementById('doc-status');
+  function reduzirImagem(file) {
+    return new Promise((ok) => {
+      if (!file.type.startsWith('image/')) return ok(file);
+      const img = new Image(), url = URL.createObjectURL(file);
+      img.onload = () => {
+        const f = Math.min(1, 1800 / Math.max(img.width, img.height));
+        const c = document.createElement('canvas'); c.width = Math.round(img.width * f); c.height = Math.round(img.height * f);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        c.toBlob((b) => ok(b ? new File([b], (file.name.replace(/\.[^.]+$/, '') || 'documento') + '.jpg', {type: 'image/jpeg'}) : file), 'image/jpeg', 0.85);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); ok(file); };
+      img.src = url;
+    });
+  }
+  btn.addEventListener('click', async () => {
+    if (!inp.files.length) { msg.style.color = '#B33'; msg.textContent = 'Escolha um arquivo primeiro.'; return; }
+    btn.disabled = true; msg.style.color = '#55707C'; msg.textContent = 'Enviando...';
+    try {
+      const arq = await reduzirImagem(inp.files[0]);
+      const fd = new FormData(); fd.append('arquivo', arq, arq.name);
+      const r = await fetch('/api/perfil/documento', {method: 'POST', body: fd});
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.erro || 'Não foi possível enviar.');
+      msg.style.color = '#0B7B45'; msg.textContent = d.resultado;
+      st.textContent = '✅ Documento enviado (' + d.nome_arquivo + '). Se quiser, envie outro para substituir.'; inp.value = '';
+    } catch (e) { msg.style.color = '#B33'; msg.textContent = e.message; }
+    btn.disabled = false;
+  });
+})();
+</script>
 </body>
 </html>

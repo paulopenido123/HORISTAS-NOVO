@@ -30,6 +30,12 @@
     <div class="card">
       <h2>Consultórios</h2>
       {% if unidades %}
+      <div style="margin-bottom:14px;padding:12px;background:#F5F8FA;border-radius:10px">
+        <strong style="font-size:13px">Fotos da recepção de cada endereço</strong>
+        <div class="row" style="margin-top:8px">
+          {% for u in unidades %}<a class="btn" href="{{ url_for('admin.fotos_unidade', unidade_id=u.id) }}">📷 Recepção {{ u.nome }} ({{ (u.fotos or [])|length }})</a>{% endfor %}
+        </div>
+      </div>
       <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
         <a class="btn" href="{{ url_for('admin.consultorios') }}" style="{{ 'opacity:.6' if filtro_unidade else '' }}">Todas as unidades</a>
         {% for u in unidades %}<a class="btn" href="{{ url_for('admin.consultorios', unidade=u.id) }}" style="{{ '' if filtro_unidade == u.id else 'opacity:.6' }}">{{ u.nome }}</a>{% endfor %}

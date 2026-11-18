@@ -32,6 +32,7 @@
   .card p{margin:0;color:var(--muted);line-height:1.55;font-size:14px}
   .btn{display:inline-block;text-decoration:none;padding:13px 19px;border-radius:9px;font-weight:700;font-size:14px}
   .btn-primary{background:var(--teal);color:#fff}
+  .bloco-un{min-width:0}
   .unidades{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   a.unidade{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit;padding:30px;transition:box-shadow .15s,transform .15s,border-color .15s}
   a.unidade:hover{box-shadow:0 10px 30px #082a3d1f;transform:translateY(-2px);border-color:var(--teal)}
@@ -89,18 +90,24 @@
 </div></section>
 <main class="content">
   <div class="unidades">
+    <div class="bloco-un">
     <a class="card unidade" href="{{ url_for('consultorios_goncalves_dias') }}">
       <span class="rotulo">📍 Unidade</span>
       <h3>Rua Gonçalves Dias, 82</h3>
       <p>Funcionários, Belo Horizonte, MG</p>
       <span class="btn btn-primary acao" style="align-self:flex-start">Ver consultórios →</span>
     </a>
+    {% set fotos_un = (fotos_unidade or {}).get('Funcionários', []) %}{% set grupo_un = 'func' %}{% include '_fotos_unidade.html' %}
+    </div>
+    <div class="bloco-un">
     <a class="card unidade" href="{{ url_for('consultorios_barao_homem_de_melo') }}">
       <span class="rotulo">📍 Unidade</span>
       <h3>Av. Barão Homem de Melo, 4494, Sl 1403</h3>
-      <p>Estoril, Belo Horizonte, MG — em frente ao Avangarden</p>
+      <p>Estoril, Belo Horizonte, MG — em frente à Avantgarde Motors</p>
       <span class="breve">Novo local em breve</span>
     </a>
+    {% set fotos_un = (fotos_unidade or {}).get('Estoril', []) %}{% set grupo_un = 'est' %}{% include '_fotos_unidade.html' %}
+    </div>
   </div>
 </main>
 
@@ -109,7 +116,7 @@
   <a class="voltar" href="{{ url_for('consultorios_publicos') }}">← Voltar aos endereços</a>
   <div class="eyebrow">Unidade</div>
   <h1>Av. Barão Homem de Melo, 4494, Sl 1403</h1>
-  <p>Estoril, Belo Horizonte, MG — em frente ao Avangarden.</p>
+  <p>Estoril, Belo Horizonte, MG — em frente à Avantgarde Motors.</p>
 </div></section>
 <main class="content">
   <div class="card em-breve">
@@ -127,7 +134,7 @@
   <div class="eyebrow">Unidade</div>
   {% if modo == 'barao' %}
   <h1>Av. Barão Homem de Melo, 4494, Sl 1403</h1>
-  <p>Estoril, Belo Horizonte, MG — em frente ao Avangarden. Conheça os consultórios, escolha a estrutura que combina com seu atendimento e reserve somente o tempo necessário.</p>
+  <p>Estoril, Belo Horizonte, MG — em frente à Avantgarde Motors. Conheça os consultórios, escolha a estrutura que combina com seu atendimento e reserve somente o tempo necessário.</p>
   {% else %}
   <h1>Rua Gonçalves Dias, 82</h1>
   <p>Funcionários, Belo Horizonte, MG. Conheça alguns de nossos consultórios, escolha a estrutura que combina com seu atendimento e reserve somente o tempo necessário.</p>
@@ -161,6 +168,7 @@
 </main>
 {% endif %}
 
+{% include '_lightbox_unidade.html' %}
 <footer class="footer">Lifemax Consultórios · Belo Horizonte/MG</footer>
 
 <script>

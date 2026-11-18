@@ -1,0 +1,32 @@
+<style>
+  .fotos-unidade{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 4px;-webkit-overflow-scrolling:touch}
+  .fotos-unidade .miniatura{flex:0 0 auto;width:96px;height:72px;padding:0;border:1px solid rgba(14,42,58,.15);border-radius:9px;overflow:hidden;background:#fff;cursor:zoom-in}
+  .fotos-unidade .miniatura img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .15s}
+  .fotos-unidade .miniatura:hover img{transform:scale(1.07)}
+  #lbu{position:fixed;inset:0;z-index:9999;background:rgba(8,20,28,.92);display:none;align-items:center;justify-content:center;padding:16px}
+  #lbu.aberto{display:flex}
+  #lbu img{max-width:100%;max-height:88vh;border-radius:10px;box-shadow:0 10px 40px #0008}
+  #lbu button{position:absolute;background:rgba(255,255,255,.16);color:#fff;border:0;border-radius:50%;width:44px;height:44px;font-size:24px;cursor:pointer}
+  #lbu .fecha{top:14px;right:14px}#lbu .ant{left:12px;top:50%}#lbu .prox{right:12px;top:50%}
+</style>
+<div id="lbu" role="dialog" aria-modal="true" aria-label="Foto ampliada">
+  <button type="button" class="fecha" aria-label="Fechar">×</button>
+  <button type="button" class="ant" aria-label="Foto anterior">‹</button>
+  <img id="lbu-img" alt="Foto ampliada">
+  <button type="button" class="prox" aria-label="Próxima foto">›</button>
+</div>
+<script>
+(function(){
+  var lb=document.getElementById('lbu'), im=document.getElementById('lbu-img'), grupo=[], i=0;
+  function mostrar(n){ i=(n+grupo.length)%grupo.length; im.src=grupo[i]; }
+  function fechar(){ lb.classList.remove('aberto'); im.removeAttribute('src'); }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('.miniatura');
+    if(b){ e.preventDefault(); grupo=[].map.call(document.querySelectorAll('.miniatura[data-grupo="'+b.dataset.grupo+'"] img'),function(x){return x.src;}); lb.classList.add('aberto'); mostrar(parseInt(b.dataset.idx,10)); return; }
+    if(e.target.closest('.fecha')||e.target===lb){ fechar(); }
+    else if(e.target.closest('.ant')){ mostrar(i-1); }
+    else if(e.target.closest('.prox')){ mostrar(i+1); }
+  });
+  document.addEventListener('keydown',function(e){ if(!lb.classList.contains('aberto'))return; if(e.key==='Escape')fechar(); if(e.key==='ArrowLeft')mostrar(i-1); if(e.key==='ArrowRight')mostrar(i+1); });
+})();
+</script>

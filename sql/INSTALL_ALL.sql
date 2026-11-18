@@ -2823,12 +2823,16 @@ alter table unidades enable row level security;
 
 insert into unidades (nome, endereco, referencia, ordem) values
   ('Funcionários', 'Rua Gonçalves Dias, 82', null, 1),
-  ('Estoril', 'Av. Barão Homem de Melo, 4494, Sl 1403', 'Em frente ao Avangarden', 2)
+  ('Estoril', 'Av. Barão Homem de Melo, 4494, Sl 1403', 'Em frente à Avantgarde Motors', 2)
 on conflict (nome) do nothing;
 
 alter table consultorios add column if not exists unidade_id uuid references unidades(id);
 update consultorios set unidade_id = (select id from unidades where nome = 'Funcionários') where unidade_id is null;
 create index if not exists idx_consultorios_unidade on consultorios (unidade_id);
+
+-- v104: fotos da recepção de cada endereço (o admin envia em Admin > Consultórios > "Fotos da recepção") e correção do nome da loja em frente ao Estoril.
+alter table unidades add column if not exists fotos text[] not null default '{}';
+update unidades set referencia = 'Em frente à Avantgarde Motors' where nome = 'Estoril' and referencia is distinct from 'Em frente à Avantgarde Motors';
 
 
 -- ============================================================

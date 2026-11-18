@@ -25,6 +25,8 @@
   .unidade .ref{font-size:13px;color:var(--muted)}
   .unidade .qtd{font-size:12.5px;color:var(--muted);margin-top:4px}
   .acao{margin-top:14px;align-self:flex-start;background:var(--cyan);color:#fff;font-weight:700;font-size:13.5px;padding:10px 16px;border-radius:9px}
+  .bloco{min-width:0}
+  .bloco .unidade{height:auto}
   @media(max-width:640px){.unidades{grid-template-columns:1fr}}
 </style></head>
 <body>
@@ -35,6 +37,7 @@
   <p class="sub">Escolha o endereço onde você quer atender{% if medico %} — seu saldo é de <strong>{{ saldo_horas }}h</strong>, válido nas duas unidades{% endif %}.</p>
   <div class="unidades">
     {% for u in unidades %}
+    <div class="bloco">
     <a class="unidade" href="{{ url_for('turnos.pagina_turnos', unidade=u.id) }}">
       <span class="rotulo">📍 Unidade</span>
       <h2>{{ u.nome }}</h2>
@@ -43,7 +46,10 @@
       <span class="qtd">{% if contagem[u.id] %}{{ contagem[u.id] }} consultório{{ 's' if contagem[u.id] != 1 else '' }}{% else %}Novos consultórios em breve{% endif %}</span>
       <span class="acao">Ver consultórios →</span>
     </a>
+    {% set fotos_un = u.fotos or [] %}{% set grupo_un = u.id %}{% include '_fotos_unidade.html' %}
+    </div>
     {% endfor %}
   </div>
 </main>
+{% include '_lightbox_unidade.html' %}
 </body></html>

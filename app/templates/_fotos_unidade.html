@@ -1,0 +1,6 @@
+{# v104: fotos de uma unidade (miniaturas clicáveis que aumentam). Uso: {% set fotos_un = [...] %}{% include '_fotos_unidade.html' %} #}
+{% if fotos_un %}
+<div class="fotos-unidade">
+  {% for f in fotos_un %}<button type="button" class="miniatura" data-grupo="{{ grupo_un }}" data-idx="{{ loop.index0 }}" aria-label="Ampliar foto {{ loop.index }}"><img src="{{ f }}" alt="Foto da recepção" loading="lazy"></button>{% endfor %}
+</div>
+{% endif %}

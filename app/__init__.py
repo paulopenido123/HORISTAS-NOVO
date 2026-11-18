@@ -86,7 +86,12 @@ def create_app():
     # de Melo ainda não tem consultórios -- página "em breve" por enquanto.
     @app.route("/consultorios")
     def consultorios_publicos():
-        return render_template("consultorios_publicos.html", modo="unidades")
+        from app.services import supabase_client as db
+        try:
+            fotos_unidade = {u["nome"]: (u.get("fotos") or []) for u in db.listar_unidades()}
+        except Exception:
+            fotos_unidade = {}
+        return render_template("consultorios_publicos.html", modo="unidades", fotos_unidade=fotos_unidade)
 
     def _fotos_da_unidade(nome_unidade):
         """Fotos dos consultórios ativos de uma unidade (v102). Sem a tabela de unidades,

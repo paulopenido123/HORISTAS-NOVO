@@ -480,6 +480,14 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v104 — Fotos da recepção de cada endereço; nome "Avantgarde Motors"
+- Referência do Estoril corrigida para "Em frente à Avantgarde Motors" (telas, páginas públicas e banco: a migração atualiza também quem já tinha o texto antigo).
+- Nova coluna `unidades.fotos` (text[]), criada por `sql/migration_unidades.sql` (rodar de novo no Neon; é idempotente).
+- Admin > Consultórios: bloco "Fotos da recepção de cada endereço" com um botão por unidade -> `/admin/unidades/<id>/fotos` (envio de várias fotos JPG/PNG/WEBP, excluir). Armazenadas no Neon Storage em `unidades/<id>/`. Admin e secretária.
+- As fotos aparecem em miniatura logo abaixo de cada endereço (tela de escolha do médico `/turnos` e página pública `/consultorios`); ao clicar, ampliam em tela cheia (setas, ESC e clique fora fecham) -- parciais `_fotos_unidade.html` e `_lightbox_unidade.html`.
+- Sem a coluna (migração não rodada): telas funcionam sem fotos e o envio mostra aviso para rodar a migração.
+- Arquivos: sql/migration_unidades.sql, services/supabase_client.py, routes/admin.py, app/__init__.py, templates admin_unidade_fotos.html (novo), _fotos_unidade.html (novo), _lightbox_unidade.html (novo), admin_consultorios.html, turnos_unidades.html, consultorios_publicos.html.
+
 ## v103 — Contrato da Autentique no modelo "Biomax / assinatura só do cliente"
 - Modelo enviado pelo Paulo (`Contrato_Biomax_Authentic_Assinatura_Somente_Cliente.docx`). As cláusulas 1ª a 9ª foram comparadas por programa com o texto do sistema: idênticas (32 de 32 linhas).
 - PDF enviado à Autentique (`pdf_service.gerar_pdf_contrato(..., assinatura_externa=True)`) agora segue o modelo: contratada **BIOMAX SERVICES LTDA** (CNPJ 29.478.011/0001-63), dados do contratante (nome, CPF/CNPJ, registro, especialidade, endereço, e-mail, telefone) preenchidos dentro do texto, e fecho "Declarações e assinatura eletrônica" com assinatura só do contratante. Texto da contratada em `contrato_service.CONTRATADA_ASSINATURA_*`.
@@ -488,7 +496,7 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Sem mudança de banco. Arquivos: services/pdf_service.py, services/contrato_service.py.
 
 ## v102 — Duas unidades (Funcionários e Estoril)
-- Nova tabela `unidades` (nome, endereço, referência, ordem) e coluna `consultorios.unidade_id`. Migração: `sql/migration_unidades.sql` (cria as 2 unidades — Funcionários: Rua Gonçalves Dias, 82; Estoril: Av. Barão Homem de Melo, 4494, Sl 1403, em frente ao Avangarden — e coloca todos os consultórios existentes em Funcionários). Pode ser rodada mais de uma vez.
+- Nova tabela `unidades` (nome, endereço, referência, ordem) e coluna `consultorios.unidade_id`. Migração: `sql/migration_unidades.sql` (cria as 2 unidades — Funcionários: Rua Gonçalves Dias, 82; Estoril: Av. Barão Homem de Melo, 4494, Sl 1403, em frente à Avantgarde Motors — e coloca todos os consultórios existentes em Funcionários). Pode ser rodada mais de uma vez.
 - Médico: ao clicar em "Reservar consultórios" (`/turnos`) aparece primeiro a tela com os dois endereços (`turnos_unidades.html`); ao escolher, abre a grade só daquela unidade (`/turnos?unidade=ID`, `/api/turnos/grade?unidade=ID`), com faixa do endereço e link "Trocar unidade". O saldo de horas vale nas duas unidades.
 - Admin > Consultórios: seletor de unidade ao cadastrar (obrigatório), ao editar (permite mover o consultório de unidade) e filtro por unidade na lista. Admin > Visualizar agenda: filtro por unidade (`/admin/api/matriz/grade?unidade=ID`). Secretária: permissões inalteradas.
 - Endereço correto da unidade no painel do médico (reservas) e na mensagem/e-mail de confirmação de consulta (`mapa_endereco_por_consultorio`).

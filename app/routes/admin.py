@@ -995,6 +995,51 @@ def excluir_foto(consultorio_id):
     return redirect(url_for('admin.fotos_consultorio', consultorio_id=consultorio_id))
 
 
+@admin_bp.route('/unidades/<unidade_id>/fotos', methods=['GET', 'POST'])
+@_admin
+def fotos_unidade(unidade_id):
+    """v104: fotos da recepção de cada endereço (aparecem abaixo do endereço na tela de escolha e na página pública)."""
+    unidade = next((u for u in db.listar_unidades() if u['id'] == unidade_id), None)
+    if not unidade:
+        flash('Unidade não encontrada.', 'erro')
+        return redirect(url_for('admin.consultorios'))
+    if request.method == 'POST':
+        arquivos = [a for a in request.files.getlist('foto') if a and a.filename]
+        if not arquivos:
+            flash('Selecione ao menos uma foto.', 'erro')
+        else:
+            urls_ok, erros = [], []
+            for arquivo in arquivos:
+                ext = arquivo.filename.rsplit('.', 1)[-1].lower() if '.' in arquivo.filename else 'jpg'
+                if ext not in {'jpg', 'jpeg', 'png', 'webp'}:
+                    erros.append(f'{arquivo.filename}: use JPG, PNG ou WEBP.')
+                    continue
+                caminho = f"unidades/{unidade_id}/{date.today().isoformat()}-{arquivo.filename.rsplit('/', 1)[-1]}"
+                try:
+                    urls_ok.append(neon_storage.upload_arquivo(caminho, arquivo.read(), arquivo.mimetype or 'image/jpeg'))
+                except Exception as e:
+                    erros.append(f'{arquivo.filename}: {e}')
+            if urls_ok:
+                try:
+                    db.adicionar_fotos_unidade(unidade_id, urls_ok)
+                    flash(f'{len(urls_ok)} foto(s) adicionada(s).' if len(urls_ok) > 1 else 'Foto adicionada.', 'ok')
+                except Exception as e:
+                    flash('Não foi possível salvar as fotos. Rode no Neon o arquivo sql/migration_unidades.sql (ele cria a coluna de fotos).', 'erro')
+            for msg in erros:
+                flash(f'Não foi possível enviar {msg}', 'erro')
+        return redirect(url_for('admin.fotos_unidade', unidade_id=unidade_id))
+    return render_template('admin_unidade_fotos.html', unidade=unidade)
+
+
+@admin_bp.route('/unidades/<unidade_id>/fotos/excluir', methods=['POST'])
+@_admin
+def excluir_foto_unidade(unidade_id):
+    url = request.form.get('url', '')
+    if url:
+        db.remover_foto_unidade(unidade_id, url)
+    return redirect(url_for('admin.fotos_unidade', unidade_id=unidade_id))
+
+
 @admin_bp.route('/matriz')
 @_admin_total
 def matriz():

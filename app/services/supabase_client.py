@@ -432,6 +432,20 @@ def listar_unidades() -> list[dict]:
         return []
 
 
+def adicionar_fotos_unidade(unidade_id: str, novas_urls: list[str]) -> None:
+    c = get_client()
+    atual = c.table("unidades").select("*").eq("id", unidade_id).execute().data
+    fotos = (atual[0].get("fotos") or []) if atual else []
+    c.table("unidades").update({"fotos": fotos + novas_urls}).eq("id", unidade_id).execute()
+
+
+def remover_foto_unidade(unidade_id: str, url_foto: str) -> None:
+    c = get_client()
+    atual = c.table("unidades").select("*").eq("id", unidade_id).execute().data
+    fotos = (atual[0].get("fotos") or []) if atual else []
+    c.table("unidades").update({"fotos": [f for f in fotos if f != url_foto]}).eq("id", unidade_id).execute()
+
+
 def mapa_endereco_por_consultorio() -> dict:
     """{consultorio_id: endereço da unidade dele} -- para mostrar o endereço certo em reservas e e-mails."""
     unidades = {u["id"]: u["endereco"] for u in listar_unidades()}

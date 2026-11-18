@@ -72,7 +72,7 @@ def _formatar_data_br(iso_str: str | None) -> str:
         return str(iso_str)
 
 
-def gerar_pdf_contrato(medico: dict) -> io.BytesIO:
+def gerar_pdf_contrato(medico: dict, assinatura_externa: bool = False) -> io.BytesIO:
     """Monta o PDF do contrato preenchido com os dados de aceite DESSE
     médico (nome, CPF/CNPJ, registro profissional, especialidade, data de
     nascimento, endereço, telefone, e-mail, data/hora, IP, versão do
@@ -81,7 +81,11 @@ def gerar_pdf_contrato(medico: dict) -> io.BytesIO:
     reserva_service._CAMPOS_OBRIGATORIOS_PARA_RESERVAR). Se por algum
     motivo o médico ainda não tiver aceitado (não deveria acontecer --
     essa rota já fica atrás do login + @requer_termo_aceito em todas as
-    outras telas), mostra os campos como pendentes em vez de quebrar."""
+    outras telas), mostra os campos como pendentes em vez de quebrar.
+
+    `assinatura_externa=True` (v101): versão enviada à Autentique para assinatura digital -- o bloco
+    final não fala em "aceite na plataforma"; a data, o IP e o certificado ficam no registro da própria
+    Autentique, anexado ao documento assinado."""
     estilos = _estilos()
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -120,9 +124,10 @@ def gerar_pdf_contrato(medico: dict) -> io.BytesIO:
 
     # ---- Bloco de aceite, preenchido com os dados reais deste médico ----
     story.append(PageBreak())
-    story.append(Paragraph("ACEITE DIGITAL", estilos["aceite_titulo"]))
+    story.append(Paragraph("ASSINATURA DIGITAL" if assinatura_externa else "ACEITE DIGITAL", estilos["aceite_titulo"]))
     story.append(Paragraph(
-        "Ao aceitar eletronicamente na plataforma, o profissional declarou que:",
+        "Ao assinar digitalmente este contrato, o profissional declara que:" if assinatura_externa
+        else "Ao aceitar eletronicamente na plataforma, o profissional declarou que:",
         estilos["corpo"],
     ))
     story.append(Spacer(1, 4))
@@ -146,19 +151,25 @@ def gerar_pdf_contrato(medico: dict) -> io.BytesIO:
         ("Endereço", endereco_fmt),
         ("Telefone", medico.get("telefone") or "não informado"),
         ("E-mail", medico.get("email") or "não informado"),
+        *([("Versão do contrato", contrato_service.CONTRATO_VERSAO),
+           ("Assinatura", "Assinatura eletrônica registrada pela plataforma Autentique (data, hora, IP e certificado no registro anexo)")]
+          if assinatura_externa else [
         ("Data e hora do aceite", _formatar_data_br(medico.get("termo_aceito_em"))),
         ("IP / identificação eletrônica", medico.get("termo_aceito_ip") or "não registrado"),
         ("Versão do contrato aceita", medico.get("termo_versao") or "não registrada (aceite anterior ao controle de versão)"),
         ("Aceite eletrônico", "ACEITO E CONCORDO" if medico.get("termo_aceito") else "PENDENTE"),
+        ]),
     ]
     for rotulo, valor in dados:
         story.append(Paragraph(f"<b>{rotulo}:</b> {valor}", estilos["dados_aceite"]))
 
     story.append(Spacer(1, 10))
     gerado_em = datetime.now(timezone.utc).strftime("%d/%m/%Y às %H:%M UTC")
+    complemento = ("a partir dos dados do cadastro, para assinatura digital" if assinatura_externa
+                   else "a partir do aceite eletrônico registrado")
     story.append(Paragraph(
         f"<i>Documento gerado automaticamente pela plataforma LifeMax em {gerado_em}, "
-        f"a partir do aceite eletrônico registrado -- não requer assinatura física.</i>",
+        f"{complemento} -- não requer assinatura física.</i>",
         estilos["dados_aceite"],
     ))
 

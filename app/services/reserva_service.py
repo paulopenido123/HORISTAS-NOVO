@@ -86,6 +86,17 @@ class MatrizNaoGeradaError(Exception):
         )
 
 
+class ContratoPendenteError(Exception):
+    """v101: médico que se cadastrou sozinho ainda não assinou o contrato digital (Autentique). Pode comprar
+    horas, mas só reserva depois de assinar. Não herda de NaoAutorizadoError de propósito: as rotas tratam
+    os dois (ver turnos.py / api_dora.py)."""
+    def __init__(self):
+        super().__init__(
+            "Para reservar um consultório você precisa assinar o contrato digital. "
+            "Clique em \"Assinar contrato\" no aviso no topo da página."
+        )
+
+
 class NaoAutorizadoError(Exception):
     """Médico se cadastrou sozinho (auto-cadastro em /primeiro-acesso) mas
     o admin ainda não liberou o acesso dele -- pedido do Paulo em
@@ -176,6 +187,17 @@ def _checar_pode_alugar_avulso(medico: dict | None, criado_por_admin: bool = Fal
         return
     if medico and not medico.get("autorizado", True):
         raise NaoAutorizadoError()
+    if medico and medico.get("exige_contrato") and not medico.get("contrato_assinado_em"):
+        # v101: confere na Autentique antes de barrar (ele pode ter assinado agora há pouco)
+        from app.services import autentique_service
+        try:
+            if medico.get("contrato_autentique_id") and autentique_service.configurado():
+                autentique_service.atualizar_status(medico["id"])
+                medico = db.get_medico_by_id(medico["id"]) or medico
+        except Exception as e:
+            print(f"[reserva] não consegui conferir o contrato na Autentique: {e}")
+        if autentique_service.contrato_pendente(medico):
+            raise ContratoPendenteError()
     if medico:
         faltando = _campos_pessoais_faltando(medico)
         if faltando:

@@ -210,6 +210,30 @@ def pagina_dados_pessoais():
                             documento=docs_medico.obter_info(medico["id"]))
 
 
+@medico_painel_bp.route("/api/perfil/contrato/enviar", methods=["POST"])
+@requer_login_medico
+def enviar_contrato_assinatura():
+    """v101: gera o contrato do médico e o envia para assinatura digital (Autentique). Devolve o link, se houver."""
+    from app.services import autentique_service
+    try:
+        r = autentique_service.enviar_contrato(medico_logado_id())
+    except (ValueError, autentique_service.AutentiqueErro) as e:
+        return jsonify({"erro": str(e)}), 400
+    return jsonify({"link": r["link"], "novo": r["novo"]})
+
+
+@medico_painel_bp.route("/api/perfil/contrato/verificar", methods=["POST"])
+@requer_login_medico
+def verificar_contrato_assinatura():
+    """v101: botão "Já assinei": consulta a Autentique e, se assinou, libera a parte do contrato."""
+    from app.services import autentique_service
+    try:
+        r = autentique_service.atualizar_status(medico_logado_id())
+    except autentique_service.AutentiqueErro as e:
+        return jsonify({"erro": str(e)}), 400
+    return jsonify(r)
+
+
 @medico_painel_bp.route("/api/perfil/documento", methods=["POST"])
 @requer_login_medico
 def enviar_documento_medico():

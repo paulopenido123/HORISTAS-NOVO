@@ -72,6 +72,12 @@ class Config:
     ASAAS_ENV = os.getenv("ASAAS_ENV", "sandbox")  # "sandbox" ou "production"
     ASAAS_WEBHOOK_TOKEN = os.getenv("ASAAS_WEBHOOK_TOKEN")  # token que você define e configura no Asaas
 
+    # --- Assinatura digital do contrato (Autentique) -- v101 ---
+    # Token em painel.autentique.com.br/perfil/api. AUTENTIQUE_SANDBOX=1 (padrão) cria só documentos de
+    # TESTE (sem custo); troque para 0 no Render quando for valer de verdade.
+    AUTENTIQUE_API_TOKEN = os.getenv("AUTENTIQUE_API_TOKEN")
+    AUTENTIQUE_SANDBOX = (os.getenv("AUTENTIQUE_SANDBOX", "1") or "1").strip().lower() not in ("0", "false", "nao", "não", "no")
+
     # --- Emissão de Nota Fiscal (NFS-e) da Lifemax pros médicos ---
     # Certificado A1 da PRÓPRIA LIFEMAX (emitente), usado pra emitir a nota
     # cobrada do médico pelo aluguel do consultório/sala -- ver

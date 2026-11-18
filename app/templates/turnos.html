@@ -307,6 +307,7 @@
 </div>
 
 <div class="container">
+  {% include '_aviso_contrato.html' %}
   {% if medico and not medico.autorizado %}
   <div style="background:var(--coral-soft, #FBEAE6); color:var(--coral, #B33); padding:12px 16px; border-radius:14px; font-size:13px; margin:14px 12px 0;">
     Seu cadastro ainda está aguardando liberação do administrador. Você pode navegar pela grade,

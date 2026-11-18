@@ -199,8 +199,11 @@ def clientes():
     for m in lista:
         m['saldo_horas'] = creditos_db.estimar_horas_compraveis(m.get('saldo_creditos') or 0, pacotes_horas)
     from app.services import documentos_medico_service as docs_medico
+    from app.services import autentique_service
+    from app.config import Config
     return render_template('admin_clientes.html', medicos=lista, busca=request.args.get('busca') or '',
-                           docs=docs_medico.info_de_todos())
+                           docs=docs_medico.info_de_todos(),
+                           autentique_teste=autentique_service.configurado() and Config.AUTENTIQUE_SANDBOX)
 
 
 @admin_bp.route('/clientes/<medico_id>/autorizacao', methods=['POST'])
@@ -552,6 +555,33 @@ def historico_cliente(medico_id):
     medico['saldo_horas'] = creditos_db.saldo_em_horas_medico(medico_id)
     return render_template('admin_cliente_historico.html', medico=medico, linhas=linhas,
                            resumo=resumo, ordem=ordenar)
+
+
+@admin_bp.route('/clientes/<medico_id>/contrato/verificar', methods=['POST'])
+@_admin
+def verificar_contrato_cliente(medico_id):
+    """v101: confere na Autentique se o médico já assinou o contrato digital."""
+    from app.services import autentique_service
+    try:
+        r = autentique_service.atualizar_status(medico_id)
+        flash('Contrato assinado pelo médico.' if r['assinado'] else
+              ('O médico RECUSOU o contrato.' if r['recusado'] else 'Ainda não assinou.'), 'ok' if r['assinado'] else 'erro')
+    except autentique_service.AutentiqueErro as e:
+        flash(str(e), 'erro')
+    return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
+
+
+@admin_bp.route('/clientes/<medico_id>/contrato/dispensar', methods=['POST'])
+@_admin_total
+def dispensar_contrato_cliente(medico_id):
+    """v101: dispensa o médico de assinar o contrato digital (ex.: não consegue assinar; já é cliente antigo)."""
+    medico = db.get_medico_by_id(medico_id)
+    if not medico:
+        flash('Cliente não encontrado.', 'erro')
+        return redirect(url_for('admin.clientes'))
+    db.get_client().table('medicos').update({'exige_contrato': False}).eq('id', medico_id).execute()
+    flash(f'{medico["nome"]} foi dispensado de assinar o contrato digital.', 'ok')
+    return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
 
 @admin_bp.route('/clientes/<medico_id>/documento', methods=['GET'])

@@ -10,6 +10,10 @@ from app.services.auth_service import medico_logado_id
 
 
 def medico_precisa_aceitar_termo(medico: dict) -> bool:
+    # v101: quem precisa assinar o contrato digital (Autentique) não passa pelo aceite interno -- o contrato
+    # assinado substitui o termo, e a assinatura só é exigida na hora de RESERVAR (para poder comprar horas antes).
+    if medico.get("exige_contrato"):
+        return False
     return not medico.get("termo_aceito", False)
 
 

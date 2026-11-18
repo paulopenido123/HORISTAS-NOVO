@@ -51,7 +51,7 @@ def _medico_para_json(medico: dict) -> dict:
     # Todo médico é "avulso" (pedido do Paulo em 30/09/2026: Agenda Fixos e
     # Agenda Horistas foram removidas do sistema) -- a Dora usa esse campo
     # pra saber se pode oferecer "reservar consultório" pra esse médico.
-    pode_reservar_avulso = medico.get("autorizado", True)
+    pode_reservar_avulso = medico.get("autorizado", True) and not (medico.get("exige_contrato") and not medico.get("contrato_assinado_em"))
     return {
         "id": medico["id"],
         "nome": medico["nome"],
@@ -172,7 +172,7 @@ def api_dora_reservar():
         return jsonify({"erro": str(e)}), 402
     except reserva_service.ConflitoDeReservaError as e:
         return jsonify({"erro": str(e)}), 409
-    except reserva_service.NaoAutorizadoError as e:
+    except (reserva_service.NaoAutorizadoError, reserva_service.ContratoPendenteError) as e:
         return jsonify({"erro": str(e)}), 403
     except reserva_service.DadosPessoaisIncompletosError as e:
         return jsonify({"erro": str(e), "campos_faltando": e.campos_faltando}), 403

@@ -129,7 +129,7 @@ def api_reservar():
         return jsonify({"erro": str(e)}), 402
     except reserva_service.ConflitoDeReservaError as e:
         return jsonify({"erro": str(e)}), 409
-    except reserva_service.NaoAutorizadoError as e:
+    except (reserva_service.NaoAutorizadoError, reserva_service.ContratoPendenteError) as e:
         return jsonify({"erro": str(e)}), 403
     except reserva_service.DadosPessoaisIncompletosError as e:
         return jsonify({"erro": str(e), "campos_faltando": e.campos_faltando}), 403
@@ -173,7 +173,7 @@ def api_reservar_horas():
         return jsonify({"erro": str(e)}), 402
     except reserva_service.ConflitoDeReservaError as e:
         return jsonify({"erro": str(e)}), 409
-    except reserva_service.NaoAutorizadoError as e:
+    except (reserva_service.NaoAutorizadoError, reserva_service.ContratoPendenteError) as e:
         return jsonify({"erro": str(e)}), 403
     except reserva_service.DadosPessoaisIncompletosError as e:
         return jsonify({"erro": str(e), "campos_faltando": e.campos_faltando}), 403

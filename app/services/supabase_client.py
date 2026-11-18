@@ -568,7 +568,7 @@ def criar_medico(nome: str, telefone: str | None, especialidade: str = "", tipo_
                   endereco_cep: str = "", endereco_rua: str = "", endereco_numero: str = "",
                   endereco_complemento: str = "", endereco_bairro: str = "", endereco_cidade: str = "",
                   endereco_estado: str = "", convenios: list[str] | None = None,
-                  autorizado: bool = True) -> dict:
+                  autorizado: bool = True, exige_contrato: bool = False) -> dict:
     """v100 (18/11/2026): o AUTO-CADASTRO público (/primeiro-acesso) volta a passar `autorizado=False` --
     o médico novo entra e compra horas, mas só reserva depois que o administrador liberar em
     Admin > Clientes. Quem o admin cadastra/importa continua nascendo autorizado (padrão True).
@@ -581,10 +581,7 @@ def criar_medico(nome: str, telefone: str | None, especialidade: str = "", tipo_
     bloqueio manual excepcional que o admin aciona depois, em
     /admin/clientes (ex: suspender um médico) -- não é mais passado aqui
     na criação."""
-    resp = (
-        get_client()
-        .table("medicos")
-        .insert({
+    dados = ({
             "nome": nome,
             "telefone": telefone,
             "especialidade": especialidade,
@@ -608,8 +605,19 @@ def criar_medico(nome: str, telefone: str | None, especialidade: str = "", tipo_
             "endereco_estado": endereco_estado,
             "convenios": convenios or [],
         })
-        .execute()
-    )
+    if exige_contrato:
+        # v101: só o auto-cadastro público assina o contrato digital para reservar (ver autentique_service).
+        dados["exige_contrato"] = True
+    try:
+        resp = get_client().table("medicos").insert(dados).execute()
+    except Exception as e:
+        if exige_contrato and getattr(e, "pgcode", None) == "42703":
+            # migração migration_contrato_assinatura.sql ainda não rodou: cadastra sem exigir (não perde o cadastro)
+            print("[criar_medico] coluna exige_contrato ausente -- rode sql/migration_contrato_assinatura.sql")
+            dados.pop("exige_contrato")
+            resp = get_client().table("medicos").insert(dados).execute()
+        else:
+            raise
     return resp.data[0]
 
 

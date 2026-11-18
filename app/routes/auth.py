@@ -55,7 +55,7 @@ def primeiro_acesso():
                 try:
                     # Cadastro inicial só com e-mail e senha (telefone e demais dados vão em "Meus dados"
                     # -- enquanto faltarem, o sistema não deixa reservar; ver reserva_service).
-                    novo = db.criar_medico(nome, None, "", email=email_digitado, autorizado=False)
+                    novo = db.criar_medico(nome, None, "", email=email_digitado, autorizado=False, exige_contrato=True)
                 except Exception as e:
                     print(f"[primeiro_acesso] Falha ao criar cadastro: {e}")
                     erro = ("Não conseguimos concluir seu cadastro agora. Fale com a equipe Lifemax pelos telefones "

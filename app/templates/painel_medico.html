@@ -382,6 +382,7 @@ if ("serviceWorker" in navigator) {
     {% endfor %}
   {% endwith %}
 
+  {% include '_aviso_contrato.html' %}
   {% if not medico.autorizado %}
   <div class="flash erro">
     Seu cadastro ainda está aguardando liberação do administrador. Você já pode comprar horas,

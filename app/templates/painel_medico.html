@@ -174,6 +174,13 @@
   .btn-pad.verde:hover { background: var(--teal-dark); }
   .btn-pad.menta { background: var(--mint); color: #0B7F7B; }
   .btn-pad.menta:hover { background: #C7EAE7; }
+  /* v106: cadastro incompleto -> "Meus dados" pisca em vermelho 3 vezes ao abrir o painel */
+  @keyframes piscar-vermelho {
+    0%, 100% { background: var(--mint); color: #0B7F7B; box-shadow: 0 0 0 0 rgba(229,57,53,0); }
+    50% { background: #E53935; color: #fff; box-shadow: 0 0 0 5px rgba(229,57,53,.35), 0 0 18px rgba(229,57,53,.6); }
+  }
+  .btn-pad.piscar { animation: piscar-vermelho .9s ease-in-out .5s 3; }
+  @media (prefers-reduced-motion: reduce) { .btn-pad.piscar { animation: none; box-shadow: 0 0 0 3px #E53935; } }
 
   /* ---- Cartões rápidos ---- */
   html, body { overflow-x: hidden; }
@@ -362,7 +369,7 @@ if ("serviceWorker" in navigator) {
   <div class="saldo-txt"><div class="t">Saldo de horas</div><div class="v">{{ saldo_horas }}h</div></div>
   <div class="saldo-botoes">
     <button type="button" class="btn-pad verde" onclick="abrirModalCompra('horas')"><svg class="ic "><use href="#i-cart"/></svg> + Comprar horas</button>
-    <a class="btn-pad menta" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}"><svg class="ic "><use href="#i-user"/></svg> Meus dados</a>
+    <a class="btn-pad menta{{ ' piscar' if campos_faltando else '' }}" href="{{ url_for('medico_painel.pagina_dados_pessoais') }}"><svg class="ic "><use href="#i-user"/></svg> Meus dados</a>
   </div>
 </div>
 <div class="cards-rapidos">

@@ -150,7 +150,7 @@ def _checar_data_nao_passada(data: str, hora_inicio: str | None = None):
 _CAMPOS_OBRIGATORIOS_PARA_RESERVAR = [
     ("telefone", "telefone"),
     ("e-mail", "email"),
-    ("especialidade", "especialidade"),
+    ("especialidade/campo de trabalho", "especialidade"),
     ("CPF", "cpf_cnpj"),
     ("CEP", "endereco_cep"),
     ("rua/avenida", "endereco_rua"),

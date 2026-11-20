@@ -55,6 +55,10 @@
   .btn-voltar { display:inline-flex; align-items:center; text-decoration:none; background:#E8EEF2 !important; color:#1F3A4D !important; }
   .btn { background: var(--cyan); color:#fff; border:none; padding:11px 20px; border-radius:7px;
          font-family: var(--display); font-weight:700; font-size:13.5px; cursor:pointer; }
+  .obrig { color:#E53935; }
+  input[type].campo-erro, input.campo-erro[type=text], input.campo-erro[type=email] { border:2px solid #E53935 !important; background:#FFF1F0 !important; box-shadow:0 0 0 3px rgba(229,57,53,.15); }
+  label.label-erro { color:#E53935 !important; }
+  .msg-erro { color:#E53935; font-size:12.5px; font-weight:600; margin:5px 0 0; }
   .btn:disabled { background: var(--line-strong); color: var(--ink-faint); cursor: not-allowed; }
   #status-msg { font-size:13px; margin-top:4px; }
 
@@ -93,7 +97,7 @@
 {% with eyebrow='Cadastro', titulo='Meus dados', subtitulo='Dados usados em recibos, notas fiscais e no seu atendimento. Os campos já vêm preenchidos e ficam liberados para editar.' %}{% include '_topo_medico.html' %}{% endwith %}
 
 <div class="container">
-  <div class="aviso-obrig"><strong>Telefone, e-mail, especialidade, CPF, data de nascimento e endereço completo
+  <div class="aviso-obrig"><strong>Telefone, e-mail, especialidade/campo de trabalho, CPF, data de nascimento e endereço completo
      (CEP, rua, número, bairro, cidade e estado) são obrigatórios para poder reservar
      consultórios.</strong></div>
 
@@ -111,18 +115,18 @@
 
       <div class="grid-2">
         <div>
-          <label for="telefone">Telefone (login)</label>
+          <label for="telefone">Telefone (login) <span class="obrig">*</span></label>
           <input type="text" id="telefone" name="telefone" value="{{ medico.telefone|telefone_sem_ddi if medico.telefone else '' }}" placeholder="31999999999">
         </div>
         <div>
-          <label for="email">E-mail</label>
+          <label for="email">E-mail <span class="obrig">*</span></label>
           <input type="email" id="email" name="email" value="{{ medico.email or '' }}">
         </div>
       </div>
 
       <div class="grid-2">
         <div>
-          <label for="cpf_cnpj">CPF / CNPJ</label>
+          <label for="cpf_cnpj">CPF / CNPJ <span class="obrig">*</span></label>
           <input type="text" id="cpf_cnpj" name="cpf_cnpj" value="{{ medico.cpf_cnpj or '' }}" placeholder="000.000.000-00">
         </div>
         <div>
@@ -133,7 +137,7 @@
 
       <div class="grid-2">
         <div>
-          <label for="especialidade">Especialidade</label>
+          <label for="especialidade">Especialidade/Campo de trabalho <span class="obrig">*</span></label>
           <input type="text" id="especialidade" name="especialidade" value="{{ medico.especialidade or '' }}">
         </div>
         <div>
@@ -147,19 +151,19 @@
       <h2>Endereço</h2>
       <div class="grid-2">
         <div>
-          <label for="endereco_cep">CEP</label>
+          <label for="endereco_cep">CEP <span class="obrig">*</span></label>
           <input type="text" id="endereco_cep" name="endereco_cep" value="{{ medico.endereco_cep or '' }}">
         </div>
         <div>
-          <label for="endereco_estado">Estado (UF)</label>
+          <label for="endereco_estado">Estado (UF) <span class="obrig">*</span></label>
           <input type="text" id="endereco_estado" name="endereco_estado" value="{{ medico.endereco_estado or '' }}" maxlength="2">
         </div>
       </div>
-      <label for="endereco_rua">Rua/Avenida</label>
+      <label for="endereco_rua">Rua/Avenida <span class="obrig">*</span></label>
       <input type="text" id="endereco_rua" name="endereco_rua" value="{{ medico.endereco_rua or '' }}">
       <div class="grid-2">
         <div>
-          <label for="endereco_numero">Número</label>
+          <label for="endereco_numero">Número <span class="obrig">*</span></label>
           <input type="text" id="endereco_numero" name="endereco_numero" value="{{ medico.endereco_numero or '' }}">
         </div>
         <div>
@@ -169,11 +173,11 @@
       </div>
       <div class="grid-2">
         <div>
-          <label for="endereco_bairro">Bairro</label>
+          <label for="endereco_bairro">Bairro <span class="obrig">*</span></label>
           <input type="text" id="endereco_bairro" name="endereco_bairro" value="{{ medico.endereco_bairro or '' }}">
         </div>
         <div>
-          <label for="endereco_cidade">Cidade</label>
+          <label for="endereco_cidade">Cidade <span class="obrig">*</span></label>
           <input type="text" id="endereco_cidade" name="endereco_cidade" value="{{ medico.endereco_cidade or '' }}">
         </div>
       </div>
@@ -301,7 +305,43 @@ document.getElementById('endereco_cep').addEventListener('input', () => {
 // fora desta página (ver _autoSalvarAntesDeSair mais abaixo) -- os dois
 // caminhos reaproveitam a mesma função salvarDados() pra não duplicar a
 // lógica de chamada da API.
+// v106: campos obrigatórios (mesma lista do servidor) -- ficam em vermelho e impedem salvar enquanto vazios.
+const CAMPOS_OBRIGATORIOS = ['telefone','email','especialidade','cpf_cnpj','endereco_cep','endereco_rua','endereco_numero','endereco_bairro','endereco_cidade','endereco_estado'];
+function limparErroCampo(id) {
+  const el = document.getElementById(id); if (!el) return;
+  el.classList.remove('campo-erro');
+  const lab = document.querySelector('label[for="' + id + '"]'); if (lab) lab.classList.remove('label-erro');
+  const m = el.parentNode.querySelector('.msg-erro[data-campo="' + id + '"]'); if (m) m.remove();
+}
+function marcarErroCampo(id) {
+  const el = document.getElementById(id); if (!el) return;
+  limparErroCampo(id);
+  el.classList.add('campo-erro');
+  const lab = document.querySelector('label[for="' + id + '"]'); if (lab) lab.classList.add('label-erro');
+  const m = document.createElement('div'); m.className = 'msg-erro'; m.dataset.campo = id; m.textContent = 'Preencha este campo para poder salvar.';
+  el.insertAdjacentElement('afterend', m);
+}
+function validarObrigatorios(extras) {
+  CAMPOS_OBRIGATORIOS.forEach(limparErroCampo);
+  const faltando = CAMPOS_OBRIGATORIOS.filter(id => {
+    const el = document.getElementById(id);
+    return el && !(el.value || '').trim();
+  });
+  (extras || []).forEach(id => { if (!faltando.includes(id)) faltando.push(id); });
+  faltando.forEach(marcarErroCampo);
+  if (faltando.length) {
+    const primeiro = document.getElementById(faltando[0]);
+    primeiro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => primeiro.focus({ preventScroll: true }), 350);
+  }
+  return faltando;
+}
+CAMPOS_OBRIGATORIOS.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => limparErroCampo(id)); });
+
 async function salvarDados() {
+  if (validarObrigatorios().length) {
+    return { ok: false, invalido: true, erro: 'Preencha os campos em vermelho para poder salvar.' };
+  }
   const form = document.getElementById('form-dados-pessoais');
   const dados = {};
   new FormData(form).forEach((valor, chave) => {
@@ -330,6 +370,7 @@ async function salvarDados() {
       return { ok: false, erro: `Erro ao salvar (código ${resp.status}). Se continuar, avise o suporte técnico.` };
     }
     if (!resp.ok) {
+      if (resultado.campos_faltando) validarObrigatorios(resultado.campos_faltando);
       return { ok: false, erro: resultado.erro || 'Erro ao salvar.' };
     }
     return { ok: true, resultado };
@@ -373,7 +414,13 @@ function _autoSalvarAntesDeSair(link) {
     const destino = link.href;
     statusEl.textContent = 'Salvando...';
     statusEl.style.color = 'var(--ink-muted)';
-    await salvarDados();
+    const r = await salvarDados();
+    if (!r.ok && r.invalido) {
+      // faltam campos obrigatórios: não salva; só sai se a pessoa confirmar
+      statusEl.textContent = r.erro;
+      statusEl.style.color = 'var(--coral)';
+      if (!window.confirm('Ainda faltam campos obrigatórios (em vermelho), então as alterações NÃO foram salvas. Sair mesmo assim?')) return;
+    }
     window.location.href = destino;
   });
 }

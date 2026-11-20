@@ -480,6 +480,15 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v106 — "Meus dados": botão piscando, novo nome do campo e salvar só com tudo preenchido
+- Painel do médico: enquanto o cadastro estiver incompleto, o botão "Meus dados" pisca em vermelho 3 vezes ao abrir o painel (animação CSS `piscar-vermelho`; sem movimento para quem usa "reduzir animações": fica com contorno vermelho fixo). Some quando o cadastro está completo.
+- Campo "Especialidade" passou a se chamar "Especialidade/Campo de trabalho" (tela Meus dados, aviso, mensagem "faltam: ...", texto do primeiro acesso). O dado continua na mesma coluna (`especialidade`); contrato/PDF não foram alterados.
+- Salvar em "Meus dados": só grava se TODOS os obrigatórios estiverem preenchidos (telefone, e-mail, especialidade/campo de trabalho, CPF/CNPJ, CEP, rua, número, bairro, cidade, UF). Os que faltam ficam em vermelho (borda, rótulo e mensagem "Preencha este campo para poder salvar."), a tela rola até o primeiro e o vermelho some ao digitar. Obrigatórios marcados com * vermelho.
+- Regra também no servidor (`POST /api/perfil/dados-pessoais` devolve 400 com `campos_faltando`), então não dá para burlar. Espaços em branco contam como vazio.
+- Ao sair da página (Voltar, Sair, menu inferior) com obrigatório vazio: nada é salvo e o sistema pergunta se deseja sair mesmo assim.
+- Efeito colateral: cliente antigo com cadastro incompleto precisa completar os obrigatórios para conseguir salvar QUALQUER alteração em "Meus dados" (já não podia reservar sem eles).
+- Sem mudança de banco. Arquivos: routes/medico_painel.py, services/reserva_service.py, templates painel_medico.html, painel_dados_pessoais.html, primeiro_acesso.html.
+
 ## v105 — Nova aparência da página inicial (2ª versão, a partir do modelo do Paulo)
 - `home_reserva_horas.html` refeita conforme o modelo: foto da recepção com a médica como fundo do topo (`static/images/hero-recepcao.jpg`, espelhada para a médica ficar à direita, ~160 KB) com degradê azul-petróleo à esquerda e embaixo; logo OFICIAL da Lifemax (`static/images/logo-light.png`, o mesmo do topo do admin) em placa branca arredondada, seguido da palavra "CONSULTÓRIOS" em ciano; fonte Poppins (Google Fonts); quatro botões grandes arredondados com brilho ciano, ícone e seta (Entrar preenchido, os outros em vidro escuro com borda luminosa); agenda e cartões de benefícios no mesmo estilo (fundo escuro, bordas com brilho).
 - TEXTOS INALTERADOS (conferido por comparação automática: nenhuma palavra removida ou acrescentada). A palavra "profissional" do título aparece em ciano; os botões que ficavam no cabeçalho foram para o topo da página.

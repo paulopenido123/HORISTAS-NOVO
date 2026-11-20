@@ -267,6 +267,14 @@ def enviar_documento_medico():
 @requer_login_medico
 def salvar_dados_pessoais():
     body = request.get_json(force=True)
+    # v106: não grava enquanto faltar algum campo obrigatório (considera o que já está salvo + o que veio agora).
+    atual = db.get_medico_by_id(medico_logado_id()) or {}
+    combinado = {**atual, **{k: v for k, v in (body or {}).items() if k in atual or k in dict((c, 1) for _, c in reserva_service._CAMPOS_OBRIGATORIOS_PARA_RESERVAR)}}
+    faltando = [(rot, campo) for rot, campo in reserva_service._CAMPOS_OBRIGATORIOS_PARA_RESERVAR
+                if not str(combinado.get(campo) or "").strip()]
+    if faltando:
+        return jsonify({"erro": "Preencha os campos em vermelho para poder salvar (faltam: " + ", ".join(r for r, _ in faltando) + ").",
+                        "campos_faltando": [c for _, c in faltando]}), 400
     try:
         medico = creditos_db.atualizar_dados_pessoais(medico_logado_id(), body)
     except ValueError as e:

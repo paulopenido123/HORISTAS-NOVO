@@ -30,6 +30,10 @@ details.ajuste summary::-webkit-details-marker{display:none}
 .status-tag.bloqueado{background:#FBEAE6;color:#B33}
 .form-autorizacao{margin-top:6px}
 .btn-autorizacao{font-size:13px;padding:6px 10px}
+.filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.filtros .chip{padding:7px 12px;border-radius:999px;background:#E6EEF2;color:#082A3D;font-weight:700;font-size:13px;text-decoration:none}
+.filtros .chip.on{background:#0EA5A0;color:#fff}
+.ult-ativ{display:block;font-size:12px;color:#55707C;margin-top:4px}
 .btn-autorizacao.liberar{background:#0EA5A0}
 .btn-autorizacao.bloquear{background:#B33}
 .saldo-horas-num{font-size:17px;font-weight:800;color:#0B3A52}
@@ -69,10 +73,18 @@ details.ajuste summary::-webkit-details-marker{display:none}
         <a class="btn" href="{{ url_for('admin.novo_cliente') }}">+ Inserir novo</a>
       </div>
     </div>
+    <div class="filtros">
+      <span class="muted">Filtrar:</span>
+      <a class="chip{{ ' on' if not filtro }}" href="{{ url_for('admin.clientes') }}">Todos</a>
+      <a class="chip{{ ' on' if filtro == 'pendentes' }}" href="{{ url_for('admin.clientes', filtro='pendentes') }}">Aguardando liberação ({{ totais.pendentes }})</a>
+      <a class="chip{{ ' on' if filtro == 'sem_compra_30' }}" href="{{ url_for('admin.clientes', filtro='sem_compra_30') }}">Sem comprar há +30 dias ({{ totais.sem_compra }})</a>
+      <a class="chip{{ ' on' if filtro == 'sem_reserva_30' }}" href="{{ url_for('admin.clientes', filtro='sem_reserva_30') }}">Sem reservar há +30 dias ({{ totais.sem_reserva }})</a>
+    </div>
     <form class="busca" method="get">
+      {% if filtro %}<input type="hidden" name="filtro" value="{{ filtro }}">{% endif %}
       <input type="text" name="busca" value="{{ busca }}" placeholder="Buscar por nome, telefone ou e-mail...">
       <button type="submit">Buscar</button>
-      {% if busca %}<a class="btn alt" href="{{ url_for('admin.clientes') }}">Limpar</a>{% endif %}
+      {% if busca %}<a class="btn alt" href="{{ url_for('admin.clientes', filtro=filtro) }}">Limpar</a>{% endif %}
     </form>
 
     <table class="cartoes">
@@ -88,7 +100,8 @@ details.ajuste summary::-webkit-details-marker{display:none}
       <tbody>
         {% for m in medicos %}
         <tr>
-          <td data-label="Nome"><strong class="{{ 'nome-bloqueado' if not m.autorizado else '' }}">{{ m.nome }}</strong>{% if not m.ativo %}<br><span class="muted">(inativo)</span>{% endif %}</td>
+          <td data-label="Nome"><strong class="{{ 'nome-bloqueado' if not m.autorizado else '' }}">{{ m.nome }}</strong>{% if not m.ativo %}<br><span class="muted">(inativo)</span>{% endif %}
+            <span class="ult-ativ">Última compra: {{ m.ultima_compra.strftime('%d/%m/%Y') if m.ultima_compra else 'nunca' }} · Última reserva: {{ m.ultima_reserva.strftime('%d/%m/%Y') if m.ultima_reserva else 'nunca' }}</span></td>
           <td data-label="Contato" class="muted">{{ m.telefone or '—' }}{% if m.email %}<br>{{ m.email }}{% if m.email_confirmado %} <span title="E-mail confirmado pelo médico">⭐</span>{% endif %}{% endif %}</td>
           <td data-label="Acesso">
             {% if m.autorizado %}
@@ -100,13 +113,13 @@ details.ajuste summary::-webkit-details-marker{display:none}
             {% if docs.get(m.id) %}<span class="status-tag liberado" title="Enviado em {{ docs[m.id].enviado_em }}">📄 Documento enviado</span>{% else %}<span class="status-tag bloqueado" style="background:#FFF4DC;color:#9A6700">📄 Sem documento</span>{% endif %}
             <form class="form-autorizacao" method="post" action="{{ url_for('admin.autorizacao_cliente', medico_id=m.id) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="hidden" name="busca" value="{{ busca }}">
+              <input type="hidden" name="busca" value="{{ busca }}"><input type="hidden" name="filtro" value="{{ filtro }}">
               {% if m.autorizado %}
               <input type="hidden" name="autorizado" value="0">
               <button type="submit" class="btn-autorizacao bloquear" onclick="return confirm('Bloquear {{ m.nome }}? Ele não vai conseguir reservar consultório até ser liberado de novo.')">Bloquear acesso</button>
               {% else %}
               <input type="hidden" name="autorizado" value="1">
-              <button type="submit" class="btn-autorizacao liberar"{% if not docs.get(m.id) %} onclick="return confirm('{{ m.nome|e }} ainda não enviou o documento. Liberar o acesso mesmo assim?')"{% endif %}>Liberar acesso</button>
+              <button type="submit" class="btn-autorizacao liberar"{% if m.exige_contrato and not m.contrato_assinado_em %} onclick="return confirm('{{ m.nome|e }} ainda NÃO assinou o contrato. Liberar mesmo assim? Ele vai poder reservar sem assinar.')"{% elif not docs.get(m.id) %} onclick="return confirm('{{ m.nome|e }} ainda não enviou o documento. Liberar o acesso mesmo assim?')"{% endif %}>Liberar acesso</button>
               {% endif %}
             </form>
           </td>
@@ -137,6 +150,14 @@ details.ajuste summary::-webkit-details-marker{display:none}
             <a class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.historico_cliente', medico_id=m.id) }}">Histórico</a>
             <a class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.historico_contato_cliente', medico_id=m.id) }}">Histórico contato</a>
             <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.editar_cliente', medico_id=m.id) }}">Editar</a>
+            {% if admin_total %}
+            <form method="post" action="{{ url_for('admin.excluir_cliente', medico_id=m.id) }}" style="display:inline" onsubmit="return confirmarDeletarCliente(this, '{{ m.nome|e }}')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="confirmar_nome" value="">
+              <input type="hidden" name="voltar" value="lista">
+              <button type="submit" class="btn-autorizacao bloquear" style="padding:7px 12px;font-size:12px;margin-bottom:8px">Deletar cliente</button>
+            </form>
+            {% endif %}
             <details class="ajuste">
               <summary>Enviar link de acesso</summary>
               <form class="form-ajuste" method="post" action="{{ url_for('admin.enviar_link_cliente', medico_id=m.id) }}">
@@ -203,6 +224,13 @@ details.ajuste summary::-webkit-details-marker{display:none}
 </div>
 
 <script>
+function confirmarDeletarCliente(form, nome) {
+  const d = prompt('Para DELETAR este cliente de vez, digite o nome exatamente como está abaixo:\n\n' + nome);
+  if (d === null) return false;
+  if (d.trim() !== nome.trim()) { alert('O nome digitado não confere. Nada foi deletado.'); return false; }
+  form.querySelector('[name=confirmar_nome]').value = d.trim();
+  return true;
+}
 function csrfHeader() {
   return { 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content };
 }

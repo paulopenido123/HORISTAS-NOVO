@@ -165,6 +165,45 @@ def atualizar_endereco_padrao():
     return redirect(url_for('admin.horas'))
 
 
+def _como_data(v):
+    """Converte o valor de data/hora do banco (texto ISO ou datetime) em datetime sem fuso; None se não der."""
+    from datetime import datetime
+    if not v:
+        return None
+    if isinstance(v, datetime):
+        return v.replace(tzinfo=None)
+    try:
+        return datetime.fromisoformat(str(v).replace('Z', '+00:00')[:26]).replace(tzinfo=None)
+    except ValueError:
+        return None
+
+
+def _ultimas_atividades():
+    """v113: {medico_id: {'compra': datetime|None, 'reserva': datetime|None}} -- última compra de horas/créditos e última
+    reserva (não cancelada) de cada cliente. Cada fonte é lida à parte e, se a tabela não existir, é ignorada."""
+    fontes = [
+        ('compra', 'pagamentos_pix', 'medico_id,criado_em,pago_em', lambda q: q.eq('status', 'pago')),
+        ('compra', 'horas_transacoes', 'medico_id,criado_em', lambda q: q.eq('tipo', 'credito')),
+        ('compra', 'creditos_transacoes', 'medico_id,criado_em', lambda q: q.eq('tipo', 'compra')),
+        ('reserva', 'reservas', 'medico_id,criado_em', lambda q: q.neq('status', 'cancelada')),
+    ]
+    res = {}
+    for chave, tabela, cols, filtro in fontes:
+        try:
+            linhas = filtro(db.get_client().table(tabela).select(cols)).execute().data or []
+        except Exception as e:
+            print(f'[ultimas_atividades] {tabela} ignorada: {e}')
+            continue
+        for l in linhas:
+            d = _como_data(l.get('pago_em')) or _como_data(l.get('criado_em'))
+            if not d or not l.get('medico_id'):
+                continue
+            atual = res.setdefault(l['medico_id'], {}).get(chave)
+            if atual is None or d > atual:
+                res[l['medico_id']][chave] = d
+    return res
+
+
 @admin_bp.route('/clientes')
 @_admin
 def clientes():
@@ -196,6 +235,35 @@ def clientes():
     # calcula o saldo em horas direto dos dados que já vieram no
     # select("*"), sem nenhuma consulta extra por médico.
     pacotes_horas = creditos_db.listar_pacotes_horas()
+    # v113: filtros por atividade (pendentes de liberação / sem compra há +30 dias / sem reserva há +30 dias)
+    from datetime import datetime, timedelta
+    filtro = (request.args.get('filtro') or '').strip()
+    atividades = _ultimas_atividades()
+    limite = datetime.utcnow() - timedelta(days=30)
+    for m in lista:
+        a = atividades.get(m['id'], {})
+        m['ultima_compra'], m['ultima_reserva'] = a.get('compra'), a.get('reserva')
+    totais = {'pendentes': 0, 'sem_compra': 0, 'sem_reserva': 0}
+
+    def _parado(m, chave):
+        # quem nunca teve a atividade conta desde o cadastro (cliente novo de poucos dias não entra)
+        ref = m.get(chave) or _como_data(m.get('criado_em'))
+        return bool(m.get('ativo')) and ref is not None and ref < limite
+    for m in lista:
+        if m.get('ativo') and not m.get('autorizado'):
+            totais['pendentes'] += 1
+        if _parado(m, 'ultima_compra'):
+            totais['sem_compra'] += 1
+        if _parado(m, 'ultima_reserva'):
+            totais['sem_reserva'] += 1
+    if filtro == 'pendentes':
+        lista = [m for m in lista if m.get('ativo') and not m.get('autorizado')]
+    elif filtro == 'sem_compra_30':
+        lista = [m for m in lista if _parado(m, 'ultima_compra')]
+    elif filtro == 'sem_reserva_30':
+        lista = [m for m in lista if _parado(m, 'ultima_reserva')]
+    else:
+        filtro = ''
     for m in lista:
         m['saldo_horas'] = creditos_db.estimar_horas_compraveis(m.get('saldo_creditos') or 0, pacotes_horas)
         db.ajustar_contrato_sandbox(m)
@@ -203,6 +271,7 @@ def clientes():
     from app.services import autentique_service
     from app.config import Config
     return render_template('admin_clientes.html', medicos=lista, busca=request.args.get('busca') or '',
+                           filtro=filtro, totais=totais,
                            docs=docs_medico.info_de_todos(),
                            autentique_teste=autentique_service.configurado() and Config.AUTENTIQUE_SANDBOX)
 
@@ -224,6 +293,12 @@ def autorizacao_cliente(medico_id):
     novo_valor = request.form.get('autorizado') == '1'
     db.definir_autorizacao_medico(medico_id, novo_valor)
     if novo_valor:
+        # v112: se o admin libera mesmo sem contrato assinado, o contrato deixa de ser exigido (ele reserva normalmente)
+        if medico.get('exige_contrato') and not medico.get('contrato_assinado_em'):
+            try:
+                db.get_client().table('medicos').update({'exige_contrato': False}).eq('id', medico_id).execute()
+            except Exception as e:
+                print(f'[autorizacao] não consegui dispensar o contrato: {e}')
         flash(f'Acesso de {medico["nome"]} liberado -- já pode reservar consultório.', 'ok')
         # Item 3 (pedido do Paulo em 11/09/2026): avisa o médico por
         # e-mail que ele já está apto a usar o sistema/comprar horas --
@@ -234,7 +309,7 @@ def autorizacao_cliente(medico_id):
             email_service.notificar_acesso_liberado(medico['nome'], medico['email'])
     else:
         flash(f'Acesso de {medico["nome"]} bloqueado -- não vai conseguir reservar consultório até ser liberado de novo.', 'ok')
-    return redirect(url_for('admin.clientes', busca=request.form.get('busca') or ''))
+    return redirect(url_for('admin.clientes', busca=request.form.get('busca') or '', filtro=request.form.get('filtro') or ''))
 
 
 @admin_bp.route('/clientes/<medico_id>/enviar-link', methods=['POST'])
@@ -693,12 +768,12 @@ def excluir_cliente(medico_id):
         return redirect(url_for('admin.clientes'))
     if (request.form.get('confirmar_nome') or '').strip() != (medico.get('nome') or '').strip():
         flash('O nome digitado não confere. Nada foi excluído.', 'erro')
-        return redirect(url_for('admin.editar_cliente', medico_id=medico_id))
+        return redirect(url_for('admin.clientes') if request.form.get('voltar') == 'lista' else url_for('admin.editar_cliente', medico_id=medico_id))
     try:
         db.excluir_medico(medico_id)
     except ValueError as e:
         flash(str(e), 'erro')
-        return redirect(url_for('admin.editar_cliente', medico_id=medico_id))
+        return redirect(url_for('admin.clientes') if request.form.get('voltar') == 'lista' else url_for('admin.editar_cliente', medico_id=medico_id))
     flash(f'Cliente "{medico["nome"]}" excluído.', 'ok')
     return redirect(url_for('admin.clientes'))
 

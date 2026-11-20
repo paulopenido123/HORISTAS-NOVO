@@ -48,6 +48,17 @@ def obter_info(medico_id: str) -> dict | None:
     return r[0] if r else None
 
 
+def documento_pendente(medico_id: str) -> bool:
+    """v114: True se o médico ainda não anexou o documento de identidade. Se a tabela ainda não existe (migração v100 não
+    rodada), devolve False para não travar o cadastro de todo mundo."""
+    try:
+        return obter_info(medico_id) is None
+    except Exception as e:
+        if getattr(e, "pgcode", None) == "42P01":
+            return False
+        raise
+
+
 def info_de_todos() -> dict:
     """{medico_id: metadados} de quem já enviou -- 1 consulta, sem carregar os arquivos."""
     r = get_client().table("documentos_medico").select("medico_id,nome_arquivo,enviado_em").execute().data

@@ -175,12 +175,14 @@
   .btn-pad.menta { background: var(--mint); color: #0B7F7B; }
   .btn-pad.menta:hover { background: #C7EAE7; }
   /* v106: cadastro incompleto -> "Meus dados" pisca em vermelho 3 vezes ao abrir o painel */
+  /* v114: os botões no padrão novo usam !important em fundo/sombra, o que anulava a animação por cor; o `filter` não é
+     afetado: gira o tom (turquesa -> vermelho) e acende um brilho vermelho. */
   @keyframes piscar-vermelho {
-    0%, 100% { background: var(--mint); color: #0B7F7B; box-shadow: 0 0 0 0 rgba(229,57,53,0); }
-    50% { background: #E53935; color: #fff; box-shadow: 0 0 0 5px rgba(229,57,53,.35), 0 0 18px rgba(229,57,53,.6); }
+    0%, 100% { filter: none; }
+    50% { filter: hue-rotate(188deg) saturate(2.4) brightness(.95) drop-shadow(0 0 12px rgba(229,57,53,.95)) drop-shadow(0 0 4px rgba(229,57,53,.9)); }
   }
   .btn-pad.piscar { animation: piscar-vermelho .9s ease-in-out .5s 3; }
-  @media (prefers-reduced-motion: reduce) { .btn-pad.piscar { animation: none; box-shadow: 0 0 0 3px #E53935; } }
+  @media (prefers-reduced-motion: reduce) { .btn-pad.piscar { animation: none; filter: hue-rotate(188deg) saturate(2.4); } }
 
   /* ---- Cartões rápidos ---- */
   html, body { overflow-x: hidden; }

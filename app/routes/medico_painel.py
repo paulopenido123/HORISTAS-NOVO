@@ -54,6 +54,12 @@ def painel():
     preco_minimo = creditos_db.calcular_preco_horas(horas_minimas)
     campos_faltando = reserva_service._campos_pessoais_faltando(medico)
     try:
+        from app.services import documentos_medico_service as _docs
+        if _docs.documento_pendente(medico["id"]):
+            campos_faltando = list(campos_faltando) + ["documento de identidade"]
+    except Exception as e:
+        print(f"[painel] checagem do documento ignorada: {e}")
+    try:
         from app.services import supabase_client as _db
         enderecos_consultorio = _db.mapa_endereco_por_consultorio()
     except Exception:
@@ -294,9 +300,13 @@ def salvar_dados_pessoais():
     combinado = {**atual, **{k: v for k, v in (body or {}).items() if k in atual or k in dict((c, 1) for _, c in reserva_service._CAMPOS_OBRIGATORIOS_PARA_RESERVAR)}}
     faltando = [(rot, campo) for rot, campo in reserva_service._CAMPOS_OBRIGATORIOS_PARA_RESERVAR
                 if not str(combinado.get(campo) or "").strip()]
-    if faltando:
-        return jsonify({"erro": "Preencha os campos em vermelho para poder salvar (faltam: " + ", ".join(r for r, _ in faltando) + ").",
-                        "campos_faltando": [c for _, c in faltando]}), 400
+    from app.services import documentos_medico_service as docs_medico
+    sem_documento = docs_medico.documento_pendente(medico_logado_id())
+    if faltando or sem_documento:
+        nomes = [r for r, _ in faltando] + (["documento de identidade"] if sem_documento else [])
+        return jsonify({"erro": "Para salvar, preencha os campos em vermelho" + (" e anexe o documento de identidade" if sem_documento else "")
+                                + " (faltam: " + ", ".join(nomes) + ").",
+                        "campos_faltando": [c for _, c in faltando], "documento_faltando": sem_documento}), 400
     try:
         medico = creditos_db.atualizar_dados_pessoais(medico_logado_id(), body)
     except ValueError as e:

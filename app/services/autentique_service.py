@@ -92,10 +92,24 @@ def consultar_assinatura(documento_id: str) -> dict:
         raise AutentiqueErro(f"Não consegui consultar a assinatura: {erro or 'resposta inesperada'}")
     assinaturas = doc.get("signatures") or []
     feitas = [(a.get("signed") or {}).get("created_at") for a in assinaturas if a.get("signed")]
+    assinado = bool(assinaturas) and len(feitas) == len(assinaturas)
+    assinado_em = feitas[0] if feitas else None
+    if not assinado and assinaturas and not any(a.get("rejected") for a in assinaturas):
+        # v112: segunda conferência (melhor esforço): o documento concluído tem o arquivo assinado disponível
+        try:
+            q2 = requests.post(URL_API, headers=dict(_headers(), **{"Content-Type": "application/json"}), timeout=25,
+                               json={"query": 'query { document(id: "%s") { files { signed } } }'
+                                              % re.sub(r"[^A-Za-z0-9_-]", "", documento_id)}).json()
+            if ((((q2.get("data") or {}).get("document") or {}).get("files") or {}).get("signed")):
+                assinado = True
+        except Exception as e:
+            print(f"[autentique] conferência por arquivo assinado falhou: {e}")
+    print(f"[autentique] doc {documento_id}: {len(feitas)} de {len(assinaturas)} assinatura(s) concluída(s)")
     return {
-        "assinado": bool(assinaturas) and len(feitas) == len(assinaturas),
-        "assinado_em": feitas[0] if feitas else None,
+        "assinado": assinado,
+        "assinado_em": assinado_em,
         "recusado": any(a.get("rejected") for a in assinaturas),
+        "total": len(assinaturas), "feitas": len(feitas), "documento": documento_id,
     }
 
 
@@ -210,4 +224,5 @@ def atualizar_status(medico_id: str) -> dict:
     if st["assinado"]:
         get_client().table("medicos").update(
             {"contrato_assinado_em": st["assinado_em"] or agora_iso()}).eq("id", medico_id).execute()
-    return {"assinado": st["assinado"], "recusado": st["recusado"]}
+    return {"assinado": st["assinado"], "recusado": st["recusado"], "total": st.get("total"), "feitas": st.get("feitas"),
+            "documento": (medico["contrato_autentique_id"] or "")[-6:]}

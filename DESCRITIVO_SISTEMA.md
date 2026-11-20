@@ -480,6 +480,25 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v114 — "Meus dados" volta a piscar; documento de identidade obrigatório para salvar
+- Causa do botão não piscar: os botões no padrão novo (v108) usam `!important` em fundo e sombra, o que anulava a animação. Agora a animação usa `filter` (gira o tom para vermelho + brilho vermelho), que não é anulado. Pisca 3 vezes ao abrir o painel.
+- O botão também pisca (e o aviso de cadastro pendente lista "documento de identidade") quando só falta o documento.
+- Salvar "Meus dados" exige o documento anexado: sem ele o servidor devolve erro 400 e NADA é gravado. Na tela, o quadro do documento fica vermelho; se o médico já escolheu o arquivo e não clicou em "Enviar documento", o sistema envia automaticamente ao salvar.
+- Se a migração do documento (v100) ainda não foi rodada no Neon, a exigência é ignorada para não travar o cadastro de todos.
+- Arquivos: medico_painel.py, documentos_medico_service.py, painel_medico.html, painel_dados_pessoais.html. Testes: teste_v114 (+ visual) e v106 ajustado OK.
+
+## v113 — Filtros na lista de clientes e atalho no dashboard
+- Dashboard do admin: o aviso "clientes aguardando liberação" agora tem o botão "Ver lista para liberar →", que abre a lista de clientes já filtrada só nos que precisam ser liberados.
+- Lista de clientes: filtros em botões — Todos, Aguardando liberação, Sem comprar há +30 dias, Sem reservar há +30 dias — cada um com a contagem. Funcionam junto com a busca por nome.
+- Cada cliente mostra "Última compra" e "Última reserva". Compra = pagamento Pix pago, crédito de horas ou compra de créditos. Reserva = reserva não cancelada (data em que foi marcada). Quem nunca comprou/reservou conta a partir da data do cadastro (cliente novo de poucos dias não aparece). Só clientes ativos entram nos filtros de +30 dias.
+- Arquivos: admin.py, admin_clientes.html, admin_dashboard.html. Teste: teste_v113 OK.
+
+## v112 — Assinatura não reconhecida, liberar sem contrato, deletar cliente na lista
+- "Já assinei": a conferência agora também reconhece o documento concluído pelo arquivo assinado, grava no log da Render quantas assinaturas a Autentique devolveu e, quando ainda não consta, mostra "Conferi o contrato final XXXXXX: 0 de 1 assinatura concluída" (ajuda a ver se foi assinado outro documento, como o e-mail antigo de teste).
+- "Liberar acesso" (lista de clientes): se o cliente ainda não assinou, pergunta e, ao confirmar, libera E deixa de exigir o contrato — ele reserva normalmente.
+- Botão "Deletar cliente" em cada linha da lista (só Administrador). Pede para digitar o nome; só apaga quem não tem saldo nem histórico (regra já existente); senão avisa e sugere "Bloquear acesso".
+- Arquivos: autentique_service.py, admin.py, admin_clientes.html, _aviso_contrato.html. Teste: teste_v112 + v108/v109 OK (Autentique simulada).
+
 ## v111 — Contrato da Autentique definitivo por padrão
 - Antes: sem a variável AUTENTIQUE_SANDBOX no Render, o sistema criava contratos de TESTE. Agora o padrão é DEFINITIVO; só vira teste se existir AUTENTIQUE_SANDBOX=1.
 - Não precisa criar nenhuma variável nova no Render. Basta subir a v111 e usar "Gerar novo contrato" na ficha do médico.

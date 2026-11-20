@@ -58,6 +58,7 @@
   .obrig { color:#E53935; }
   input[type].campo-erro, input.campo-erro[type=text], input.campo-erro[type=email] { border:2px solid #E53935 !important; background:#FFF1F0 !important; box-shadow:0 0 0 3px rgba(229,57,53,.15); }
   label.label-erro { color:#E53935 !important; }
+  #card-documento.campo-erro-card { border:2px solid #E53935 !important; background:#FFF5F5 !important; box-shadow:0 0 0 4px rgba(229,57,53,.18) !important; }
   .msg-erro { color:#E53935; font-size:12.5px; font-weight:600; margin:5px 0 0; }
   .btn:disabled { background: var(--line-strong); color: var(--ink-faint); cursor: not-allowed; }
   #status-msg { font-size:13px; margin-top:4px; }
@@ -230,7 +231,7 @@
   </form>
 
   <div class="card" id="card-documento">
-    <h2>Documento profissional</h2>
+    <h2>Documento de identidade <span style="color:#E53935">*</span> <small style="font-weight:600;font-size:12px;color:#E53935">(obrigatório para salvar)</small></h2>
     <p style="font-size:13px;color:var(--ink-muted);margin-bottom:12px">
       Envie uma foto ou PDF do seu documento de identidade, de preferência a carteira do CRM (ou correspondente).
       Ele fica arquivado com segurança no sistema e <strong>só o administrador da Lifemax</strong> tem acesso.
@@ -338,9 +339,24 @@ function validarObrigatorios(extras) {
 }
 CAMPOS_OBRIGATORIOS.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => limparErroCampo(id)); });
 
+function marcarDocumento(erro) {
+  const card = document.getElementById('card-documento'); if (!card) return;
+  card.classList.toggle('campo-erro-card', !!erro);
+}
 async function salvarDados() {
-  if (validarObrigatorios().length) {
-    return { ok: false, invalido: true, erro: 'Preencha os campos em vermelho para poder salvar.' };
+  const faltandoCampos = validarObrigatorios();
+  // v114: documento de identidade obrigatório -- se escolheu o arquivo mas ainda não enviou, envia agora; senão bloqueia
+  let docOk = true;
+  if (window.__doc && !window.__doc.enviado()) {
+    docOk = await window.__doc.enviarEscolhido();
+    if (!docOk) {
+      marcarDocumento(true);
+      if (!faltandoCampos.length) document.getElementById('card-documento').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  if (docOk) marcarDocumento(false);
+  if (faltandoCampos.length || !docOk) {
+    return { ok: false, invalido: true, erro: 'Para salvar, preencha os campos em vermelho' + (docOk ? '.' : ' e anexe o documento de identidade (veja o quadro em vermelho abaixo).') };
   }
   const form = document.getElementById('form-dados-pessoais');
   const dados = {};
@@ -371,6 +387,7 @@ async function salvarDados() {
     }
     if (!resp.ok) {
       if (resultado.campos_faltando) validarObrigatorios(resultado.campos_faltando);
+      if (resultado.documento_faltando) marcarDocumento(true);
       return { ok: false, erro: resultado.erro || 'Erro ao salvar.' };
     }
     return { ok: true, resultado };
@@ -447,9 +464,11 @@ document.querySelectorAll('#link-sair, #link-voltar, .nav-inf a').forEach(_autoS
       img.src = url;
     });
   }
-  btn.addEventListener('click', async () => {
-    if (!inp.files.length) { msg.style.color = '#B33'; msg.textContent = 'Escolha um arquivo primeiro.'; return; }
+  let enviado = {{ 'false' if not documento else 'true' }};
+  async function enviar() {
+    if (!inp.files.length) { msg.style.color = '#B33'; msg.textContent = 'Escolha um arquivo primeiro.'; return false; }
     btn.disabled = true; msg.style.color = '#55707C'; msg.textContent = 'Enviando...';
+    let ok = false;
     try {
       const arq = await reduzirImagem(inp.files[0]);
       const fd = new FormData(); fd.append('arquivo', arq, arq.name);
@@ -458,9 +477,13 @@ document.querySelectorAll('#link-sair, #link-voltar, .nav-inf a').forEach(_autoS
       if (!r.ok) throw new Error(d.erro || 'Não foi possível enviar.');
       msg.style.color = '#0B7B45'; msg.textContent = d.resultado;
       st.textContent = '✅ Documento enviado (' + d.nome_arquivo + '). Se quiser, envie outro para substituir.'; inp.value = '';
+      enviado = true; ok = true; document.getElementById('card-documento').classList.remove('campo-erro-card');
     } catch (e) { msg.style.color = '#B33'; msg.textContent = e.message; }
     btn.disabled = false;
-  });
+    return ok;
+  }
+  btn.addEventListener('click', enviar);
+  window.__doc = { enviado: () => enviado, enviarEscolhido: async () => (inp.files.length ? await enviar() : false) };
 })();
 </script>
 </body>

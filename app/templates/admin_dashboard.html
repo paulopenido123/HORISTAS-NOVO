@@ -81,7 +81,7 @@
 </header>
 
 <div class="wrap">
-  {% if medicos_pendentes %}<div class="aviso-pendente"><span>⚠ {{ medicos_pendentes|length }} cliente{{ 's' if medicos_pendentes|length != 1 else '' }} aguardando liberação de acesso: {{ medicos_pendentes[:4]|map(attribute='nome')|join(', ') }}{% if medicos_pendentes|length > 4 %} e mais {{ medicos_pendentes|length - 4 }}{% endif %}.</span><a href="{{ url_for('admin.clientes') }}">Liberar agora →</a></div>{% endif %}
+  {% if medicos_pendentes %}<div class="aviso-pendente"><span>⚠ {{ medicos_pendentes|length }} cliente{{ 's' if medicos_pendentes|length != 1 else '' }} aguardando liberação de acesso: {{ medicos_pendentes[:4]|map(attribute='nome')|join(', ') }}{% if medicos_pendentes|length > 4 %} e mais {{ medicos_pendentes|length - 4 }}{% endif %}.</span><a href="{{ url_for('admin.clientes', filtro='pendentes') }}">Ver lista para liberar →</a></div>{% endif %}
 
   <div class="caixa">
     <div class="stats">

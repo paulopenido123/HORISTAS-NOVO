@@ -480,6 +480,11 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v109 — Gerar novo contrato (admin) e indicador do modo da Autentique
+- Ficha do cliente (Admin > Clientes > Visualizar), quando o contrato está pendente: botão "Gerar novo contrato" (descarta o documento atual, p.ex. de teste, e envia um novo ao médico; recusa se já assinou) e linha "Sistema em MODO TESTE/DEFINITIVO" (mostra também se o contrato atual é de TESTE).
+- Reenviar e-mail NÃO cria documento novo: só manda de novo o link do documento existente.
+- Sem mudança de banco. Arquivos: routes/admin.py, services/autentique_service.py, templates/admin_cliente_visualizar.html.
+
 ## v108 — Botões no padrão da primeira página; reenviar e-mail "Assinar contrato"
 - Novo `static/css/botoes-lifemax.css` (incluído em todas as telas, exceto a inicial, que já tem o visual próprio): botão primário em degradê ciano/petróleo com brilho, secundário branco com contorno luminoso, perigo (excluir/bloquear) vermelho com brilho; passar o mouse intensifica o brilho. Só mudam cores, contorno, brilho e cantos; tamanhos e posições seguem os de cada tela. Botões funcionais pequenos (fechar, setas, abas, horários da grade) não foram alterados. Classes utilitárias `lm-primario`, `lm-secundario`, `lm-perigo` para botões novos.
 - Removidos os emojis na frente do texto de botões/links-botão (ex.: Salvar, Enviar documento, Assinar contrato, Histórico, Editar) e os ícones desenhados nos botões de ação do painel (`.btn-pad`, `.btn`). Ícones de cartões de navegação, menu inferior e da página inicial foram mantidos.

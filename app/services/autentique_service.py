@@ -20,6 +20,10 @@ class AutentiqueErro(Exception):
     """Falha ao falar com a Autentique (mensagem em português, pronta para mostrar)."""
 
 
+def modo_teste() -> bool:
+    return bool(Config.AUTENTIQUE_SANDBOX)
+
+
 def configurado() -> bool:
     return bool(Config.AUTENTIQUE_API_TOKEN)
 

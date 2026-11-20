@@ -532,8 +532,9 @@ def visualizar_cliente(medico_id):
     medico['saldo_horas'] = creditos_db.saldo_em_horas_medico(medico_id)
     transacoes = creditos_db.listar_transacoes_medico(medico_id, limite=200)
     from app.services import documentos_medico_service as docs_medico
+    from app.config import Config
     return render_template('admin_cliente_visualizar.html', medico=medico, transacoes=transacoes,
-                           documento=docs_medico.obter_info(medico_id))
+                           documento=docs_medico.obter_info(medico_id), autentique_modo_teste=Config.AUTENTIQUE_SANDBOX)
 
 
 @admin_bp.route('/clientes/<medico_id>/historico', methods=['GET'])
@@ -583,6 +584,27 @@ def reenviar_contrato_cliente(medico_id):
             flash(f"E-mail \"Assinar contrato\" enviado para {r['email']}.", 'ok')
         else:
             flash('Não consegui enviar o e-mail agora (confira o SMTP no Render). Link de assinatura: ' + (r['link'] or '—'), 'erro')
+    except (ValueError, autentique_service.AutentiqueErro) as e:
+        flash(str(e), 'erro')
+    return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
+
+
+@admin_bp.route('/clientes/<medico_id>/contrato/novo', methods=['POST'])
+@_admin
+def novo_contrato_cliente(medico_id):
+    """v109: descarta o documento atual (ex.: criado em modo teste) e gera um contrato NOVO para o médico assinar."""
+    from app.services import autentique_service
+    medico = db.get_medico_by_id(medico_id)
+    if not medico:
+        flash('Cadastro não encontrado.', 'erro')
+        return redirect(url_for('admin.clientes'))
+    if medico.get('contrato_assinado_em'):
+        flash('Este médico já assinou o contrato. Não é preciso gerar outro.', 'erro')
+        return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
+    db.get_client().table('medicos').update({'contrato_autentique_id': None, 'contrato_link': None, 'contrato_enviado_em': None}).eq('id', medico_id).execute()
+    try:
+        r = autentique_service.enviar_contrato(medico_id)
+        flash(f"Novo contrato gerado e enviado para {medico.get('email')}." + (' (MODO TESTE: sem valor jurídico)' if autentique_service.modo_teste() else ''), 'ok')
     except (ValueError, autentique_service.AutentiqueErro) as e:
         flash(str(e), 'erro')
     return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))

@@ -11,6 +11,7 @@ from app.services import modulos_service
 from app.services import pacientes_service
 from app.services import reserva_service
 from app.services import relatorios_service
+from app.extensions import limiter
 from app.services.auth_service import requer_login_medico, medico_logado_id
 from app.services.termo_service import requer_termo_aceito
 
@@ -225,6 +226,23 @@ def enviar_contrato_assinatura():
     except (ValueError, autentique_service.AutentiqueErro) as e:
         return jsonify({"erro": str(e)}), 400
     return jsonify({"link": r["link"], "novo": r["novo"]})
+
+
+@medico_painel_bp.route("/api/perfil/contrato/reenviar", methods=["POST"])
+@requer_login_medico
+@limiter.limit("20 per hour")
+def reenviar_contrato_assinatura():
+    """v108: reenvia o e-mail "Assinar contrato" (quantas vezes o médico pedir)."""
+    from app.services import autentique_service
+    try:
+        r = autentique_service.reenviar_contrato(medico_logado_id())
+    except (ValueError, autentique_service.AutentiqueErro) as e:
+        return jsonify({"erro": str(e)}), 400
+    if r["enviado_sistema"] or r["enviado_autentique"]:
+        msg = f"Enviamos o e-mail \"Assinar contrato\" para {r['email']}. Confira também a caixa de spam."
+    else:
+        msg = "Não consegui enviar o e-mail agora, mas você pode assinar pelo botão abaixo."
+    return jsonify({"resultado": msg, "link": r["link"], "email_enviado": bool(r["enviado_sistema"] or r["enviado_autentique"])})
 
 
 @medico_painel_bp.route("/api/perfil/contrato/verificar", methods=["POST"])

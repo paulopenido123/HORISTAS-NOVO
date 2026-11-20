@@ -50,7 +50,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
 .lista-selecao input{width:auto}
 .modal-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 .modal-status{font-size:13px;margin-top:10px}
-</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head><body>
+</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head><body>
 {% with titulo='Clientes', ativo='clientes' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
   {% with mensagens = get_flashed_messages(with_categories=true) %}
@@ -64,8 +64,8 @@ details.ajuste summary::-webkit-details-marker{display:none}
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
       <h2 style="margin-top:0">Clientes cadastrados</h2>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button type="button" class="btn alt" onclick="abrirModalLote('email')">📧 Configurar e-mail</button>
-        <button type="button" class="btn alt" onclick="abrirModalLote('link')">🔗 Enviar link de acesso</button>
+        <button type="button" class="btn alt" onclick="abrirModalLote('email')">Configurar e-mail</button>
+        <button type="button" class="btn alt" onclick="abrirModalLote('link')">Enviar link de acesso</button>
         <a class="btn" href="{{ url_for('admin.novo_cliente') }}">+ Inserir novo</a>
       </div>
     </div>
@@ -119,7 +119,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
                lista, logo embaixo do saldo, pra não precisar entrar em
                "Visualizar" toda vez. #}
             {% if admin_total %}<details class="ajuste">
-              <summary>💰 Alterar saldo</summary>
+              <summary>Alterar saldo</summary>
               <form class="form-ajuste" method="post" action="{{ url_for('admin.ajustar_saldo_cliente', medico_id=m.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="busca" value="{{ busca }}">
@@ -132,11 +132,11 @@ details.ajuste summary::-webkit-details-marker{display:none}
             </details>{% endif %}
           </td>
           <td data-label="Ação">
-            <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.visualizar_cliente', medico_id=m.id) }}">🔍 Visualizar</a>
-            <button type="button" class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px;" onclick="abrirModalLote('email', '{{ m.id }}')">📧 Configurar e-mail</button>
-            <a class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.historico_cliente', medico_id=m.id) }}">📜 Histórico</a>
-            <a class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.historico_contato_cliente', medico_id=m.id) }}">📬 Histórico contato</a>
-            <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.editar_cliente', medico_id=m.id) }}">✏️ Editar</a>
+            <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.visualizar_cliente', medico_id=m.id) }}">Visualizar</a>
+            <button type="button" class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px;" onclick="abrirModalLote('email', '{{ m.id }}')">Configurar e-mail</button>
+            <a class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.historico_cliente', medico_id=m.id) }}">Histórico</a>
+            <a class="btn alt" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.historico_contato_cliente', medico_id=m.id) }}">Histórico contato</a>
+            <a class="btn" style="padding:7px 12px; font-size:12px; margin-bottom:8px; display:inline-block;" href="{{ url_for('admin.editar_cliente', medico_id=m.id) }}">Editar</a>
             <details class="ajuste">
               <summary>Enviar link de acesso</summary>
               <form class="form-ajuste" method="post" action="{{ url_for('admin.enviar_link_cliente', medico_id=m.id) }}">

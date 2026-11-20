@@ -1,0 +1,90 @@
+/* v108 — Botões padrão Lifemax: cores e brilho da página inicial (ciano/azul-petróleo com glow).
+   Só muda cor, borda, brilho e cantos: tamanho e posição de cada botão continuam os da própria tela. */
+:root{--lm-cyan:#2FE6EA;--lm-glow:rgba(47,230,234,.38)}
+
+/* ---------- Primário (ação principal) ---------- */
+.lm-primario,
+.btn:not(.alt):not(.btn-voltar):not(.btn-secondary):not(.perigo):not(.danger):not(.btn-contorno),
+.btn-primary, .btn-gerar, .btn-admin-acao.destaque, .btn-pad.verde, .btn-confirmar:not(.perigo),
+.btn-comprar-pacote, .btn-emitir-nf, .btn-modal-padrao, .btn-toggle-verde, .btn-editar-pac,
+.btn-autorizacao.liberar, .btn-ghost, .btn-app, .btn-escuro, .filtro button,
+form button:not([class]):not([type=button]), button[type=submit]:not([class]), input[type=submit]:not([class]){
+  background:linear-gradient(180deg,#26DAD8 0%,#10B3B7 55%,#08939B 100%) !important;
+  color:#fff !important;
+  border:1.5px solid #8FF3F1 !important;
+  border-radius:14px !important;
+  font-weight:700 !important;
+  text-decoration:none;
+  text-shadow:0 1px 1px rgba(0,70,80,.25);
+  box-shadow:0 0 0 1px rgba(47,230,234,.22),0 6px 16px rgba(14,181,179,.34),0 0 20px var(--lm-glow),inset 0 1px 0 rgba(255,255,255,.55) !important;
+  transition:transform .15s ease,box-shadow .15s ease,filter .15s ease;
+  cursor:pointer;
+}
+.lm-primario:hover,
+.btn:not(.alt):not(.btn-voltar):not(.btn-secondary):not(.perigo):not(.danger):not(.btn-contorno):hover,
+.btn-primary:hover, .btn-gerar:hover, .btn-admin-acao.destaque:hover, .btn-pad.verde:hover, .btn-confirmar:not(.perigo):hover,
+.btn-comprar-pacote:hover, .btn-emitir-nf:hover, .btn-modal-padrao:hover, .btn-toggle-verde:hover, .btn-editar-pac:hover,
+.btn-autorizacao.liberar:hover, .btn-ghost:hover, .btn-app:hover, .btn-escuro:hover, .filtro button:hover,
+form button:not([class]):not([type=button]):hover, button[type=submit]:not([class]):hover{
+  background:linear-gradient(180deg,#34E6E4 0%,#14C2C6 55%,#0AA2AA 100%) !important;
+  transform:translateY(-2px);
+  box-shadow:0 0 0 1px rgba(47,230,234,.4),0 10px 22px rgba(14,181,179,.42),0 0 30px rgba(47,230,234,.6),inset 0 1px 0 rgba(255,255,255,.65) !important;
+}
+
+/* ---------- Secundário (contorno luminoso) ---------- */
+.lm-secundario, .btn.alt, .btn-alt, .btn-secondary, .btn-voltar, .btn-contorno, .btn-recuperar, .btn-pad.menta, .btn-pad.cinza,
+.btn-admin-acao:not(.destaque), .filtro a.btn-limpar, .btn-limpar, .btn-editar{
+  background:linear-gradient(180deg,#FFFFFF 0%,#E8F9FA 100%) !important;
+  color:#07646C !important;
+  border:1.5px solid #4FDCE0 !important;
+  border-radius:14px !important;
+  font-weight:700 !important;
+  text-decoration:none;
+  box-shadow:0 0 0 1px rgba(47,230,234,.16),0 4px 12px rgba(47,230,234,.22),0 0 16px rgba(47,230,234,.20),inset 0 1px 0 #fff !important;
+  transition:transform .15s ease,box-shadow .15s ease,background .15s ease;
+  cursor:pointer;
+}
+.lm-secundario:hover, .btn.alt:hover, .btn-alt:hover, .btn-secondary:hover, .btn-voltar:hover, .btn-contorno:hover, .btn-recuperar:hover,
+.btn-pad.menta:hover, .btn-pad.cinza:hover, .btn-admin-acao:not(.destaque):hover, .filtro a.btn-limpar:hover, .btn-limpar:hover, .btn-editar:hover{
+  background:linear-gradient(180deg,#F3FEFE 0%,#D2F4F6 100%) !important;
+  transform:translateY(-2px);
+  box-shadow:0 0 0 1px rgba(47,230,234,.4),0 8px 18px rgba(47,230,234,.34),0 0 26px rgba(47,230,234,.5),inset 0 1px 0 #fff !important;
+}
+
+/* ---------- Perigo (excluir, bloquear, cancelar) ---------- */
+.lm-perigo, .danger, .perigo, .btn-confirmar.perigo, .btn-autorizacao.bloquear, button.btn.perigo{
+  background:linear-gradient(180deg,#FF7B78 0%,#E53935 55%,#C62828 100%) !important;
+  color:#fff !important;
+  border:1.5px solid #FFB1AE !important;
+  border-radius:14px !important;
+  font-weight:700 !important;
+  text-shadow:0 1px 1px rgba(90,0,0,.25);
+  box-shadow:0 0 0 1px rgba(255,107,104,.25),0 6px 16px rgba(229,57,53,.30),0 0 20px rgba(255,107,104,.35),inset 0 1px 0 rgba(255,255,255,.45) !important;
+  transition:transform .15s ease,box-shadow .15s ease;
+  cursor:pointer;
+}
+.lm-perigo:hover, .danger:hover, .perigo:hover, .btn-confirmar.perigo:hover, .btn-autorizacao.bloquear:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 0 1px rgba(255,107,104,.45),0 10px 22px rgba(229,57,53,.40),0 0 30px rgba(255,107,104,.6),inset 0 1px 0 rgba(255,255,255,.55) !important;
+}
+
+/* ---------- Desabilitado ---------- */
+.lm-primario:disabled, .lm-secundario:disabled, .lm-perigo:disabled, .btn:disabled, .btn-gerar:disabled, .btn-confirmar:disabled,
+.btn-comprar-pacote:disabled, .btn-modal-padrao:disabled, form button:not([class]):disabled{
+  background:#D5DEE2 !important; color:#8AA0A9 !important; border-color:#C3CFD5 !important; box-shadow:none !important; text-shadow:none; transform:none; cursor:not-allowed; opacity:1;
+}
+.btn:focus-visible,.lm-primario:focus-visible,.lm-secundario:focus-visible,.lm-perigo:focus-visible,form button:focus-visible{outline:3px solid rgba(47,230,234,.55);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.btn,.lm-primario,.lm-secundario,.lm-perigo{transition:none !important}.btn:hover{transform:none !important}}
+
+/* ---------- Sem desenhinhos na frente do texto dos botões de ação ---------- */
+.btn-pad > .ic, .btn-pad > svg, .btn > .ic, .btn > svg, .btn-gerar > svg, .btn-primary > svg, .btn-admin-acao > svg{display:none !important}
+/* link "Enviar link de acesso" e "Alterar saldo" também com o visual de botão */
+.link-email, summary.btn-saldo, details > summary:not(:empty).lm-secundario{ }
+.link-email{background:linear-gradient(180deg,#FFFFFF 0%,#E8F9FA 100%) !important;color:#07646C !important;border:1.5px solid #4FDCE0 !important;border-radius:14px !important;
+  font-weight:700 !important;padding:6px 12px !important;font-size:12px !important;text-decoration:none !important;cursor:pointer;
+  box-shadow:0 0 0 1px rgba(47,230,234,.16),0 4px 12px rgba(47,230,234,.22),0 0 16px rgba(47,230,234,.20) !important}
+.link-email:hover{box-shadow:0 0 0 1px rgba(47,230,234,.4),0 8px 18px rgba(47,230,234,.34),0 0 26px rgba(47,230,234,.5) !important}
+/* "Ver consultórios" nos cartões das unidades */
+.unidade .acao{background:linear-gradient(180deg,#26DAD8 0%,#10B3B7 55%,#08939B 100%) !important;color:#fff !important;border:1.5px solid #8FF3F1 !important;border-radius:14px !important;
+  font-weight:700 !important;text-shadow:0 1px 1px rgba(0,70,80,.25);box-shadow:0 0 0 1px rgba(47,230,234,.22),0 6px 16px rgba(14,181,179,.34),0 0 20px rgba(47,230,234,.38),inset 0 1px 0 rgba(255,255,255,.55) !important}
+a.unidade:hover .acao{box-shadow:0 0 0 1px rgba(47,230,234,.4),0 10px 22px rgba(14,181,179,.42),0 0 30px rgba(47,230,234,.6),inset 0 1px 0 rgba(255,255,255,.65) !important}

@@ -172,7 +172,7 @@
     .container { padding: 14px 12px 50px; }
   }
 </style>
-<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head>
+<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head>
 <body>
 {% with titulo='Visualizar agenda', ativo='agenda' %}{% include '_admin_topo.html' %}{% endwith %}
 
@@ -197,9 +197,9 @@
   </div>
 
   <div class="barra-acoes">
-    <button type="button" class="btn-modo" id="btn-modo-bloqueio" data-dica="Liga/desliga o modo de bloqueio. Com ele ligado, clique num horário livre para bloqueá-lo, ou num horário bloqueado para desbloqueá-lo." onclick="alternarModo('bloqueio')">🔒 Bloquear/desbloquear horários</button>
-    <button type="button" class="btn-modo reservar" id="btn-modo-reservar" data-dica="Reservar um horário para um médico: ligue o botão e clique num horário livre. Você escolhe o médico e confirma." onclick="alternarModo('reservar')">➕ Reservar</button>
-    <button type="button" class="btn-modo cancelar" id="btn-modo-cancelar" data-dica="Cancelar uma reserva de médico: ligue o botão e clique no horário reservado. Você escolhe se devolve a hora ao médico e confirma." onclick="alternarModo('cancelar')">✖ Cancelar</button>
+    <button type="button" class="btn-modo" id="btn-modo-bloqueio" data-dica="Liga/desliga o modo de bloqueio. Com ele ligado, clique num horário livre para bloqueá-lo, ou num horário bloqueado para desbloqueá-lo." onclick="alternarModo('bloqueio')">Bloquear/desbloquear horários</button>
+    <button type="button" class="btn-modo reservar" id="btn-modo-reservar" data-dica="Reservar um horário para um médico: ligue o botão e clique num horário livre. Você escolhe o médico e confirma." onclick="alternarModo('reservar')">Reservar</button>
+    <button type="button" class="btn-modo cancelar" id="btn-modo-cancelar" data-dica="Cancelar uma reserva de médico: ligue o botão e clique no horário reservado. Você escolhe se devolve a hora ao médico e confirma." onclick="alternarModo('cancelar')">Cancelar</button>
     <span class="muted" style="font-size:12.5px;color:var(--muted)">O círculo verde sobre cada dia oculta/exibe aquele dia para os médicos.</span>
   </div>
   <div class="aviso-modo" id="aviso-modo">Modo bloquear/desbloquear ligado: clique num horário <strong>livre</strong> para bloquear ou num horário <strong>bloqueado</strong> para desbloquear. Clique no botão de novo para sair.</div>

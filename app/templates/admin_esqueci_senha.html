@@ -15,7 +15,7 @@ input:focus{outline:2px solid #0EA5A0;outline-offset:1px;background:#fff}
 button{width:100%;height:54px;border:0;border-radius:14px;background:#0EA5A0;color:#fff;font-family:'Manrope',sans-serif;font-weight:800;font-size:17px;cursor:pointer}
 button:hover{background:#0C8B87}
 .erro{background:#FDECEA;color:#C62A1B;padding:12px 14px;border-radius:14px;margin-bottom:16px;font-size:14px;font-weight:600}
-</style><link rel="stylesheet" href="/static/css/base-mobile.css"></head><body>
+</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head><body>
 <header class="hero"><img class="logo" src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax"><div class="eyebrow">Acesso administrativo</div><h1>Recuperar senha</h1><p>Enviamos um link para o seu e-mail cadastrado.</p></header>
 <div class="card">{% if enviado %}<div class="erro" style="background:#E3F7EE;color:#0B7B45">Se esse e-mail estiver cadastrado, você receberá em instantes o link para criar uma nova senha.</div>{% else %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="email">E-mail cadastrado</label><input id="email" type="email" name="email" required autofocus autocomplete="email"><button>Enviar link</button></form>{% endif %}<p style="text-align:center;margin:16px 0 0"><a href="{{ url_for('admin.admin_login') }}" style="color:#0EA5A0;font-weight:700;text-decoration:none">← Voltar ao login</a></p></div>
 </body></html>

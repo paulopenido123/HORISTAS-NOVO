@@ -72,7 +72,7 @@
     .rec-dia td{display:flex;border:0;padding:12px 14px;color:#fff}
   }
 </style>
-<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"></head><body>
+<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M16 8l4 4-4 4M20 12H9"/></symbol></defs></svg>
 <header class="hero"><div class="hero-topo">
   <div><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
@@ -118,7 +118,7 @@
         <a class="btn-limpar" href="{{ url_for('admin.relatorios', tipo='receitas', visao=visao_receitas, mes=mes_proximo, medico_id=filtros.medico_id, cliente=filtros.cliente) }}" title="Próximo mês" aria-label="Próximo mês">&rarr;</a>
       </div>
       <a class="btn-limpar" href="{{ url_for('admin.relatorios', tipo='receitas', visao=visao_receitas) }}">Mês atual</a>
-      <a class="btn-escuro" href="{{ url_for('admin.relatorios', tipo='receitas', medico_id=filtros.medico_id, cliente=filtros.cliente, visao=visao_receitas, mes=mes_receitas, formato='csv') }}">⬇ Baixar planilha (CSV)</a>
+      <a class="btn-escuro" href="{{ url_for('admin.relatorios', tipo='receitas', medico_id=filtros.medico_id, cliente=filtros.cliente, visao=visao_receitas, mes=mes_receitas, formato='csv') }}">Baixar planilha (CSV)</a>
     </form>
     <div class="visoes">
       <a class="{{ 'on' if visao_receitas == 'pagamentos' else '' }}" href="{{ url_for('admin.relatorios', tipo='receitas', visao='pagamentos', mes=mes_receitas, medico_id=filtros.medico_id, cliente=filtros.cliente) }}">Pagamentos</a>

@@ -75,7 +75,7 @@
   .modal-parabens p { font-size:14px; color: var(--ink-muted); line-height:1.5; margin-bottom:24px; }
   .modal-parabens .btn { padding:12px 28px; font-size:14px; }
 </style>
-<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="/static/css/padrao-medico.css"><link rel="stylesheet" href="/static/css/manual-botao.css"></head>
+<link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="/static/css/padrao-medico.css"><link rel="stylesheet" href="/static/css/manual-botao.css"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <body>
 <script>
@@ -103,7 +103,7 @@
 
   <div class="barra-acoes">
     <a class="btn btn-voltar" id="link-voltar" href="{{ url_for('medico_painel.painel') }}">← Voltar</a>
-    <button type="button" class="btn" id="btn-salvar">💾 Salvar</button>
+    <button type="button" class="btn" id="btn-salvar">Salvar</button>
   </div>
   <div id="status-msg"></div>
 
@@ -239,7 +239,7 @@
       {% if documento %}✅ Documento enviado ({{ documento.nome_arquivo }}). Se quiser, envie outro para substituir.{% else %}⚠️ Documento ainda não enviado.{% endif %}
     </div>
     <input type="file" id="doc-arquivo" accept="application/pdf,image/jpeg,image/png,image/*" style="font-size:13px;max-width:100%">
-    <div style="margin-top:12px"><button type="button" class="btn" id="btn-doc">📤 Enviar documento</button></div>
+    <div style="margin-top:12px"><button type="button" class="btn" id="btn-doc">Enviar documento</button></div>
     <div id="doc-msg" style="font-size:13px;margin-top:10px"></div>
     <p style="font-size:11.5px;color:var(--ink-faint);margin-top:10px">Formatos: PDF, JPG ou PNG, até 4 MB. Os dados são usados só para validar o seu cadastro profissional (LGPD).</p>
   </div>

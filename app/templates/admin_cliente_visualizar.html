@@ -40,7 +40,7 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
 .vazio-lista{color:#8AA0A9;font-size:13px;padding:16px 0;text-align:center}
 .wrap-tabela{overflow-x:auto}
 @media(max-width:640px){.grid-dados{grid-template-columns:1fr}}
-</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"></head><body>
+</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head><body>
 {% with titulo='Cliente', ativo='clientes' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
   <a class="voltar" href="{{ url_for('admin.clientes') }}">← Voltar pra Clientes</a>
@@ -61,7 +61,7 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
         <span class="status-tag bloqueado">Aguardando liberação</span>
         {% endif %}
       </div>
-      <a class="btn" href="{{ url_for('admin.editar_cliente', medico_id=medico.id) }}">✎ Editar dados</a>
+      <a class="btn" href="{{ url_for('admin.editar_cliente', medico_id=medico.id) }}">Editar dados</a>
     </div>
 
     <div class="secao">Contato</div>
@@ -92,17 +92,18 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
         {% if not medico.exige_contrato %}Não exigido (cliente já cadastrado ou dispensado)
         {% elif medico.contrato_assinado_em %}✅ Assinado em {{ medico.contrato_assinado_em }}
         {% else %}⏳ {{ 'Enviado, aguardando assinatura' if medico.contrato_autentique_id else 'Ainda não enviado pelo médico' }}
-          <form method="post" action="{{ url_for('admin.verificar_contrato_cliente', medico_id=medico.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn" style="margin-top:8px;padding:7px 12px;font-size:12px;border:0;cursor:pointer">🔄 Verificar assinatura</button></form>
+          <form method="post" action="{{ url_for('admin.verificar_contrato_cliente', medico_id=medico.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn" style="margin-top:8px;padding:7px 12px;font-size:12px;border:0;cursor:pointer">Verificar assinatura</button></form>
+        <form method="post" action="{{ url_for('admin.reenviar_contrato_cliente', medico_id=medico.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn" style="margin-top:8px;padding:6px 12px;font-size:12px">Reenviar e-mail "Assinar contrato"</button></form>
         {% endif %}
         {% if medico.exige_contrato and admin_total %}
           <form method="post" action="{{ url_for('admin.dispensar_contrato_cliente', medico_id=medico.id) }}" style="display:inline" onsubmit="return confirm('Dispensar {{ medico.nome|e }} de assinar o contrato? Ele poderá reservar sem assinar.')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn alt" style="margin-top:8px;padding:7px 12px;font-size:12px;border:0;cursor:pointer">Dispensar contrato</button></form>
         {% endif %}</div></div>
       <div class="campo-view"><label>Documento profissional</label><div class="valor {{ '' if documento else 'vazio' }}">
         {% if documento %}✅ {{ documento.nome_arquivo }} (enviado em {{ documento.enviado_em }})
-          {% if admin_total %}<br><a class="btn" style="margin-top:8px;padding:7px 12px;font-size:12px" target="_blank" href="{{ url_for('admin.ver_documento_cliente', medico_id=medico.id) }}">📄 Abrir documento</a>
+          {% if admin_total %}<br><a class="btn" style="margin-top:8px;padding:7px 12px;font-size:12px" target="_blank" href="{{ url_for('admin.ver_documento_cliente', medico_id=medico.id) }}">Abrir documento</a>
           <form method="post" action="{{ url_for('admin.excluir_documento_cliente', medico_id=medico.id) }}" style="display:inline" onsubmit="return confirm('Excluir o documento de {{ medico.nome|e }}? O médico poderá enviar outro.')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" style="margin-top:8px;padding:7px 12px;font-size:12px;border:0;border-radius:8px;background:#B33;color:#fff;font-weight:700;cursor:pointer">🗑 Excluir documento</button>
+            <button type="submit" style="margin-top:8px;padding:7px 12px;font-size:12px;border:0;border-radius:8px;background:#B33;color:#fff;font-weight:700;cursor:pointer">Excluir documento</button>
           </form>{% endif %}
         {% else %}Ainda não enviado{% endif %}</div>{% if medico.crm %}<div class="aviso" style="font-size:12px;margin-top:6px">Registro informado: <strong>{{ medico.crm }}</strong> · <a href="https://portal.cfm.org.br/busca-medicos" target="_blank" rel="noopener">conferir no CFM</a> (só vale para médicos)</div>{% endif %}</div>
     </div>
@@ -119,7 +120,7 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
        pedido do Paulo em 11/09/2026. Mesma rota/form de sempre
        (admin.ajustar_saldo_cliente), só mudou onde ela mora na tela. #}
     {% if admin_total %}<details class="ajuste">
-      <summary>💰 Alterar saldo</summary>
+      <summary>Alterar saldo</summary>
       <form class="form-ajuste" method="post" action="{{ url_for('admin.ajustar_saldo_cliente', medico_id=medico.id) }}" ontoggle="">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label class="lbl-quantidade">Quantas horas? (negativo pra debitar)</label>
@@ -136,7 +137,7 @@ th{color:#62788A;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
      (app/templates/painel_medico.html). #}
   <div class="card">
     <div class="secao" style="margin-top:0; padding-top:0; border-top:0;">Histórico de transações</div>
-    <a class="btn" style="margin-top:8px" href="{{ url_for('admin.historico_cliente', medico_id=medico.id) }}">📜 Ver histórico completo (compras, agendamentos, cancelamentos)</a>
+    <a class="btn" style="margin-top:8px" href="{{ url_for('admin.historico_cliente', medico_id=medico.id) }}">Ver histórico completo (compras, agendamentos, cancelamentos)</a>
     {% if transacoes %}
     <div class="wrap-tabela">
       <table class="cartoes">

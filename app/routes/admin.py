@@ -572,6 +572,22 @@ def verificar_contrato_cliente(medico_id):
     return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
 
+@admin_bp.route('/clientes/<medico_id>/contrato/reenviar', methods=['POST'])
+@_admin
+def reenviar_contrato_cliente(medico_id):
+    """v108: reenvia o e-mail "Assinar contrato" ao médico (quantas vezes for preciso)."""
+    from app.services import autentique_service
+    try:
+        r = autentique_service.reenviar_contrato(medico_id)
+        if r['enviado_sistema'] or r['enviado_autentique']:
+            flash(f"E-mail \"Assinar contrato\" enviado para {r['email']}.", 'ok')
+        else:
+            flash('Não consegui enviar o e-mail agora (confira o SMTP no Render). Link de assinatura: ' + (r['link'] or '—'), 'erro')
+    except (ValueError, autentique_service.AutentiqueErro) as e:
+        flash(str(e), 'erro')
+    return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
+
+
 @admin_bp.route('/clientes/<medico_id>/contrato/dispensar', methods=['POST'])
 @_admin_total
 def dispensar_contrato_cliente(medico_id):

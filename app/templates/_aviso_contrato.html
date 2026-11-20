@@ -1,10 +1,11 @@
 {# v101: aviso de contrato digital pendente (só para quem se cadastrou sozinho). Incluir onde houver `medico`. #}
 {% if medico and medico.exige_contrato and not medico.contrato_assinado_em %}
 <div id="aviso-contrato" style="background:#FFF4DC;color:#7A5200;padding:12px 16px;border-radius:14px;font-size:13px;margin:14px 12px 0;line-height:1.5">
-  ✍️ <strong>Falta assinar o contrato digital.</strong> Você já pode comprar horas, mas só vai conseguir reservar um consultório depois de assinar.
+  <strong>Falta assinar o contrato digital.</strong> Você já pode comprar horas, mas só vai conseguir reservar um consultório depois de assinar.
   <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-    <button type="button" id="btn-assinar" style="padding:8px 14px;border:0;border-radius:8px;background:#0EA5A0;color:#fff;font-weight:700;cursor:pointer">✍️ Assinar contrato</button>
-    <button type="button" id="btn-ja-assinei" style="padding:8px 14px;border:1px solid #d8c48f;border-radius:8px;background:#fff;color:#7A5200;font-weight:700;cursor:pointer">Já assinei</button>
+    <button type="button" id="btn-assinar" class="lm-primario" style="padding:8px 14px;border:0;border-radius:8px;background:#0EA5A0;color:#fff;font-weight:700;cursor:pointer">Assinar contrato</button>
+    <button type="button" id="btn-reenviar" class="lm-secundario" style="padding:8px 14px;border:1px solid #d8c48f;border-radius:8px;background:#fff;color:#7A5200;font-weight:700;cursor:pointer">Reenviar e-mail</button>
+    <button type="button" id="btn-ja-assinei" class="lm-secundario" style="padding:8px 14px;border:1px solid #d8c48f;border-radius:8px;background:#fff;color:#7A5200;font-weight:700;cursor:pointer">Já assinei</button>
   </div>
   <div id="msg-contrato" style="margin-top:8px"></div>
 </div>
@@ -19,6 +20,15 @@
       if (!r.ok) throw new Error(d.erro || 'Não foi possível preparar o contrato.');
       if (d.link) { window.open(d.link, '_blank'); dizer('Abrimos a página de assinatura. Depois de assinar, volte aqui e clique em "Já assinei".', true); }
       else dizer('Enviamos o contrato para o seu e-mail. Assine pelo link e depois clique em "Já assinei".', true);
+    } catch (e) { dizer(e.message, false); }
+    ev.target.disabled = false;
+  });
+  document.getElementById('btn-reenviar').addEventListener('click', async (ev) => {
+    ev.target.disabled = true; dizer('Enviando o e-mail...', true);
+    try {
+      const r = await fetch('/api/perfil/contrato/reenviar', {method: 'POST', headers: H}); const d = await r.json();
+      if (!r.ok) throw new Error(d.erro || 'Não foi possível reenviar o e-mail.');
+      dizer(d.resultado, d.email_enviado);
     } catch (e) { dizer(e.message, false); }
     ev.target.disabled = false;
   });

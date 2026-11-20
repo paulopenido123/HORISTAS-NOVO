@@ -95,6 +95,63 @@ def consultar_assinatura(documento_id: str) -> dict:
     }
 
 
+def reenviar_assinaturas(documento_id: str) -> tuple[bool, str | None]:
+    """Pede à Autentique para reenviar o e-mail de assinatura do documento. Devolve (ok, erro). A Autentique limita
+    reenvios muito seguidos (erro too_many_resent_emails); por isso o sistema também manda o seu próprio e-mail."""
+    try:
+        doc_id = re.sub(r"[^A-Za-z0-9_-]", "", documento_id)
+        h = dict(_headers(), **{"Content-Type": "application/json"})
+        q = requests.post(URL_API, headers=h, timeout=25,
+                          json={"query": 'query { document(id: "%s") { signatures { public_id } } }' % doc_id}).json()
+        ids = [a["public_id"] for a in (((q.get("data") or {}).get("document") or {}).get("signatures") or []) if a.get("public_id")]
+        if not ids:
+            return False, "assinatura não encontrada"
+        lista = ", ".join('"%s"' % re.sub(r"[^A-Za-z0-9_-]", "", i) for i in ids)
+        r = requests.post(URL_API, headers=h, timeout=25, json={"query": "mutation { resendSignatures(public_ids: [%s]) }" % lista}).json()
+        erro = _erros(r)
+        return (not erro and bool((r.get("data") or {}).get("resendSignatures", True))), erro
+    except AutentiqueErro as e:
+        return False, str(e)
+    except Exception as e:
+        return False, f"{type(e).__name__}"
+
+
+def _html_email_contrato(nome: str, link: str) -> str:
+    primeiro = (nome or "").split()[0] if nome else ""
+    return (f'<div style="font-family:Arial,sans-serif;color:#102A43;max-width:520px">'
+            f'<h2 style="color:#0B3A52;margin:0 0 12px">Assinar contrato</h2>'
+            f'<p>Olá{", " + primeiro if primeiro else ""}!</p>'
+            f'<p>Para poder reservar consultórios na Lifemax, falta assinar o seu contrato digital. É rápido e feito pelo celular ou computador.</p>'
+            f'<p style="margin:22px 0"><a href="{link}" style="background:#0EA5A0;color:#fff;text-decoration:none;font-weight:700;'
+            f'padding:14px 26px;border-radius:12px;display:inline-block">Assinar contrato</a></p>'
+            f'<p style="font-size:13px;color:#55707C">Se o botão não abrir, copie e cole este endereço no navegador:<br>{link}</p></div>')
+
+
+def reenviar_contrato(medico_id: str) -> dict:
+    """Reenvia o e-mail "Assinar contrato" quantas vezes o médico pedir. Se o documento ainda não existe, cria (a Autentique
+    envia o primeiro e-mail). Se já existe: manda o e-mail do próprio sistema com o link e também pede o reenvio à
+    Autentique. Devolve {"link", "email", "enviado_sistema", "enviado_autentique", "novo"}."""
+    r = enviar_contrato(medico_id)  # cria se não existir; devolve o mesmo documento se já existir
+    medico = db.get_medico_by_id(medico_id) or {}
+    email = (medico.get("email") or "").strip()
+    resultado = {"link": r.get("link"), "email": email, "novo": r["novo"], "enviado_sistema": False, "enviado_autentique": False}
+    if r["novo"]:
+        resultado["enviado_autentique"] = True  # a própria criação já dispara o e-mail da Autentique
+        return resultado
+    if resultado["link"]:
+        from app.services import email_service
+        try:
+            resultado["enviado_sistema"] = bool(email_service.enviar_email(
+                [email], "Assinar contrato — Lifemax", _html_email_contrato(medico.get("nome") or "", resultado["link"])))
+        except Exception as e:
+            print(f"[autentique] e-mail do contrato falhou: {e}")
+    ok, erro = reenviar_assinaturas(medico["contrato_autentique_id"])
+    resultado["enviado_autentique"] = ok
+    if erro:
+        print(f"[autentique] reenvio pela Autentique: {erro}")
+    return resultado
+
+
 # ---------------------------------------------------------------- regras do sistema
 def contrato_pendente(medico: dict | None) -> bool:
     """True se este médico PRECISA assinar e ainda não assinou."""

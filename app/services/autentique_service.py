@@ -4,7 +4,7 @@ Regra de negócio (pedido do Paulo, 18/11/2026): o médico que se cadastra sozin
 precisa ASSINAR o contrato -- só ele assina -- para poder reservar consultório. Quem já era cliente (ou é
 cadastrado pelo admin) não precisa. O PDF do contrato é gerado com os dados do médico (pdf_service) e enviado à
 Autentique (API GraphQL, https://docs.autentique.com.br/api). O sistema descobre se ele assinou consultando a
-Autentique sob demanda (sem webhook). AUTENTIQUE_SANDBOX=1 (padrão) cria apenas documentos de teste.
+Autentique sob demanda (sem webhook). Padrão: documentos DEFINITIVOS; AUTENTIQUE_SANDBOX=1 cria apenas documentos de teste.
 """
 import json
 import re
@@ -138,7 +138,9 @@ def reenviar_contrato(medico_id: str) -> dict:
     r = enviar_contrato(medico_id)  # cria se não existir; devolve o mesmo documento se já existir
     medico = db.get_medico_by_id(medico_id) or {}
     email = (medico.get("email") or "").strip()
-    resultado = {"link": r.get("link"), "email": email, "novo": r["novo"], "enviado_sistema": False, "enviado_autentique": False}
+    smtp_ok = all([Config.SMTP_HOST, Config.SMTP_USER, Config.SMTP_PASSWORD, Config.EMAIL_FROM])
+    resultado = {"link": r.get("link"), "email": email, "novo": r["novo"], "enviado_sistema": False, "enviado_autentique": False,
+                 "smtp_configurado": smtp_ok, "erro_autentique": None}
     if r["novo"]:
         resultado["enviado_autentique"] = True  # a própria criação já dispara o e-mail da Autentique
         return resultado
@@ -151,6 +153,7 @@ def reenviar_contrato(medico_id: str) -> dict:
             print(f"[autentique] e-mail do contrato falhou: {e}")
     ok, erro = reenviar_assinaturas(medico["contrato_autentique_id"])
     resultado["enviado_autentique"] = ok
+    resultado["erro_autentique"] = erro
     if erro:
         print(f"[autentique] reenvio pela Autentique: {erro}")
     return resultado

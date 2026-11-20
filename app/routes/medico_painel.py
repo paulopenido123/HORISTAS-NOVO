@@ -241,7 +241,11 @@ def reenviar_contrato_assinatura():
     if r["enviado_sistema"] or r["enviado_autentique"]:
         msg = f"Enviamos o e-mail \"Assinar contrato\" para {r['email']}. Confira também a caixa de spam."
     else:
-        msg = "Não consegui enviar o e-mail agora, mas você pode assinar pelo botão abaixo."
+        if not r.get("smtp_configurado"):
+            msg = ("Não consegui enviar o e-mail agora (o envio de e-mails do sistema ainda não está configurado), "
+                   "mas você pode assinar pelo botão abaixo.")
+        else:
+            msg = "Não consegui enviar o e-mail agora, mas você pode assinar pelo botão abaixo. Tente reenviar em alguns minutos."
     return jsonify({"resultado": msg, "link": r["link"], "email_enviado": bool(r["enviado_sistema"] or r["enviado_autentique"])})
 
 

@@ -73,10 +73,10 @@ class Config:
     ASAAS_WEBHOOK_TOKEN = os.getenv("ASAAS_WEBHOOK_TOKEN")  # token que você define e configura no Asaas
 
     # --- Assinatura digital do contrato (Autentique) -- v101 ---
-    # Token em painel.autentique.com.br/perfil/api. AUTENTIQUE_SANDBOX=1 (padrão) cria só documentos de
-    # TESTE (sem custo); troque para 0 no Render quando for valer de verdade.
+    # Token em painel.autentique.com.br/perfil/api. v111: o padrão agora é DEFINITIVO (contrato com valor
+    # jurídico). Só cria documento de TESTE se existir AUTENTIQUE_SANDBOX=1 no Render.
     AUTENTIQUE_API_TOKEN = os.getenv("AUTENTIQUE_API_TOKEN")
-    AUTENTIQUE_SANDBOX = (os.getenv("AUTENTIQUE_SANDBOX", "1") or "1").strip().lower() not in ("0", "false", "nao", "não", "no")
+    AUTENTIQUE_SANDBOX = (os.getenv("AUTENTIQUE_SANDBOX", "0") or "0").strip().lower() in ("1", "true", "sim", "yes")
 
     # --- Emissão de Nota Fiscal (NFS-e) da Lifemax pros médicos ---
     # Certificado A1 da PRÓPRIA LIFEMAX (emitente), usado pra emitir a nota

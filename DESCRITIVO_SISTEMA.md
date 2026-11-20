@@ -480,6 +480,17 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v111 — Contrato da Autentique definitivo por padrão
+- Antes: sem a variável AUTENTIQUE_SANDBOX no Render, o sistema criava contratos de TESTE. Agora o padrão é DEFINITIVO; só vira teste se existir AUTENTIQUE_SANDBOX=1.
+- Não precisa criar nenhuma variável nova no Render. Basta subir a v111 e usar "Gerar novo contrato" na ficha do médico.
+- Arquivos: config.py, autentique_service.py.
+
+## v110 — Mensagem clara quando o e-mail do contrato não sai
+- Ao reenviar "Assinar contrato", se o e-mail não puder ser enviado, o sistema agora diz o motivo: SMTP não configurado no Render, ou limite de reenvios da Autentique (tentar novamente em alguns minutos).
+- Admin: o aviso mostra o motivo e o link de assinatura para repassar ao médico.
+- O botão "Assinar contrato" continua funcionando mesmo sem e-mail.
+- Arquivos: autentique_service.py, medico_painel.py, admin.py. Testes: teste_v108 e teste_v109 OK (e-mail e Autentique simulados).
+
 ## v109 — Gerar novo contrato (admin) e indicador do modo da Autentique
 - Ficha do cliente (Admin > Clientes > Visualizar), quando o contrato está pendente: botão "Gerar novo contrato" (descarta o documento atual, p.ex. de teste, e envia um novo ao médico; recusa se já assinou) e linha "Sistema em MODO TESTE/DEFINITIVO" (mostra também se o contrato atual é de TESTE).
 - Reenviar e-mail NÃO cria documento novo: só manda de novo o link do documento existente.

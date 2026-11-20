@@ -583,7 +583,7 @@ def reenviar_contrato_cliente(medico_id):
         if r['enviado_sistema'] or r['enviado_autentique']:
             flash(f"E-mail \"Assinar contrato\" enviado para {r['email']}.", 'ok')
         else:
-            flash('Não consegui enviar o e-mail agora (confira o SMTP no Render). Link de assinatura: ' + (r['link'] or '—'), 'erro')
+            flash(('O envio de e-mails do sistema (SMTP) NÃO está configurado no Render' if not r.get('smtp_configurado') else 'Não consegui enviar o e-mail agora (' + (r.get('erro_autentique') or 'erro no envio') + ')') + '. Link de assinatura para passar ao médico: ' + (r['link'] or '—'), 'erro')
     except (ValueError, autentique_service.AutentiqueErro) as e:
         flash(str(e), 'erro')
     return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))

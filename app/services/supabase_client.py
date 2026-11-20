@@ -111,7 +111,7 @@ def get_medico_by_telefone(telefone: str) -> dict | None:
     """Busca o médico pelo número de telefone (identifica quem está falando)."""
     resp = get_client().table("medicos").select("*").eq("telefone", telefone).execute()
     data = resp.data
-    return data[0] if data else None
+    return ajustar_contrato_sandbox(data[0]) if data else None
 
 
 def listar_medicos_por_email(email: str) -> list[dict]:
@@ -702,9 +702,22 @@ def listar_funcionarios_ativos() -> list[dict]:
     return resp.data
 
 
+def ajustar_contrato_sandbox(medico: dict | None) -> dict | None:
+    """v107: se o sistema está em modo DEFINITIVO e o contrato do médico foi criado em modo TESTE, ele é tratado
+    como não enviado/não assinado (só na leitura; o banco não é alterado). Assim o médico assina um contrato de verdade."""
+    if medico and medico.get("contrato_sandbox") is True:
+        from app.config import Config
+        if not Config.AUTENTIQUE_SANDBOX:
+            medico["contrato_autentique_id"] = None
+            medico["contrato_link"] = None
+            medico["contrato_enviado_em"] = None
+            medico["contrato_assinado_em"] = None
+    return medico
+
+
 def get_medico_by_id(medico_id: str) -> dict | None:
     resp = get_client().table("medicos").select("*").eq("id", medico_id).execute()
-    return resp.data[0] if resp.data else None
+    return ajustar_contrato_sandbox(resp.data[0]) if resp.data else None
 
 
 def registrar_aceite_termo(medico_id: str, ip: str | None, versao: str | None = None):

@@ -198,6 +198,7 @@ def clientes():
     pacotes_horas = creditos_db.listar_pacotes_horas()
     for m in lista:
         m['saldo_horas'] = creditos_db.estimar_horas_compraveis(m.get('saldo_creditos') or 0, pacotes_horas)
+        db.ajustar_contrato_sandbox(m)
     from app.services import documentos_medico_service as docs_medico
     from app.services import autentique_service
     from app.config import Config

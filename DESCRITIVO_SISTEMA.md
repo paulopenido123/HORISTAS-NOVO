@@ -480,6 +480,13 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v107 — Contrato da Autentique: de teste para definitivo
+- Documento criado em modo teste (sandbox) não tem valor jurídico e a Autentique o apaga em alguns dias. Para valer: no Render, variável `AUTENTIQUE_SANDBOX` = `0` (ou `false`).
+- Nova coluna `medicos.contrato_sandbox` (migração: `sql/migration_contrato_assinatura.sql`, idempotente; marca como "teste" tudo que já existia). Quando o sistema está em modo DEFINITIVO, contratos marcados como teste são tratados como não enviados/não assinados (só na leitura, `supabase_client.ajustar_contrato_sandbox`): o médico volta a precisar assinar e o próximo "Enviar contrato" cria um documento DEFINITIVO. Assinatura de teste não libera reserva no modo definitivo.
+- Em modo teste, assinar o contrato de teste continua liberando a reserva (para poder testar o fluxo).
+- Sem a migração rodada, o envio continua funcionando (grava sem a marca).
+- Arquivos: sql/migration_contrato_assinatura.sql, services/autentique_service.py, services/supabase_client.py, routes/admin.py.
+
 ## v106 — "Meus dados": botão piscando, novo nome do campo e salvar só com tudo preenchido
 - Painel do médico: enquanto o cadastro estiver incompleto, o botão "Meus dados" pisca em vermelho 3 vezes ao abrir o painel (animação CSS `piscar-vermelho`; sem movimento para quem usa "reduzir animações": fica com contorno vermelho fixo). Some quando o cadastro está completo.
 - Campo "Especialidade" passou a se chamar "Especialidade/Campo de trabalho" (tela Meus dados, aviso, mensagem "faltam: ...", texto do primeiro acesso). O dado continua na mesma coluna (`especialidade`); contrato/PDF não foram alterados.

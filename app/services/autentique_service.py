@@ -122,9 +122,15 @@ def enviar_contrato(medico_id: str) -> dict:
     pdf = pdf_service.gerar_pdf_contrato(medico, assinatura_externa=True).getvalue()
     primeiro = (medico.get("nome") or "medico").split()[0]
     doc = criar_documento(pdf, f"Contrato Lifemax - {medico.get('nome') or primeiro}", medico.get("nome") or primeiro, email)
-    get_client().table("medicos").update({
-        "contrato_autentique_id": doc["id"], "contrato_link": doc["link"], "contrato_enviado_em": agora_iso(),
-    }).eq("id", medico_id).execute()
+    dados = {"contrato_autentique_id": doc["id"], "contrato_link": doc["link"], "contrato_enviado_em": agora_iso(),
+             "contrato_assinado_em": None}
+    try:
+        get_client().table("medicos").update({**dados, "contrato_sandbox": bool(Config.AUTENTIQUE_SANDBOX)}).eq("id", medico_id).execute()
+    except Exception as e:
+        if getattr(e, "pgcode", None) != "42703":
+            raise
+        # migração v107 ainda não rodada: grava sem a marca (o documento já foi criado na Autentique)
+        get_client().table("medicos").update(dados).eq("id", medico_id).execute()
     return {"link": doc["link"], "novo": True}
 
 

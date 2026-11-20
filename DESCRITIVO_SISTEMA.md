@@ -480,6 +480,12 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v105 — Nova aparência da página inicial (2ª versão, a partir do modelo do Paulo)
+- `home_reserva_horas.html` refeita conforme o modelo: foto da recepção com a médica como fundo do topo (`static/images/hero-recepcao.jpg`, espelhada para a médica ficar à direita, ~160 KB) com degradê azul-petróleo à esquerda e embaixo; logo OFICIAL da Lifemax (`static/images/logo-light.png`, o mesmo do topo do admin) em placa branca arredondada, seguido da palavra "CONSULTÓRIOS" em ciano; fonte Poppins (Google Fonts); quatro botões grandes arredondados com brilho ciano, ícone e seta (Entrar preenchido, os outros em vidro escuro com borda luminosa); agenda e cartões de benefícios no mesmo estilo (fundo escuro, bordas com brilho).
+- TEXTOS INALTERADOS (conferido por comparação automática: nenhuma palavra removida ou acrescentada). A palavra "profissional" do título aparece em ciano; os botões que ficavam no cabeçalho foram para o topo da página.
+- Celular: texto, foto da médica em faixa própria, botões em coluna, agenda e benefícios; sem rolagem lateral (390, 820, 1280 e 1440 px testados).
+- Sem mudança de banco. Arquivos: templates/home_reserva_horas.html, static/images/hero-recepcao.jpg.
+
 ## v104 — Fotos da recepção de cada endereço; nome "Avantgarde Motors"
 - Referência do Estoril corrigida para "Em frente à Avantgarde Motors" (telas, páginas públicas e banco: a migração atualiza também quem já tinha o texto antigo).
 - Nova coluna `unidades.fotos` (text[]), criada por `sql/migration_unidades.sql` (rodar de novo no Neon; é idempotente).

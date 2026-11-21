@@ -56,6 +56,7 @@
   .btn { background: var(--cyan); color:#fff; border:none; padding:11px 20px; border-radius:7px;
          font-family: var(--display); font-weight:700; font-size:13.5px; cursor:pointer; }
   .obrig { color:#E53935; }
+  {% if not exige_obrigatorios %}.obrig, .aviso-obrig { display:none !important; }{% endif %}
   input[type].campo-erro, input.campo-erro[type=text], input.campo-erro[type=email] { border:2px solid #E53935 !important; background:#FFF1F0 !important; box-shadow:0 0 0 3px rgba(229,57,53,.15); }
   label.label-erro { color:#E53935 !important; }
   #card-documento.campo-erro-card { border:2px solid #E53935 !important; background:#FFF5F5 !important; box-shadow:0 0 0 4px rgba(229,57,53,.18) !important; }
@@ -231,7 +232,7 @@
   </form>
 
   <div class="card" id="card-documento">
-    <h2>Documento de identidade <span style="color:#E53935">*</span> <small style="font-weight:600;font-size:12px;color:#E53935">(obrigatório para salvar)</small></h2>
+    <h2>Documento de identidade{% if exige_obrigatorios %} <span style="color:#E53935">*</span> <small style="font-weight:600;font-size:12px;color:#E53935">(obrigatório para salvar)</small>{% endif %}</h2>
     <p style="font-size:13px;color:var(--ink-muted);margin-bottom:12px">
       Envie uma foto ou PDF do seu documento de identidade, de preferência a carteira do CRM (ou correspondente).
       Ele fica arquivado com segurança no sistema e <strong>só o administrador da Lifemax</strong> tem acesso.
@@ -307,6 +308,7 @@ document.getElementById('endereco_cep').addEventListener('input', () => {
 // caminhos reaproveitam a mesma função salvarDados() pra não duplicar a
 // lógica de chamada da API.
 // v106: campos obrigatórios (mesma lista do servidor) -- ficam em vermelho e impedem salvar enquanto vazios.
+const EXIGE_OBRIGATORIOS = {{ 'true' if exige_obrigatorios else 'false' }};  // v116: cliente já liberado não é obrigado a nada
 const CAMPOS_OBRIGATORIOS = ['telefone','email','especialidade','cpf_cnpj','endereco_cep','endereco_rua','endereco_numero','endereco_bairro','endereco_cidade','endereco_estado'];
 function limparErroCampo(id) {
   const el = document.getElementById(id); if (!el) return;
@@ -324,6 +326,7 @@ function marcarErroCampo(id) {
 }
 function validarObrigatorios(extras) {
   CAMPOS_OBRIGATORIOS.forEach(limparErroCampo);
+  if (!EXIGE_OBRIGATORIOS) return [];
   const faltando = CAMPOS_OBRIGATORIOS.filter(id => {
     const el = document.getElementById(id);
     return el && !(el.value || '').trim();
@@ -347,7 +350,7 @@ async function salvarDados() {
   const faltandoCampos = validarObrigatorios();
   // v114: documento de identidade obrigatório -- se escolheu o arquivo mas ainda não enviou, envia agora; senão bloqueia
   let docOk = true;
-  if (window.__doc && !window.__doc.enviado()) {
+  if (EXIGE_OBRIGATORIOS && window.__doc && !window.__doc.enviado()) {
     docOk = await window.__doc.enviarEscolhido();
     if (!docOk) {
       marcarDocumento(true);

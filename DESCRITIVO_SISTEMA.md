@@ -480,6 +480,16 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v116 — Cliente já liberado nunca é barrado nem cobrado por dados
+- Regra: médico com acesso liberado pelo admin (autorizado) é cliente. Para ele o sistema NÃO exige dados novos: a reserva nunca é barrada por cadastro incompleto, "Meus dados" não pisca, o aviso de "cadastro pendente" não aparece, e salvar "Meus dados" não exige campos nem documento de identidade (os asteriscos e o aviso de obrigatório também somem da tela).
+- Continua valendo só para cadastro novo ainda não liberado (campos obrigatórios + documento para salvar). O contrato digital, quando exigido, ainda precisa dos dados para gerar o PDF.
+- Arquivos: reserva_service.py (exige_dados_pessoais), medico_painel.py, painel_dados_pessoais.html. Testes: teste_v116 OK; v106/v114 ajustados para cadastro novo.
+
+## v115 — Busca de clientes sem acento e aviso do documento mais completo
+- Admin > Clientes: a busca agora ignora acentos e maiúsculas ("camara" acha "Câmara") e aceita telefone com ou sem máscara.
+- O aviso "enviou o documento de identificação" (WhatsApp) agora diz se o médico está AGUARDANDO LIBERAÇÃO ou já liberado e traz telefone e e-mail.
+- Arquivos: admin.py, medico_painel.py. Teste: teste_v115 (+ v113, v114) OK.
+
 ## v114 — "Meus dados" volta a piscar; documento de identidade obrigatório para salvar
 - Causa do botão não piscar: os botões no padrão novo (v108) usam `!important` em fundo e sombra, o que anulava a animação. Agora a animação usa `filter` (gira o tom para vermelho + brilho vermelho), que não é anulado. Pisca 3 vezes ao abrir o painel.
 - O botão também pisca (e o aviso de cadastro pendente lista "documento de identidade") quando só falta o documento.

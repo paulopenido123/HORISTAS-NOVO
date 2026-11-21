@@ -161,6 +161,12 @@ _CAMPOS_OBRIGATORIOS_PARA_RESERVAR = [
 ]
 
 
+def exige_dados_pessoais(medico: dict | None) -> bool:
+    """v116: quem JÁ foi liberado pelo admin (autorizado) é cliente: o sistema nunca exige dados novos dele nem barra a
+    reserva por falta de cadastro. A exigência vale só para cadastro novo, ainda não liberado."""
+    return not (medico or {}).get("autorizado")
+
+
 def _campos_pessoais_faltando(medico: dict) -> list[str]:
     return [rotulo for rotulo, campo in _CAMPOS_OBRIGATORIOS_PARA_RESERVAR if not medico.get(campo)]
 
@@ -198,7 +204,7 @@ def _checar_pode_alugar_avulso(medico: dict | None, criado_por_admin: bool = Fal
             print(f"[reserva] não consegui conferir o contrato na Autentique: {e}")
         if autentique_service.contrato_pendente(medico):
             raise ContratoPendenteError()
-    if medico:
+    if medico and exige_dados_pessoais(medico):
         faltando = _campos_pessoais_faltando(medico)
         if faltando:
             raise DadosPessoaisIncompletosError(faltando)

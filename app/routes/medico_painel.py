@@ -52,13 +52,15 @@ def painel():
         endereco_lifemax = f_endereco.result()
     horas_minimas = int(precos.get("horas_minimas", 1))
     preco_minimo = creditos_db.calcular_preco_horas(horas_minimas)
-    campos_faltando = reserva_service._campos_pessoais_faltando(medico)
-    try:
-        from app.services import documentos_medico_service as _docs
-        if _docs.documento_pendente(medico["id"]):
-            campos_faltando = list(campos_faltando) + ["documento de identidade"]
-    except Exception as e:
-        print(f"[painel] checagem do documento ignorada: {e}")
+    campos_faltando = []
+    if reserva_service.exige_dados_pessoais(medico):  # v116: cliente já liberado não é cobrado por dados
+        campos_faltando = reserva_service._campos_pessoais_faltando(medico)
+        try:
+            from app.services import documentos_medico_service as _docs
+            if _docs.documento_pendente(medico["id"]):
+                campos_faltando = list(campos_faltando) + ["documento de identidade"]
+        except Exception as e:
+            print(f"[painel] checagem do documento ignorada: {e}")
     try:
         from app.services import supabase_client as _db
         enderecos_consultorio = _db.mapa_endereco_por_consultorio()
@@ -217,7 +219,7 @@ def pagina_dados_pessoais():
     # sistema.
     cadastro_completo_inicial = not reserva_service._campos_pessoais_faltando(medico)
     from app.services import documentos_medico_service as docs_medico
-    return render_template("painel_dados_pessoais.html", medico=medico,
+    return render_template("painel_dados_pessoais.html", medico=medico, exige_obrigatorios=reserva_service.exige_dados_pessoais(medico),
                             cadastro_completo_inicial=cadastro_completo_inicial,
                             documento=docs_medico.obter_info(medico["id"]))
 
@@ -285,7 +287,9 @@ def enviar_documento_medico():
     try:
         from app.services import notificacoes_operacionais_service as notif_op
         medico = db.get_medico_by_id(medico_id)
-        notif_op.avisar_admins(f"📄 {medico['nome']} enviou o documento de identificação. Veja em Admin > Clientes.")
+        situacao = "acesso JÁ liberado" if medico.get("autorizado") else "AGUARDANDO LIBERAÇÃO (aparece em Admin > Clientes > Aguardando liberação)"
+        contato = " · ".join(x for x in [medico.get("telefone"), medico.get("email")] if x)
+        notif_op.avisar_admins(f"📄 {medico['nome']} enviou o documento de identificação. {situacao}. Contato: {contato or '—'}. Veja em Admin > Clientes.")
     except Exception as e:
         print(f"[documento_medico] Aviso aos admins falhou: {e}")
     return jsonify({"resultado": "Documento enviado com sucesso.", "nome_arquivo": info["nome_arquivo"]})
@@ -301,7 +305,10 @@ def salvar_dados_pessoais():
     faltando = [(rot, campo) for rot, campo in reserva_service._CAMPOS_OBRIGATORIOS_PARA_RESERVAR
                 if not str(combinado.get(campo) or "").strip()]
     from app.services import documentos_medico_service as docs_medico
-    sem_documento = docs_medico.documento_pendente(medico_logado_id())
+    exige = reserva_service.exige_dados_pessoais(atual)
+    if not exige:  # v116: cliente já liberado salva livremente, sem campos nem documento obrigatórios
+        faltando = []
+    sem_documento = exige and docs_medico.documento_pendente(medico_logado_id())
     if faltando or sem_documento:
         nomes = [r for r, _ in faltando] + (["documento de identidade"] if sem_documento else [])
         return jsonify({"erro": "Para salvar, preencha os campos em vermelho" + (" e anexe o documento de identidade" if sem_documento else "")

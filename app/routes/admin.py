@@ -215,11 +215,19 @@ def clientes():
     busca = (request.args.get('busca') or '').strip().lower()
     lista = db.get_client().table('medicos').select('*').order('nome').execute().data
     if busca:
+        # v115: busca sem acento e sem diferenciar maiúsculas ("camara" acha "Câmara"); telefone só pelos dígitos
+        import unicodedata
+
+        def _sem_acento(t):
+            return ''.join(c for c in unicodedata.normalize('NFD', (t or '').lower()) if unicodedata.category(c) != 'Mn')
+        b = _sem_acento(busca)
+        b_dig = ''.join(c for c in b if c.isdigit())
         lista = [
             m for m in lista
-            if busca in (m.get('nome') or '').lower()
-            or busca in (m.get('telefone') or '')
-            or busca in (m.get('email') or '').lower()
+            if b in _sem_acento(m.get('nome'))
+            or b in _sem_acento(m.get('email'))
+            or b in (m.get('telefone') or '')
+            or (b_dig and b_dig in ''.join(c for c in (m.get('telefone') or '') if c.isdigit()))
         ]
     # Saldo de horas de cada um, pra mostrar na lista.
     #

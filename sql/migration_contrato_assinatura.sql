@@ -11,3 +11,8 @@ alter table medicos add column if not exists contrato_assinado_em timestamptz;
 alter table medicos add column if not exists contrato_sandbox boolean;
 -- tudo que existia antes desta coluna foi criado em modo teste:
 update medicos set contrato_sandbox = true where contrato_autentique_id is not null and contrato_sandbox is null;
+
+-- v117: limite de contratos digitais por mês (plano gratuito da Autentique = 10). A partir do 11º cadastro novo do mês o
+-- contrato é assinado PRESENCIALMENTE no escritório e o médico não fica travado para reservar.
+alter table medicos add column if not exists contrato_presencial boolean not null default false;
+alter table medicos add column if not exists contrato_vaga_mes text;  -- 'AAAA-MM' do mês em que usou uma das vagas digitais

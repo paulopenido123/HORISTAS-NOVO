@@ -480,6 +480,14 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v117 — Aviso de cada cadastro novo (Dora) e limite de 10 contratos digitais por mês
+- Todo cadastro novo pelo site (/primeiro-acesso) já avisava os admins pela Dora (WhatsApp); agora o aviso também diz o contrato: "vaga X de 10 deste mês" ou "CONTRATO PRESENCIAL".
+- Limite mensal (variável opcional `AUTENTIQUE_LIMITE_MES`, padrão 10 = plano gratuito da Autentique). Os 10 primeiros cadastros novos do mês recebem contrato digital; do 11º em diante o contrato é PRESENCIAL: o sistema não cria documento na Autentique, avisa a Dora para deixar o contrato impresso no escritório, manda e-mail ao médico ("contrato disponível no escritório") e mostra a mensagem no painel dele. O médico NÃO fica travado para reservar (continua dependendo apenas da liberação de acesso pelo admin).
+- Admin: na lista de clientes aparece "Contratos digitais deste mês: X de 10" e a etiqueta "Contrato presencial (escritório)"; na ficha: "Baixar contrato para imprimir" (PDF com linhas de assinatura) e "Marcar como assinado no escritório".
+- A contagem usa o maior entre as vagas distribuídas no mês e os documentos já criados na Autentique no mês (não conta documentos de teste).
+- Migração: `sql/migration_contrato_assinatura.sql` (novas colunas `contrato_presencial` e `contrato_vaga_mes`). Sem rodar a migração, tudo segue digital como antes.
+- Arquivos: autentique_service.py, auth.py, admin.py, api_dora.py, config.py, _aviso_contrato.html, admin_clientes.html, admin_cliente_visualizar.html. Teste: teste_v117 (12 cadastros) + anteriores OK.
+
 ## v116 — Cliente já liberado nunca é barrado nem cobrado por dados
 - Regra: médico com acesso liberado pelo admin (autorizado) é cliente. Para ele o sistema NÃO exige dados novos: a reserva nunca é barrada por cadastro incompleto, "Meus dados" não pisca, o aviso de "cadastro pendente" não aparece, e salvar "Meus dados" não exige campos nem documento de identidade (os asteriscos e o aviso de obrigatório também somem da tela).
 - Continua valendo só para cadastro novo ainda não liberado (campos obrigatórios + documento para salvar). O contrato digital, quando exigido, ainda precisa dos dados para gerar o PDF.

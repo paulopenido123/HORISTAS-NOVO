@@ -76,6 +76,8 @@ class Config:
     # Token em painel.autentique.com.br/perfil/api. v111: o padrão agora é DEFINITIVO (contrato com valor
     # jurídico). Só cria documento de TESTE se existir AUTENTIQUE_SANDBOX=1 no Render.
     AUTENTIQUE_API_TOKEN = os.getenv("AUTENTIQUE_API_TOKEN")
+    # v117: contratos digitais por mês (plano gratuito = 10). Do 11º cadastro novo do mês em diante o contrato é presencial.
+    AUTENTIQUE_LIMITE_MES = int((os.getenv("AUTENTIQUE_LIMITE_MES", "10") or "10").strip() or 10)
     AUTENTIQUE_SANDBOX = (os.getenv("AUTENTIQUE_SANDBOX", "0") or "0").strip().lower() in ("1", "true", "sim", "yes")
 
     # --- Emissão de Nota Fiscal (NFS-e) da Lifemax pros médicos ---

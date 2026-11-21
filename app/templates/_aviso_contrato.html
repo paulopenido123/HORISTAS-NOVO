@@ -1,5 +1,9 @@
 {# v101: aviso de contrato digital pendente (só para quem se cadastrou sozinho). Incluir onde houver `medico`. #}
-{% if medico and medico.exige_contrato and not medico.contrato_assinado_em %}
+{% if medico and medico.exige_contrato and not medico.contrato_assinado_em and medico.contrato_presencial %}
+<div id="aviso-contrato" style="background:#E8F4FD;color:#0B3A52;padding:12px 16px;border-radius:14px;font-size:13px;margin:14px 12px 0;line-height:1.5">
+  <strong>Seu contrato está disponível no escritório da Lifemax.</strong> Assine pessoalmente quando for atendido. Enquanto isso, você já pode usar o sistema e reservar consultórios normalmente.
+</div>
+{% elif medico and medico.exige_contrato and not medico.contrato_assinado_em %}
 <div id="aviso-contrato" style="background:#FFF4DC;color:#7A5200;padding:12px 16px;border-radius:14px;font-size:13px;margin:14px 12px 0;line-height:1.5">
   <strong>Falta assinar o contrato digital.</strong> Você já pode comprar horas, mas só vai conseguir reservar um consultório depois de assinar.
   <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">

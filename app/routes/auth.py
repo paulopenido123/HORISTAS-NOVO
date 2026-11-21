@@ -63,12 +63,35 @@ def primeiro_acesso():
                 else:
                     creditos_db.definir_senha_medico(novo["id"], auth_service.gerar_hash_senha(senha))
                     auth_service.login_medico(novo["id"])
+                    modo = {}
+                    try:
+                        from app.services import autentique_service
+                        modo = autentique_service.definir_modo_contrato(novo["id"])
+                    except Exception as e:
+                        print(f"[primeiro_acesso] não consegui definir o modo do contrato: {e}")
                     try:
                         from app.services import notificacoes_operacionais_service as notif_op
+                        if modo.get("modo") == "presencial":
+                            contrato_txt = (f"⚠️ CONTRATO PRESENCIAL: já foram usados os {modo['limite']} contratos digitais deste mês. "
+                                            f"Deixe o contrato impresso no escritório para ele assinar quando for atendido "
+                                            f"(Admin > Clientes > ficha > Baixar contrato). Ele NÃO fica travado para reservar.")
+                        elif modo.get("modo") == "digital":
+                            contrato_txt = f"Contrato digital: vaga {modo['usadas'] + 1} de {modo['limite']} deste mês."
+                        else:
+                            contrato_txt = ""
                         notif_op.avisar_admins(f"👋 Novo cliente se cadastrou pelo site: {nome} ({email_digitado}). "
-                                               f"Ele ainda precisa completar os dados e enviar o documento em Meus dados, e aguarda a sua liberação em Clientes para reservar.")
+                                               f"Ele ainda precisa completar os dados e enviar o documento em Meus dados, e aguarda a sua liberação em Clientes para reservar. {contrato_txt}".strip())
                     except Exception as e:
                         print(f"[primeiro_acesso] Aviso aos admins falhou: {e}")
+                    if modo.get("modo") == "presencial" and email_digitado:
+                        try:
+                            from app.services import email_service
+                            email_service.enviar_email([email_digitado], "Seu contrato Lifemax está no escritório",
+                                "<div style=\"font-family:Arial,sans-serif;color:#102A43;max-width:520px\"><h2 style=\"color:#0B3A52\">Contrato disponível no escritório</h2>"
+                                "<p>Olá! Seu contrato com a Lifemax está disponível no nosso escritório. Assine pessoalmente quando for atendido. "
+                                "Enquanto isso, você já pode usar o sistema e reservar consultórios normalmente.</p></div>")
+                        except Exception as e:
+                            print(f"[primeiro_acesso] e-mail do contrato presencial falhou: {e}")
                     return redirect(url_for("medico_painel.painel"))
         elif not encontrados:
             # e-mail novo -> cadastro novo (só e-mail, nome e senha)

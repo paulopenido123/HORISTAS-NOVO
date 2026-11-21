@@ -175,8 +175,54 @@ def reenviar_contrato(medico_id: str) -> dict:
 
 # ---------------------------------------------------------------- regras do sistema
 def contrato_pendente(medico: dict | None) -> bool:
-    """True se este médico PRECISA assinar e ainda não assinou."""
-    return bool(medico and medico.get("exige_contrato") and not medico.get("contrato_assinado_em"))
+    """True se este médico PRECISA assinar (digitalmente) e ainda não assinou. v117: quem ficou no contrato PRESENCIAL
+    (limite mensal da Autentique atingido) nunca é barrado por isso -- assina no escritório sem travar a reserva."""
+    return bool(medico and medico.get("exige_contrato") and not medico.get("contrato_assinado_em")
+                and not medico.get("contrato_presencial"))
+
+
+def _mes_atual() -> str:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    return datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%Y-%m")
+
+
+def vagas_usadas_no_mes() -> int:
+    """Quantos contratos digitais já foram usados neste mês: cadastros novos que receberam vaga + documentos já criados
+    na Autentique (o maior dos dois, para não contar duas vezes a mesma pessoa)."""
+    mes = _mes_atual()
+    cli = get_client()
+    por_vaga = 0
+    try:
+        por_vaga = len(cli.table("medicos").select("id").eq("contrato_vaga_mes", mes).execute().data or [])
+    except Exception as e:
+        if getattr(e, "pgcode", None) != "42703":
+            raise
+    docs = 0
+    try:
+        linhas = cli.table("medicos").select("contrato_enviado_em,contrato_sandbox,contrato_autentique_id").execute().data or []
+        docs = sum(1 for l in linhas if l.get("contrato_autentique_id") and (str(l.get("contrato_enviado_em") or "")[:7] == mes) and not l.get("contrato_sandbox"))
+    except Exception as e:
+        print(f"[autentique] contagem de documentos do mês falhou: {e}")
+    return max(por_vaga, docs)
+
+
+def definir_modo_contrato(medico_id: str) -> dict:
+    """v117: chamado no cadastro novo. Se ainda há vaga digital no mês, reserva uma; senão marca o contrato como
+    PRESENCIAL. Devolve {"modo": "digital"|"presencial", "usadas": n_antes, "limite": n}. Sem a migração v117 rodada,
+    não marca nada (tudo segue digital, como antes)."""
+    limite = int(Config.AUTENTIQUE_LIMITE_MES)
+    usadas = vagas_usadas_no_mes()
+    modo = "digital" if usadas < limite else "presencial"
+    dados = {"contrato_vaga_mes": _mes_atual()} if modo == "digital" else {"contrato_presencial": True}
+    try:
+        get_client().table("medicos").update(dados).eq("id", medico_id).execute()
+    except Exception as e:
+        if getattr(e, "pgcode", None) == "42703":
+            print("[autentique] rode sql/migration_contrato_assinatura.sql (v117) para ativar o limite mensal")
+            return {"modo": "digital", "usadas": usadas, "limite": limite, "sem_migracao": True}
+        raise
+    return {"modo": modo, "usadas": usadas, "limite": limite}
 
 
 def enviar_contrato(medico_id: str) -> dict:
@@ -187,6 +233,9 @@ def enviar_contrato(medico_id: str) -> dict:
         raise ValueError("Cadastro não encontrado.")
     if not medico.get("exige_contrato") or medico.get("contrato_assinado_em"):
         raise ValueError("Este cadastro não precisa assinar o contrato (ou já assinou).")
+    if medico.get("contrato_presencial"):
+        raise ValueError("O seu contrato está disponível no escritório da Lifemax: assine pessoalmente quando for atendido. "
+                         "Você já pode reservar consultórios normalmente.")
     if medico.get("contrato_autentique_id"):
         return {"link": medico.get("contrato_link"), "novo": False}
     email = (medico.get("email") or "").strip()

@@ -73,6 +73,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
         <a class="btn" href="{{ url_for('admin.novo_cliente') }}">+ Inserir novo</a>
       </div>
     </div>
+    {% if vagas %}<div class="muted" style="margin:0 0 10px;font-size:13px">Contratos digitais (Autentique) deste mês: <strong>{{ vagas.usadas }} de {{ vagas.limite }}</strong>{% if vagas.usadas >= vagas.limite %} — <strong style="color:#B33">limite atingido: novos cadastros assinam o contrato presencialmente no escritório</strong>{% endif %}</div>{% endif %}
     <div class="filtros">
       <span class="muted">Filtrar:</span>
       <a class="chip{{ ' on' if not filtro }}" href="{{ url_for('admin.clientes') }}">Todos</a>
@@ -109,7 +110,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
             {% else %}
             <span class="status-tag bloqueado">Aguardando liberação</span>
             {% endif %}
-            {% if m.exige_contrato %}{% if m.contrato_assinado_em %}<span class="status-tag liberado">✍️ Contrato assinado</span>{% else %}<span class="status-tag bloqueado" style="background:#FFF4DC;color:#9A6700">✍️ {{ 'Aguardando assinatura' if m.contrato_autentique_id else 'Contrato não enviado' }}</span>{% endif %}{% endif %}
+            {% if m.exige_contrato %}{% if m.contrato_presencial and not m.contrato_assinado_em %}<span class="status-tag bloqueado" style="background:#E8F4FD;color:#0B3A52">🖨 Contrato presencial (escritório)</span>{% elif m.contrato_assinado_em %}<span class="status-tag liberado">✍️ Contrato assinado</span>{% else %}<span class="status-tag bloqueado" style="background:#FFF4DC;color:#9A6700">✍️ {{ 'Aguardando assinatura' if m.contrato_autentique_id else 'Contrato não enviado' }}</span>{% endif %}{% endif %}
             {% if docs.get(m.id) %}<span class="status-tag liberado" title="Enviado em {{ docs[m.id].enviado_em }}">📄 Documento enviado</span>{% else %}<span class="status-tag bloqueado" style="background:#FFF4DC;color:#9A6700">📄 Sem documento</span>{% endif %}
             <form class="form-autorizacao" method="post" action="{{ url_for('admin.autorizacao_cliente', medico_id=m.id) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

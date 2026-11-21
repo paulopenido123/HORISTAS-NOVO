@@ -278,7 +278,13 @@ def clientes():
     from app.services import documentos_medico_service as docs_medico
     from app.services import autentique_service
     from app.config import Config
-    return render_template('admin_clientes.html', medicos=lista, busca=request.args.get('busca') or '',
+    try:
+        from app.services import autentique_service as _aut
+        vagas = {'usadas': _aut.vagas_usadas_no_mes(), 'limite': Config.AUTENTIQUE_LIMITE_MES}
+    except Exception as e:
+        print(f'[clientes] vagas do mês indisponíveis: {e}')
+        vagas = None
+    return render_template('admin_clientes.html', medicos=lista, busca=request.args.get('busca') or '', vagas=vagas,
                            filtro=filtro, totais=totais,
                            docs=docs_medico.info_de_todos(),
                            autentique_teste=autentique_service.configurado() and Config.AUTENTIQUE_SANDBOX)
@@ -690,6 +696,35 @@ def novo_contrato_cliente(medico_id):
         flash(f"Novo contrato gerado e enviado para {medico.get('email')}." + (' (MODO TESTE: sem valor jurídico)' if autentique_service.modo_teste() else ''), 'ok')
     except (ValueError, autentique_service.AutentiqueErro) as e:
         flash(str(e), 'erro')
+    return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
+
+
+@admin_bp.route('/clientes/<medico_id>/contrato/pdf')
+@_admin
+def contrato_pdf_cliente(medico_id):
+    """v117: PDF do contrato (modelo com linhas de assinatura) para IMPRIMIR e deixar no escritório."""
+    from flask import send_file
+    from app.services import pdf_service
+    medico = db.get_medico_by_id(medico_id)
+    if not medico:
+        flash('Cliente não encontrado.', 'erro')
+        return redirect(url_for('admin.clientes'))
+    pdf = pdf_service.gerar_pdf_contrato(medico, assinatura_externa=True)
+    pdf.seek(0)
+    return send_file(pdf, mimetype='application/pdf', as_attachment=True,
+                     download_name='contrato-' + (medico.get('nome') or 'medico').replace(' ', '_') + '.pdf')
+
+
+@admin_bp.route('/clientes/<medico_id>/contrato/assinado-no-escritorio', methods=['POST'])
+@_admin
+def contrato_assinado_escritorio(medico_id):
+    """v117: registra que o médico assinou o contrato em papel no escritório."""
+    medico = db.get_medico_by_id(medico_id)
+    if not medico:
+        flash('Cliente não encontrado.', 'erro')
+        return redirect(url_for('admin.clientes'))
+    db.get_client().table('medicos').update({'contrato_assinado_em': db.agora_iso()}).eq('id', medico_id).execute()
+    flash(f'Registrado: {medico["nome"]} assinou o contrato no escritório.', 'ok')
     return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
 

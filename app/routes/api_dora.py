@@ -51,7 +51,8 @@ def _medico_para_json(medico: dict) -> dict:
     # Todo médico é "avulso" (pedido do Paulo em 30/09/2026: Agenda Fixos e
     # Agenda Horistas foram removidas do sistema) -- a Dora usa esse campo
     # pra saber se pode oferecer "reservar consultório" pra esse médico.
-    pode_reservar_avulso = medico.get("autorizado", True) and not (medico.get("exige_contrato") and not medico.get("contrato_assinado_em"))
+    from app.services import autentique_service as _aut
+    pode_reservar_avulso = medico.get("autorizado", True) and not _aut.contrato_pendente(medico)
     return {
         "id": medico["id"],
         "nome": medico["nome"],

@@ -70,6 +70,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn alt" onclick="abrirModalLote('email')">Configurar e-mail</button>
         <button type="button" class="btn alt" onclick="abrirModalLote('link')">Enviar link de acesso</button>
+        <a class="btn alt" href="{{ url_for('admin.especialidades') }}">Especialidades</a>
         <a class="btn" href="{{ url_for('admin.novo_cliente') }}">+ Inserir novo</a>
       </div>
     </div>

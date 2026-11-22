@@ -480,6 +480,13 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v118 — Quadro "Especialidades" (quantos médicos por especialidade e por gênero)
+- Novo botão "Especialidades" no dashboard do admin (atalhos de Operação) e na lista de Clientes. Abre /admin/especialidades: total de médicos ativos, total de mulheres (feminino), homens (masculino) e "não identificado"; abaixo, cada especialidade com a contagem e, ao abrir, a lista dos médicos.
+- O cadastro não tem gênero: o sistema DEDUZ pelo primeiro nome (regra simples para nomes brasileiros; "Dra."/"Dr." valem na hora) e marca "deduzido". O admin corrige qualquer médico no seletor (Feminino / Masculino / Automático); a correção fica em `medicos.genero` e atualiza os totais. Nomes que não dá para deduzir ficam "não identificado" (não chuta).
+- Especialidades escritas de formas diferentes só em maiúsculas/acentos são somadas; médicos sem especialidade aparecem como "Não informada". Só médicos ativos.
+- Migração (opcional, só para salvar correções): `sql/migration_genero_medico.sql`. Sem ela o quadro funciona (por dedução) e, ao tentar corrigir, o sistema avisa para rodá-la.
+- Arquivos: especialidades_service.py (novo), admin.py, admin_especialidades.html (novo), admin_dashboard.html, admin_clientes.html. Teste: teste_v118 + visual 390/1200 px OK.
+
 ## v117 — Aviso de cada cadastro novo (Dora) e limite de 10 contratos digitais por mês
 - Todo cadastro novo pelo site (/primeiro-acesso) já avisava os admins pela Dora (WhatsApp); agora o aviso também diz o contrato: "vaga X de 10 deste mês" ou "CONTRATO PRESENCIAL".
 - Limite mensal (variável opcional `AUTENTIQUE_LIMITE_MES`, padrão 10 = plano gratuito da Autentique). Os 10 primeiros cadastros novos do mês recebem contrato digital; do 11º em diante o contrato é PRESENCIAL: o sistema não cria documento na Autentique, avisa a Dora para deixar o contrato impresso no escritório, manda e-mail ao médico ("contrato disponível no escritório") e mostra a mensagem no painel dele. O médico NÃO fica travado para reservar (continua dependendo apenas da liberação de acesso pelo admin).

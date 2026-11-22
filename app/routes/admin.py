@@ -699,6 +699,34 @@ def novo_contrato_cliente(medico_id):
     return redirect(url_for('admin.visualizar_cliente', medico_id=medico_id))
 
 
+@admin_bp.route('/especialidades')
+@_admin
+def especialidades():
+    """v118: quantos médicos há em cada especialidade e o total de homens e mulheres."""
+    from app.services import especialidades_service as esp
+    medicos = db.listar_medicos_ativos()
+    return render_template('admin_especialidades.html', r=esp.resumo(medicos))
+
+
+@admin_bp.route('/clientes/<medico_id>/genero', methods=['POST'])
+@_admin
+def definir_genero_cliente(medico_id):
+    """v118: corrige o gênero (M/F) de um médico no quadro de especialidades; vazio = voltar a deduzir pelo nome."""
+    valor = (request.form.get('genero') or '').strip().upper()
+    if valor not in ('M', 'F', ''):
+        flash('Valor de gênero inválido.', 'erro')
+        return redirect(url_for('admin.especialidades'))
+    try:
+        db.get_client().table('medicos').update({'genero': valor or None}).eq('id', medico_id).execute()
+        flash('Gênero atualizado.', 'ok')
+    except Exception as e:
+        if getattr(e, 'pgcode', None) == '42703':
+            flash('Para corrigir o gênero, rode no Neon o arquivo migration_genero_medico.sql (uma vez).', 'erro')
+        else:
+            raise
+    return redirect(url_for('admin.especialidades') + '#m' + medico_id)
+
+
 @admin_bp.route('/clientes/<medico_id>/contrato/pdf')
 @_admin
 def contrato_pdf_cliente(medico_id):

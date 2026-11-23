@@ -823,6 +823,20 @@ def mensagens():
                            resposta=Config.EMAIL_RESPOSTA)
 
 
+@admin_bp.route('/mensagens/testar-smtp', methods=['POST'])
+@_admin
+def mensagens_testar_smtp():
+    """v124: envia um e-mail de teste e devolve o erro exato (etapa + mensagem) para o admin ver na tela."""
+    from app.services import email_service
+    destino = (request.form.get('destino') or '').strip()
+    if '@' not in destino or ' ' in destino:
+        return jsonify({'ok': False, 'etapa': 'endereço', 'erro': 'Digite um e-mail válido para receber o teste.', 'dica': ''}), 400
+    r = email_service.testar_smtp(destino)
+    r['remetente'] = Config.EMAIL_FROM or ''
+    r['servidor'] = f"{Config.SMTP_HOST}:{Config.SMTP_PORT}" if Config.SMTP_HOST else ''
+    return jsonify(r)
+
+
 @admin_bp.route('/mensagens/previa')
 @_admin
 def mensagens_previa():

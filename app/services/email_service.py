@@ -40,6 +40,48 @@ RODAPE_EMAIL_AUTOMATICO = (
 )
 
 
+def testar_smtp(destino: str) -> dict:
+    """v124: teste de envio com diagnóstico passo a passo (conectar, entrar, enviar). Devolve
+    {"ok": bool, "etapa": str, "erro": str, "dica": str}. Não grava histórico; só para o admin ver o erro exato na tela."""
+    import socket
+    if not all([Config.SMTP_HOST, Config.SMTP_USER, Config.SMTP_PASSWORD, Config.EMAIL_FROM]):
+        faltam = [n for n, v in (("SMTP_HOST", Config.SMTP_HOST), ("SMTP_USER", Config.SMTP_USER),
+                                 ("SMTP_PASSWORD", Config.SMTP_PASSWORD), ("EMAIL_FROM", Config.EMAIL_FROM)) if not v]
+        return {"ok": False, "etapa": "configuração", "erro": "Variáveis vazias no Render: " + ", ".join(faltam),
+                "dica": "Preencha em Render > Environment, salve e espere o serviço reiniciar."}
+    etapa = "conectar ao servidor"
+    try:
+        if Config.SMTP_PORT == 465:
+            srv = smtplib.SMTP_SSL(Config.SMTP_HOST, Config.SMTP_PORT, timeout=20)
+        else:
+            srv = smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT, timeout=20)
+        with srv as server:
+            if Config.SMTP_PORT != 465:
+                etapa = "iniciar conexão segura (STARTTLS)"
+                server.starttls()
+            etapa = "entrar com usuário e senha"
+            server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
+            etapa = "enviar a mensagem"
+            msg = MIMEText("Teste de envio do sistema Lifemax. Se você recebeu esta mensagem, o e-mail está funcionando.", "plain", "utf-8")
+            msg["Subject"] = "Teste de e-mail — Lifemax"
+            msg["From"] = Config.EMAIL_FROM
+            msg["To"] = destino
+            server.sendmail(Config.EMAIL_FROM, [destino], msg.as_string())
+        return {"ok": True, "etapa": "", "erro": "", "dica": ""}
+    except Exception as e:
+        nome = type(e).__name__
+        dica = "Copie o erro e envie para o suporte."
+        if isinstance(e, smtplib.SMTPAuthenticationError):
+            dica = ("Usuário ou senha recusados. Confira SMTP_USER (endereço completo), a senha da conta e se, no Titan, "
+                    "'Ative o Titan em outros aplicativos' (acesso de terceiros) está ligado.")
+        elif isinstance(e, (socket.timeout, TimeoutError, ConnectionRefusedError, OSError)) and etapa == "conectar ao servidor":
+            dica = ("Não foi possível alcançar o servidor. Confira SMTP_HOST (smtp.titan.email) e SMTP_PORT. "
+                    "Se estiver certo, o Render pode estar bloqueando a porta: teste a porta 587.")
+        elif isinstance(e, smtplib.SMTPSenderRefused) or isinstance(e, smtplib.SMTPRecipientsRefused):
+            dica = "O servidor recusou o remetente ou o destinatário. EMAIL_FROM deve ser o mesmo endereço do SMTP_USER."
+        return {"ok": False, "etapa": etapa, "erro": f"{nome}: {e}", "dica": dica}
+
+
 def _registrar_envio(destinatarios: list[str], assunto: str, status: str, erro: str | None = None) -> None:
     """Grava em `emails_enviados` (sql/migration_emails_enviados.sql) a tentativa de envio, para o
     botão "Histórico contato" do admin. Nunca pode quebrar o envio: se a tabela ainda não existe
@@ -158,7 +200,7 @@ def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
         _registrar_envio(destinatarios, assunto, "enviado")
         return True
     except Exception as e:
-        print(f"[email] Erro ao enviar: {e}")
+        print(f"[email] Erro ao enviar: {type(e).__name__}: {e}", flush=True)
         _registrar_envio(destinatarios, assunto, "falhou", f"{type(e).__name__}: {e}")
         return False
 

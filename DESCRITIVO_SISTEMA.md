@@ -480,6 +480,20 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v124 — "Testar o envio de e-mail" (Admin > Mensagens)
+- Novo cartão no topo de Admin > Mensagens: digite seu e-mail e clique em "Enviar teste". O sistema tenta conectar, entrar e enviar, e mostra na tela a ETAPA que falhou, o erro exato, uma dica do que conferir e o servidor/remetente em uso (a senha nunca aparece). Rota: POST /admin/mensagens/testar-smtp; função email_service.testar_smtp.
+- Motivo: no log do Render só aparecia erro de e-mail em caso de falha e a saída podia ficar retida; agora o erro é visível na tela. O print de erro do envio também passou a usar flush e mostra o tipo do erro.
+- Sem mudança de banco. Testes locais: variáveis vazias, destino inválido, servidor inexistente, servidor sem STARTTLS e a página (OK). NÃO testados: login recusado e envio bem-sucedido (precisam de um servidor SMTP real).
+
+## v123 — Manual do cliente com o e-mail contato@lifemaxconsultorios.com.br
+- O manual (página /manual e PDF) passou a citar contato@lifemaxconsultorios.com.br como remetente dos e-mails automáticos (a conta criada no Titan/HostGator). Nada mais mudou. Para o envio funcionar, no Render: SMTP_HOST=smtp.titan.email, SMTP_PORT=465, SMTP_USER=EMAIL_FROM=contato@lifemaxconsultorios.com.br, SMTP_PASSWORD=senha da conta; no Titan, ligar "Ative o Titan em outros aplicativos" (acesso de terceiros) e deixar a verificação em duas etapas desligada.
+
+## v122 — Manual do cliente refeito (página /manual e PDF)
+- Página "Manual" (botão sob o logo) e PDF `static/docs/Manual_do_Cliente_Lifemax.pdf` (anexado ao e-mail de primeiro acesso) reescritos com o passo a passo completo: primeiro acesso/senha, Meus dados + documento de identidade obrigatório, contrato digital (inclui "contrato no escritório"), compra de horas (Pix/cartão), aguardar liberação, reservar e cancelar (regra das 12 h), outras opções do painel, e-mails do sistema e contato da Patricia (31-99754-6473).
+- Novo capítulo "E-mails do sistema": informa que as mensagens automáticas saem de contato@lifemax.com.br, que não se deve responder e que vale olhar o spam. (O envio em si depende das variáveis SMTP_* no Render.)
+- A tabela de preços da página continua vindo do banco; o PDF não traz valores (para não desatualizar).
+- Arquivos: templates/manual_cliente.html, static/docs/Manual_do_Cliente_Lifemax.pdf. Sem mudança de banco.
+
 ## v121 — Aviso de médicos novos (30 dias), aba "Mensagens" e e-mail da Lifemax
 - Dashboard do admin: faixa vermelha "N médicos entraram nos últimos 30 dias: nomes (data)" com botão "Ver lista →". Lista de Clientes ganhou o filtro "Entraram há menos de [__] dias".
 - Nova aba "Mensagens" (menu do admin): escolhe o grupo (todos ativos, com saldo, sem saldo, aguardando liberação, entraram nos últimos N dias, sem comprar há N dias, sem reservar há N dias, ou clientes escolhidos à mão), escreve assunto e mensagem (imagem opcional, 3 MB), vê quantos receberão (e quem está sem e-mail) e envia. Envio um e-mail por cliente (não expõe endereços), em lotes de 8 pela tela, com barra de progresso. Cada e-mail começa com "Olá, [primeiro nome]!", termina com a assinatura "Equipe Lifemax Consultórios" e leva Responder-para = e-mail de contato. Histórico dos últimos 40 envios na própria aba (usa a tabela emails_enviados, migration_emails_enviados.sql).

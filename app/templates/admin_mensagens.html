@@ -27,6 +27,13 @@ table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{text-align:left
   {% endif %}
 
   <div class="card">
+    <h2>Testar o envio de e-mail</h2>
+    <p class="muted">Envia um e-mail de teste e mostra aqui o motivo exato se falhar.</p>
+    <div class="linha"><input type="text" id="teste-dest" placeholder="seu e-mail, para receber o teste"><button type="button" class="btn" id="btn-teste" style="flex:0 0 auto">Enviar teste</button></div>
+    <div id="teste-res" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
     <h2>Nova mensagem</h2>
     <label class="t">Para quem enviar</label>
     <div class="linha">
@@ -62,6 +69,18 @@ table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{text-align:left
 <script>
 const $ = (id) => document.getElementById(id);
 const CSRF = '{{ csrf_token() }}';
+document.getElementById('btn-teste').addEventListener('click', async () => {
+  const res = document.getElementById('teste-res'), b = document.getElementById('btn-teste');
+  res.innerHTML = '<div class="aviso info">Enviando o teste… (pode levar até 20 segundos)</div>'; b.disabled = true;
+  const esc = (t) => String(t || '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  try {
+    const fd = new FormData(); fd.append('csrf_token', CSRF); fd.append('destino', document.getElementById('teste-dest').value);
+    const r = await fetch('{{ url_for("admin.mensagens_testar_smtp") }}', {method: 'POST', body: fd}); const j = await r.json();
+    if (j.ok) res.innerHTML = '<div class="aviso ok">✅ Enviado! Veja a caixa de entrada (e o spam) de ' + esc(document.getElementById('teste-dest').value) + '.</div>';
+    else res.innerHTML = '<div class="aviso erro"><strong>Falhou na etapa: ' + esc(j.etapa) + '</strong><br>' + esc(j.erro) + '<br><em>' + esc(j.dica) + '</em><br><span class="muted">Servidor: ' + esc(j.servidor) + ' · Remetente: ' + esc(j.remetente) + '</span></div>';
+  } catch (e) { res.innerHTML = '<div class="aviso erro">Não consegui falar com o sistema: ' + esc(e) + '</div>'; }
+  b.disabled = false;
+});
 function params() {
   const p = new URLSearchParams({grupo: $('grupo').value, dias: $('dias').value});
   if ($('grupo').value === 'manual') document.querySelectorAll('.chk-cli:checked').forEach(c => p.append('ids', c.value));

@@ -66,6 +66,8 @@ class Config:
     SMTP_USER = os.getenv("SMTP_USER")
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
     EMAIL_FROM = os.getenv("EMAIL_FROM")
+    # v121: endereço que recebe as respostas das mensagens enviadas em Admin > Mensagens (padrão: o próprio EMAIL_FROM)
+    EMAIL_RESPOSTA = os.getenv("EMAIL_RESPOSTA") or os.getenv("EMAIL_FROM")
 
     # --- Asaas (PIX) ---
     ASAAS_API_KEY = os.getenv("ASAAS_API_KEY")

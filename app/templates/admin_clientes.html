@@ -31,6 +31,11 @@ details.ajuste summary::-webkit-details-marker{display:none}
 .form-autorizacao{margin-top:6px}
 .btn-autorizacao{font-size:13px;padding:6px 10px}
 .filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.filtros .chk,.filtros .fld{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:14px;margin:0}
+.filtros-form{flex-wrap:wrap;align-items:center}
+.filtros-form .filtros{flex:1 1 100%;margin:0}
+.filtros input[type=number],.filtros input[type=checkbox],.filtros select{flex:none;width:auto}
+.filtros input[type=checkbox]{width:18px;height:18px}
 .filtros .chip{padding:7px 12px;border-radius:999px;background:#E6EEF2;color:#082A3D;font-weight:700;font-size:13px;text-decoration:none}
 .filtros .chip.on{background:#0EA5A0;color:#fff}
 .ult-ativ{display:block;font-size:12px;color:#55707C;margin-top:4px}
@@ -75,19 +80,21 @@ details.ajuste summary::-webkit-details-marker{display:none}
       </div>
     </div>
     {% if vagas %}<div class="muted" style="margin:0 0 10px;font-size:13px">Contratos digitais (Autentique) deste mês: <strong>{{ vagas.usadas }} de {{ vagas.limite }}</strong>{% if vagas.usadas >= vagas.limite %} — <strong style="color:#B33">limite atingido: novos cadastros assinam o contrato presencialmente no escritório</strong>{% endif %}</div>{% endif %}
-    <div class="filtros">
-      <span class="muted">Filtrar:</span>
-      <a class="chip{{ ' on' if not filtro }}" href="{{ url_for('admin.clientes') }}">Todos</a>
-      <a class="chip{{ ' on' if filtro == 'pendentes' }}" href="{{ url_for('admin.clientes', filtro='pendentes') }}">Aguardando liberação ({{ totais.pendentes }})</a>
-      <a class="chip{{ ' on' if filtro == 'sem_compra_30' }}" href="{{ url_for('admin.clientes', filtro='sem_compra_30') }}">Sem comprar há +30 dias ({{ totais.sem_compra }})</a>
-      <a class="chip{{ ' on' if filtro == 'sem_reserva_30' }}" href="{{ url_for('admin.clientes', filtro='sem_reserva_30') }}">Sem reservar há +30 dias ({{ totais.sem_reserva }})</a>
-    </div>
-    <form class="busca" method="get">
-      {% if filtro %}<input type="hidden" name="filtro" value="{{ filtro }}">{% endif %}
+    <form class="busca filtros-form" method="get">
+      <div class="filtros">
+        <label class="chk"><input type="checkbox" name="filtro" value="pendentes" {{ 'checked' if f.filtro == 'pendentes' }}> Só aguardando liberação</label>
+        <label class="fld">Entraram há menos de <input type="number" name="novos" min="1" max="3650" value="{{ f.novos or '' }}" placeholder="dias" style="width:78px"> dias</label>
+        <label class="fld">Sem comprar há <input type="number" name="sem_compra" min="1" max="3650" value="{{ f.sem_compra or '' }}" placeholder="dias" style="width:78px"> dias</label>
+        <label class="fld">Sem reservar há <input type="number" name="sem_reserva" min="1" max="3650" value="{{ f.sem_reserva or '' }}" placeholder="dias" style="width:78px"> dias</label>
+        <label class="fld">Saldo
+          <select name="saldo"><option value="">Todos</option><option value="com" {{ 'selected' if f.saldo == 'com' }}>Com saldo</option><option value="sem" {{ 'selected' if f.saldo == 'sem' }}>Sem saldo</option></select></label>
+      </div>
       <input type="text" name="busca" value="{{ busca }}" placeholder="Buscar por nome, telefone ou e-mail...">
-      <button type="submit">Buscar</button>
-      {% if busca %}<a class="btn alt" href="{{ url_for('admin.clientes', filtro=filtro) }}">Limpar</a>{% endif %}
+      <button type="submit">Filtrar</button>
+      {% if busca or f.filtro or f.novos or f.sem_compra or f.sem_reserva or f.saldo %}<a class="btn alt" href="{{ url_for('admin.clientes') }}">Limpar filtros</a>{% endif %}
     </form>
+    <div class="muted" style="margin:6px 0 10px;font-size:13px"><strong>{{ medicos|length }}</strong> cliente{{ 's' if medicos|length != 1 else '' }} encontrado{{ 's' if medicos|length != 1 else '' }}.
+      Quem nunca comprou ou reservou conta a partir da data do cadastro; filtros de dias só consideram clientes ativos.</div>
 
     <table class="cartoes">
       <thead>
@@ -115,7 +122,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
             {% if docs.get(m.id) %}<span class="status-tag liberado" title="Enviado em {{ docs[m.id].enviado_em }}">📄 Documento enviado</span>{% else %}<span class="status-tag bloqueado" style="background:#FFF4DC;color:#9A6700">📄 Sem documento</span>{% endif %}
             <form class="form-autorizacao" method="post" action="{{ url_for('admin.autorizacao_cliente', medico_id=m.id) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="hidden" name="busca" value="{{ busca }}"><input type="hidden" name="filtro" value="{{ filtro }}">
+              <input type="hidden" name="volta" value="{{ volta }}">
               {% if m.autorizado %}
               <input type="hidden" name="autorizado" value="0">
               <button type="submit" class="btn-autorizacao bloquear" onclick="return confirm('Bloquear {{ m.nome }}? Ele não vai conseguir reservar consultório até ser liberado de novo.')">Bloquear acesso</button>
@@ -137,7 +144,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
               <summary>Alterar saldo</summary>
               <form class="form-ajuste" method="post" action="{{ url_for('admin.ajustar_saldo_cliente', medico_id=m.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="busca" value="{{ busca }}">
+                <input type="hidden" name="volta" value="{{ volta }}">
                 <label class="lbl-quantidade">Quantas horas? (negativo pra debitar)</label>
                 <input type="number" step="1" name="quantidade" class="input-quantidade" placeholder="ex: 15 ou -5" required>
                 <label>Motivo (opcional)</label>
@@ -164,7 +171,7 @@ details.ajuste summary::-webkit-details-marker{display:none}
               <summary>Enviar link de acesso</summary>
               <form class="form-ajuste" method="post" action="{{ url_for('admin.enviar_link_cliente', medico_id=m.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="busca" value="{{ busca }}">
+                <input type="hidden" name="volta" value="{{ volta }}">
                 <label>E-mail do cliente</label>
                 <input type="email" name="email" value="{{ m.email or '' }}" placeholder="email@exemplo.com" required>
                 <button type="submit">Enviar link por e-mail</button>

@@ -1,0 +1,110 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mensagens — Lifemax Admin</title><link rel="icon" href="/static/favicon.ico" sizes="any"><style>
+body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43;font-size:15.5px}
+.wrap{max-width:1000px;margin:auto;padding:22px 16px}
+.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px;margin-bottom:16px}
+.card h2{margin:0 0 12px;font-size:19px}
+label.t{display:block;font-weight:700;font-size:13.5px;margin:12px 0 5px}
+input[type=text],input[type=number],select,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #d8e3e7;border-radius:8px;font:inherit}
+textarea{min-height:170px;resize:vertical}
+.linha{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.linha>*{flex:1 1 200px}
+.aviso{padding:12px 14px;border-radius:10px;font-size:14px;margin-bottom:12px;line-height:1.5}
+.aviso.ok{background:#E3F7EE;color:#0B7B45}.aviso.erro{background:#FDE8E8;color:#B33}.aviso.info{background:#EAF5F6;color:#0B3A52}
+.manual{max-height:240px;overflow:auto;border:1px solid #e3ebef;border-radius:8px;margin-top:8px;display:none}
+.manual label{display:flex;gap:8px;align-items:center;padding:7px 12px;border-bottom:1px solid #eef3f5;margin:0;font-weight:400;cursor:pointer}
+.manual input{width:auto}
+.prog{height:12px;background:#E6EEF2;border-radius:999px;overflow:hidden;margin:10px 0;display:none}.prog>i{display:block;height:100%;width:0;background:#0EA5A0;transition:width .3s}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{text-align:left;padding:8px 6px;border-bottom:1px solid #eef3f5;vertical-align:top}th{color:#55707C}
+.st{font-weight:700}.st.enviado{color:#0B7B45}.st.falhou,.st.nao_configurado{color:#B33}
+.muted{color:#62788A;font-size:13px}
+</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="/static/css/admin-padrao.css"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head><body>
+{% with titulo='Mensagens', subtitulo='E-mail da Lifemax para os clientes', ativo='mensagens' %}{% include '_admin_topo.html' %}{% endwith %}
+<div class="wrap">
+  {% if smtp_ok %}
+  <div class="aviso ok">✅ Envio de e-mails configurado. As mensagens saem de <strong>{{ remetente }}</strong>{% if resposta %} e as respostas dos clientes chegam em <strong>{{ resposta }}</strong>{% endif %}.</div>
+  {% else %}
+  <div class="aviso erro"><strong>O envio de e-mails ainda não está configurado no Render.</strong> Enquanto isso, nada será enviado. Configure as variáveis <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_USER</code>, <code>SMTP_PASSWORD</code> e <code>EMAIL_FROM</code> (passo a passo entregue junto com esta versão) e a aba passa a funcionar.</div>
+  {% endif %}
+
+  <div class="card">
+    <h2>Nova mensagem</h2>
+    <label class="t">Para quem enviar</label>
+    <div class="linha">
+      <select id="grupo">{% for k, nome in grupos %}<option value="{{ k }}">{{ nome }}</option>{% endfor %}</select>
+      <input type="number" id="dias" min="1" max="3650" placeholder="Número de dias" style="display:none;max-width:200px">
+    </div>
+    <div class="manual" id="manual"><div style="padding:8px 12px;border-bottom:1px solid #eef3f5"><input type="text" id="busca-manual" placeholder="Buscar cliente..."></div>
+      {% for c in clientes %}<label data-nome="{{ c.nome|lower }}"><input type="checkbox" class="chk-cli" value="{{ c.id }}"> {{ c.nome }} <span class="muted">{{ c.email or '(sem e-mail)' }}</span></label>{% endfor %}
+    </div>
+    <div class="muted" id="previa" style="margin-top:8px"></div>
+    <label class="t" for="assunto">Assunto</label>
+    <input type="text" id="assunto" maxlength="150" placeholder="Ex.: Novidades da Lifemax">
+    <label class="t" for="mensagem">Mensagem</label>
+    <textarea id="mensagem" placeholder="Escreva a mensagem. Cada linha vira um parágrafo. O sistema coloca &quot;Olá, [primeiro nome]!&quot; no começo e a assinatura da equipe no final."></textarea>
+    <label class="t" for="imagem">Imagem (opcional, até 3 MB)</label>
+    <input type="file" id="imagem" accept="image/*">
+    <div style="margin-top:16px"><button type="button" class="btn" id="btn-enviar" {{ '' if smtp_ok else 'disabled' }}>Enviar mensagem</button></div>
+    <div class="prog" id="prog"><i></i></div>
+    <div id="resultado" class="muted" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <h2>Últimos envios</h2>
+    {% if not historico_ok %}<p class="muted">O histórico ainda não está disponível: rode no Neon o arquivo <code>migration_emails_enviados.sql</code>.</p>
+    {% elif not historico %}<p class="muted">Nenhum envio registrado ainda.</p>
+    {% else %}
+    <table><thead><tr><th>Quando</th><th>Para</th><th>Assunto</th><th>Resultado</th></tr></thead><tbody>
+      {% for h in historico %}<tr><td>{{ (h.criado_em|string)[:16].replace('T',' ') }}</td><td>{{ h.destinatarios }}</td><td>{{ h.assunto }}</td>
+        <td><span class="st {{ h.status }}">{{ {'enviado':'Enviado','falhou':'Falhou','nao_configurado':'Não configurado'}.get(h.status, h.status) }}</span>{% if h.erro %}<div class="muted">{{ h.erro }}</div>{% endif %}</td></tr>{% endfor %}
+    </tbody></table>{% endif %}
+  </div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const CSRF = '{{ csrf_token() }}';
+function params() {
+  const p = new URLSearchParams({grupo: $('grupo').value, dias: $('dias').value});
+  if ($('grupo').value === 'manual') document.querySelectorAll('.chk-cli:checked').forEach(c => p.append('ids', c.value));
+  return p;
+}
+let ids = [];
+async function atualizarPrevia() {
+  const g = $('grupo').value;
+  $('dias').style.display = ['novos', 'sem_compra', 'sem_reserva'].includes(g) ? '' : 'none';
+  if (g === 'novos' && !$('dias').value) $('dias').value = 30;
+  $('manual').style.display = g === 'manual' ? 'block' : 'none';
+  const r = await (await fetch('{{ url_for("admin.mensagens_previa") }}?' + params())).json();
+  ids = r.ids;
+  let t = r.precisa_dias ? 'Digite o número de dias.' : r.total + ' cliente' + (r.total !== 1 ? 's' : '') + ' neste grupo; ' + r.com_email + ' com e-mail cadastrado (receberão a mensagem).';
+  if (r.sem_email.length) t += ' Sem e-mail: ' + r.sem_email.join(', ') + (r.total - r.com_email > r.sem_email.length ? '…' : '') + '.';
+  $('previa').textContent = t;
+}
+$('grupo').addEventListener('change', atualizarPrevia);
+$('dias').addEventListener('input', () => { clearTimeout(window._t); window._t = setTimeout(atualizarPrevia, 400); });
+document.querySelectorAll('.chk-cli').forEach(c => c.addEventListener('change', atualizarPrevia));
+$('busca-manual').addEventListener('input', (e) => { const q = e.target.value.toLowerCase(); document.querySelectorAll('#manual label').forEach(l => l.style.display = l.dataset.nome.includes(q) ? '' : 'none'); });
+atualizarPrevia();
+$('btn-enviar').addEventListener('click', async () => {
+  const assunto = $('assunto').value.trim(), msg = $('mensagem').value.trim(), res = $('resultado');
+  if (!ids.length) { res.style.color = '#B33'; res.textContent = 'Nenhum cliente com e-mail neste grupo.'; return; }
+  if (!assunto || !msg) { res.style.color = '#B33'; res.textContent = 'Preencha o assunto e a mensagem.'; return; }
+  if (!confirm('Enviar esta mensagem para ' + ids.length + ' cliente' + (ids.length !== 1 ? 's' : '') + '?')) return;
+  const btn = $('btn-enviar'); btn.disabled = true; $('prog').style.display = 'block'; res.style.color = '#55707C';
+  const tot = {env: 0, falhas: [], sem: []};
+  for (let i = 0; i < ids.length; i += 8) {
+    const fd = new FormData(); fd.append('csrf_token', CSRF); fd.append('assunto', assunto); fd.append('mensagem', msg);
+    ids.slice(i, i + 8).forEach(id => fd.append('ids', id));
+    if ($('imagem').files[0]) fd.append('imagem', $('imagem').files[0]);
+    try {
+      const r = await fetch('{{ url_for("admin.mensagens_enviar") }}', {method: 'POST', body: fd, headers: {'X-CSRFToken': CSRF}}); const d = await r.json();
+      if (!r.ok) { res.style.color = '#B33'; res.textContent = d.erro || 'Erro ao enviar.'; btn.disabled = false; return; }
+      tot.env += d.enviados.length; tot.falhas.push(...d.falhas); tot.sem.push(...d.sem_email);
+    } catch (e) { res.style.color = '#B33'; res.textContent = 'Erro de conexão. Envios feitos até aqui: ' + tot.env; btn.disabled = false; return; }
+    $('prog').firstElementChild.style.width = Math.min(100, Math.round((i + 8) / ids.length * 100)) + '%';
+    res.textContent = 'Enviando... ' + tot.env + ' de ' + ids.length;
+  }
+  res.style.color = tot.falhas.length ? '#B33' : '#0B7B45';
+  res.textContent = 'Concluído: ' + tot.env + ' enviado' + (tot.env !== 1 ? 's' : '') + (tot.falhas.length ? '; falharam: ' + tot.falhas.join(', ') : '') + (tot.sem.length ? '; sem e-mail: ' + tot.sem.join(', ') : '') + '. Atualize a página para ver o histórico.';
+  btn.disabled = false;
+});
+</script></body></html>

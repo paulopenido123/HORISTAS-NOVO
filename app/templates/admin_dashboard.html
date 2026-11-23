@@ -55,7 +55,8 @@
     .res { grid-template-columns:auto 1px 1fr; } .res .st { grid-column:1 / -1; }
     .res .dt b { font-size:25px; }
   }
-</style>
+.aviso-novos{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;background:#FDE8E8;border:1.5px solid #E53935;color:#B71C1C;border-radius:14px;padding:12px 16px;margin:12px 12px 10px;font-size:14px;line-height:1.5}
+  .aviso-novos a{background:#E53935;color:#fff;text-decoration:none;font-weight:800;padding:8px 14px;border-radius:10px;white-space:nowrap}</style>
 <link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M16 8l4 4-4 4M20 12H9"/></symbol>
@@ -82,6 +83,8 @@
 
 <div class="wrap">
   {% if medicos_pendentes %}<div class="aviso-pendente"><span>⚠ {{ medicos_pendentes|length }} cliente{{ 's' if medicos_pendentes|length != 1 else '' }} aguardando liberação de acesso: {{ medicos_pendentes[:4]|map(attribute='nome')|join(', ') }}{% if medicos_pendentes|length > 4 %} e mais {{ medicos_pendentes|length - 4 }}{% endif %}.</span><a href="{{ url_for('admin.clientes', filtro='pendentes') }}">Ver lista para liberar →</a></div>{% endif %}
+
+  {% if novos_30 %}<div class="aviso-novos"><span><strong>🆕 {{ novos_30|length }} médico{{ 's' if novos_30|length != 1 else '' }} entrou{{ 'ram' if novos_30|length != 1 else '' }} nos últimos 30 dias:</strong> {% for n in novos_30[:6] %}{{ n.nome }} ({{ n.entrou_em.strftime('%d/%m') }}){{ ', ' if not loop.last }}{% endfor %}{% if novos_30|length > 6 %} e mais {{ novos_30|length - 6 }}{% endif %}.</span><a href="{{ url_for('admin.clientes', novos=30) }}">Ver lista →</a></div>{% endif %}
 
   <div class="caixa">
     <div class="stats">

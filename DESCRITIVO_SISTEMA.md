@@ -480,6 +480,24 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v121 — Aviso de médicos novos (30 dias), aba "Mensagens" e e-mail da Lifemax
+- Dashboard do admin: faixa vermelha "N médicos entraram nos últimos 30 dias: nomes (data)" com botão "Ver lista →". Lista de Clientes ganhou o filtro "Entraram há menos de [__] dias".
+- Nova aba "Mensagens" (menu do admin): escolhe o grupo (todos ativos, com saldo, sem saldo, aguardando liberação, entraram nos últimos N dias, sem comprar há N dias, sem reservar há N dias, ou clientes escolhidos à mão), escreve assunto e mensagem (imagem opcional, 3 MB), vê quantos receberão (e quem está sem e-mail) e envia. Envio um e-mail por cliente (não expõe endereços), em lotes de 8 pela tela, com barra de progresso. Cada e-mail começa com "Olá, [primeiro nome]!", termina com a assinatura "Equipe Lifemax Consultórios" e leva Responder-para = e-mail de contato. Histórico dos últimos 40 envios na própria aba (usa a tabela emails_enviados, migration_emails_enviados.sql).
+- E-mail do sistema: continua configurado só por variáveis no Render (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, EMAIL_FROM). Novidades: variável opcional `EMAIL_RESPOSTA` (para onde vão as respostas; padrão = EMAIL_FROM); porta 465 agora usa SSL direto (antes só funcionava STARTTLS/587); tempo limite de 25 s por envio. A aba avisa em vermelho enquanto o SMTP não estiver configurado.
+- Arquivos: email_service.py, config.py, admin.py, _admin_topo.html, admin_mensagens.html (novo), admin_dashboard.html, admin_clientes.html. Teste: teste_v121 + visual 390/1200 px OK (e-mail simulado).
+
+## v120 — Consultórios do admin agrupados por endereço e em cartões separados
+- Admin > Consultórios: a lista agora é dividida por unidade (faixa azul com nome, endereço e quantidade de salas) e cada consultório é um cartão próprio com borda e sombra: no topo o NOME da sala em destaque + etiquetas (andar, nº de fotos, Ativo/INATIVO); no meio as fotos à esquerda e os campos à direita (no celular, um embaixo do outro); embaixo os botões Salvar/Fotos/Matriz/Excluir. Antes as fotos ficavam acima do nome e se misturavam com os botões da sala anterior.
+- Salas inativas ficam com cartão e cabeçalho avermelhados. Os filtros por unidade continuam.
+- Arquivos: admin.py (agrupamento), admin_consultorios.html. Teste: visual 390/1280 px + teste_v102/v104/v119 OK.
+
+## v119 — Filtros da lista de clientes com dias digitados e saldo
+- Lista de Clientes: no lugar dos botões fixos "sem comprar/reservar há +30 dias", agora há campos para digitar os dias: "Sem comprar há [__] dias" e "Sem reservar há [__] dias" (1 a 3650), mais "Saldo: Todos / Com saldo / Sem saldo" e a caixa "Só aguardando liberação". Os filtros se combinam entre si e com a busca por nome/telefone/e-mail; "Limpar filtros" volta ao normal. Mostra quantos clientes foram encontrados.
+- "Com saldo" = saldo em horas maior que zero (o número que aparece na coluna Saldo); "Sem saldo" = zero.
+- Regras dos dias iguais à v113: quem nunca comprou/reservou conta a partir do cadastro; só clientes ativos. Links antigos (?filtro=sem_compra_30) continuam funcionando; o atalho do dashboard "Ver lista para liberar" também.
+- Ao liberar/bloquear, alterar saldo ou enviar link na lista, a tela volta mantendo os filtros.
+- Arquivos: admin.py, admin_clientes.html. Teste: teste_v119 + visual 390/1200 px OK.
+
 ## v118 — Quadro "Especialidades" (quantos médicos por especialidade e por gênero)
 - Novo botão "Especialidades" no dashboard do admin (atalhos de Operação) e na lista de Clientes. Abre /admin/especialidades: total de médicos ativos, total de mulheres (feminino), homens (masculino) e "não identificado"; abaixo, cada especialidade com a contagem e, ao abrir, a lista dos médicos.
 - O cadastro não tem gênero: o sistema DEDUZ pelo primeiro nome (regra simples para nomes brasileiros; "Dra."/"Dr." valem na hora) e marca "deduzido". O admin corrige qualquer médico no seletor (Feminino / Masculino / Automático); a correção fica em `medicos.genero` e atualiza os totais. Nomes que não dá para deduzir ficam "não identificado" (não chuta).

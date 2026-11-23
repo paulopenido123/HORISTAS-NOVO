@@ -1,5 +1,20 @@
 <!doctype html><html lang="pt-BR"><head><link rel="icon" href="/static/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Consultórios — Lifemax Admin</title><style>
-  body .grid>*{min-width:0}select[name=unidade_id]{text-overflow:ellipsis;width:100%;max-width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d8e3e7;border-radius:10px;margin-bottom:8px;font:inherit;background:#fff}body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}.wrap{max-width:1180px;margin:auto;padding:28px 24px}.grid{display:grid;grid-template-columns:340px 1fr;gap:18px}.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px}input,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #d8e3e7;border-radius:8px;margin:6px 0 12px}button,.btn{padding:10px 14px;border:0;border-radius:8px;background:#0EA5A0;color:#fff;font-weight:700;text-decoration:none;font-size:13px}.item{border-bottom:1px solid #e3ebef;padding:15px 0}.row{display:flex;gap:8px;flex-wrap:wrap}.danger{background:#c95050}.muted{color:#62788A;font-size:13px}.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}.flash.ok{background:#E3F7EE;color:#0B7B45}.flash.erro{background:#FBEAE6;color:#B33}.item.inativo{background:#FBEAE6;border-left:4px solid #B33;padding-left:12px;margin-left:-16px}.badge-inativo{display:inline-block;background:#B33;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:5px;margin-bottom:8px}.fotos-preview{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.fotos-preview img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #d8e3e7}.fotos-vazio{color:#8AA0A9;font-size:12.5px;margin-bottom:10px}.andar-info{color:#62788A;font-size:12.5px;margin:-4px 0 10px}</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head><body>
+  body .grid>*{min-width:0}select[name=unidade_id]{text-overflow:ellipsis;width:100%;max-width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d8e3e7;border-radius:10px;margin-bottom:8px;font:inherit;background:#fff}body{margin:0;background:#F5F8FA;font-family:Inter,Arial;color:#102A43}.wrap{max-width:1180px;margin:auto;padding:28px 24px}.grid{display:grid;grid-template-columns:340px 1fr;gap:18px}.card{background:#fff;border:1px solid #e3ebef;border-radius:14px;padding:20px}input,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #d8e3e7;border-radius:8px;margin:6px 0 12px}button,.btn{padding:10px 14px;border:0;border-radius:8px;background:#0EA5A0;color:#fff;font-weight:700;text-decoration:none;font-size:13px}.item{border-bottom:1px solid #e3ebef;padding:15px 0}.row{display:flex;gap:8px;flex-wrap:wrap}.danger{background:#c95050}.muted{color:#62788A;font-size:13px}.flash{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13.5px;font-weight:600}.flash.ok{background:#E3F7EE;color:#0B7B45}.flash.erro{background:#FBEAE6;color:#B33}.item.inativo{background:#FBEAE6;border-left:4px solid #B33;padding-left:12px;margin-left:-16px}.badge-inativo{display:inline-block;background:#B33;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:5px;margin-bottom:8px}.fotos-preview{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.fotos-preview img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #d8e3e7}.fotos-vazio{color:#8AA0A9;font-size:12.5px;margin-bottom:10px}.andar-info{color:#62788A;font-size:12.5px;margin:-4px 0 10px}
+  .grupo-unidade{margin:0 0 30px}
+  .grupo-topo{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;background:linear-gradient(90deg,#0B3A52,#0E6F7A);color:#fff;border-radius:12px;padding:12px 16px;margin-bottom:14px;position:sticky;top:0;z-index:2}
+  .grupo-nome{font-weight:800;font-size:17px}.grupo-end{font-size:13px;opacity:.9;flex:1 1 200px}.grupo-qtd{font-size:12px;font-weight:700;background:rgba(255,255,255,.18);border-radius:999px;padding:3px 10px}
+  .sala{background:#fff;border:1px solid #cfdde3;border-left:6px solid #0EA5A0;border-radius:14px;box-shadow:0 2px 10px rgba(16,42,67,.08);margin:0 0 22px;overflow:hidden}
+  .sala.inativo{border-left-color:#B33;background:#FFF8F6}
+  .sala-topo{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:#EAF5F6;border-bottom:1px solid #d5e6ea;padding:12px 16px}
+  .sala.inativo .sala-topo{background:#FBEAE6;border-bottom-color:#f0cfc8}
+  .sala-topo h3{margin:0 8px 0 0;font-size:18px;color:#0B3A52}
+  .tag{font-size:12px;font-weight:700;background:#fff;border:1px solid #cfdde3;border-radius:999px;padding:3px 10px;color:#33566a}
+  .tag-ativo{background:#E3F7EE;border-color:#bfe8d3;color:#0B7B45}.tag-inativo{background:#B33;border-color:#B33;color:#fff}
+  .sala-corpo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px;padding:16px}
+  .sala-form input[name=nome]{font-weight:700}
+  .sala-acoes{border-top:1px solid #e3ebef;background:#F8FBFC;padding:12px 16px}
+  @media(max-width:900px){.sala-corpo{grid-template-columns:minmax(0,1fr)}}
+</style><link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/admin-padrao.css"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head><body>
 {% with titulo='Consultórios', ativo='consultorios' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
   {% with mensagens = get_flashed_messages(with_categories=true) %}
@@ -41,34 +56,50 @@
         {% for u in unidades %}<a class="btn" href="{{ url_for('admin.consultorios', unidade=u.id) }}" style="{{ '' if filtro_unidade == u.id else 'opacity:.6' }}">{{ u.nome }}</a>{% endfor %}
       </div>
       {% endif %}
-      {% for c in consultorios %}
-      <div class="item{{ ' inativo' if not c.ativo else '' }}">
-        {% if not c.ativo %}<div class="badge-inativo">⚠ INATIVO -- não aparece pro médico reservar</div>{% endif %}
-        {% if c.fotos %}
-        <div class="fotos-preview">
-          {% for url in c.fotos %}<img src="{{ url }}" alt="Foto de {{ c.nome }}">{% endfor %}
-        </div>
-        {% else %}
-        <div class="fotos-vazio">Sem foto cadastrada.</div>
-        {% endif %}
-        <form method="post" action="{{ url_for('admin.editar_consultorio',consultorio_id=c.id) }}" id="form-editar-{{ c.id }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          {% if unidades %}<select name="unidade_id">{% for u in unidades %}<option value="{{ u.id }}" {{ 'selected' if u.id == c.unidade_id else '' }}>{{ u.nome }} — {{ u.endereco }}</option>{% endfor %}</select>{% endif %}
-          <input name="nome" value="{{ c.nome }}">
-          <textarea name="descricao">{{ c.descricao or '' }}</textarea>
-          <div class="andar-info">Andar: {{ c.andar or '—' }} (calculado a partir do número)</div>
-          <label class="muted"><input type="checkbox" name="ativo" {% if c.ativo %}checked{% endif %} style="width:auto"> Ativo</label>
-        </form>
-        <form method="post" action="{{ url_for('admin.excluir_consultorio',consultorio_id=c.id) }}" id="form-excluir-{{ c.id }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        </form>
-        <div class="row">
-          <button type="submit" form="form-editar-{{ c.id }}">Salvar</button>
-          <a class="btn" href="{{ url_for('admin.fotos_consultorio',consultorio_id=c.id) }}">Fotos</a>
-          <a class="btn" href="{{ url_for('admin.matriz',consultorio_id=c.id) }}">Matriz</a>
-          <button type="submit" form="form-excluir-{{ c.id }}" class="danger" onclick="return confirm('Excluir/desativar este consultório?')">Excluir</button>
-        </div>
-      </div>
+      {% for g in grupos %}
+      <section class="grupo-unidade">
+        <div class="grupo-topo"><span class="grupo-nome">{{ g.unidade.nome if g.unidade else 'Sem unidade definida' }}</span>
+          <span class="grupo-end">{{ g.unidade.endereco if g.unidade else 'Escolha a unidade no seletor de cada consultório.' }}</span>
+          <span class="grupo-qtd">{{ g.itens|length }} consultório{{ 's' if g.itens|length != 1 else '' }}</span></div>
+        {% for c in g.itens %}
+        <article class="sala{{ ' inativo' if not c.ativo else '' }}" id="sala-{{ c.id }}">
+          <header class="sala-topo">
+            <h3>{{ c.nome }}</h3>
+            <span class="tag">{{ 'Andar ' ~ c.andar if c.andar else 'Andar —' }}</span>
+            <span class="tag">{{ (c.fotos or [])|length }} foto{{ 's' if (c.fotos or [])|length != 1 else '' }}</span>
+            {% if not c.ativo %}<span class="tag tag-inativo">⚠ INATIVO — não aparece para o médico reservar</span>{% else %}<span class="tag tag-ativo">Ativo</span>{% endif %}
+          </header>
+          <div class="sala-corpo">
+            <div class="sala-fotos">
+              {% if c.fotos %}
+              <div class="fotos-preview">{% for url in c.fotos %}<img src="{{ url }}" alt="Foto de {{ c.nome }}">{% endfor %}</div>
+              {% else %}
+              <div class="fotos-vazio">Sem foto cadastrada.</div>
+              {% endif %}
+            </div>
+            <div class="sala-form">
+              <form method="post" action="{{ url_for('admin.editar_consultorio',consultorio_id=c.id) }}" id="form-editar-{{ c.id }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if unidades %}<select name="unidade_id">{% for u in unidades %}<option value="{{ u.id }}" {{ 'selected' if u.id == c.unidade_id else '' }}>{{ u.nome }} — {{ u.endereco }}</option>{% endfor %}</select>{% endif %}
+                <input name="nome" value="{{ c.nome }}">
+                <textarea name="descricao">{{ c.descricao or '' }}</textarea>
+                <div class="andar-info">Andar: {{ c.andar or '—' }} (calculado a partir do número)</div>
+                <label class="muted"><input type="checkbox" name="ativo" {% if c.ativo %}checked{% endif %} style="width:auto"> Ativo</label>
+              </form>
+              <form method="post" action="{{ url_for('admin.excluir_consultorio',consultorio_id=c.id) }}" id="form-excluir-{{ c.id }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              </form>
+            </div>
+          </div>
+          <footer class="row sala-acoes">
+            <button type="submit" form="form-editar-{{ c.id }}">Salvar</button>
+            <a class="btn" href="{{ url_for('admin.fotos_consultorio',consultorio_id=c.id) }}">Fotos</a>
+            <a class="btn" href="{{ url_for('admin.matriz',consultorio_id=c.id) }}">Matriz</a>
+            <button type="submit" form="form-excluir-{{ c.id }}" class="danger" onclick="return confirm('Excluir/desativar este consultório?')">Excluir</button>
+          </footer>
+        </article>
+        {% endfor %}
+      </section>
       {% else %}
       <p class="muted">Nenhum consultório.</p>
       {% endfor %}

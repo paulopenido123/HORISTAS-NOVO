@@ -76,7 +76,8 @@ def historico_envios_para(email: str, limite: int = 50) -> dict:
 def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
                   anexos: list[tuple] | None = None,
                   imagens_inline: list[tuple] | None = None,
-                  rodape_automatico: bool = True) -> bool:
+                  rodape_automatico: bool = True,
+                  responder_para: str | None = None) -> bool:
     """
     Envia um email para uma lista de destinatários.
     Retorna True se enviou com sucesso, False se as credenciais SMTP
@@ -113,6 +114,8 @@ def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
     msg["Subject"] = assunto
     msg["From"] = Config.EMAIL_FROM
     msg["To"] = ", ".join(destinatarios)
+    if responder_para:
+        msg["Reply-To"] = responder_para  # v121: respostas dos clientes vão para o e-mail de contato da Lifemax
 
     if imagens_inline:
         # multipart/related: corpo HTML + imagem(ns) referenciadas por
@@ -142,8 +145,14 @@ def enviar_email(destinatarios: list[str], assunto: str, corpo_html: str,
         msg.attach(parte)
 
     try:
-        with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as server:
-            server.starttls()
+        # v121: porta 465 = SSL direto (Locaweb, Hostinger etc.); 587 = STARTTLS (Gmail, Zoho, Brevo...). Timeout evita travar a tela.
+        if Config.SMTP_PORT == 465:
+            servidor = smtplib.SMTP_SSL(Config.SMTP_HOST, Config.SMTP_PORT, timeout=25)
+        else:
+            servidor = smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT, timeout=25)
+        with servidor as server:
+            if Config.SMTP_PORT != 465:
+                server.starttls()
             server.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
             server.sendmail(Config.EMAIL_FROM, destinatarios, msg.as_string())
         _registrar_envio(destinatarios, assunto, "enviado")

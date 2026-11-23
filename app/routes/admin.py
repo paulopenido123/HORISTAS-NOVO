@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, Response
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, Response, jsonify
+from app.config import Config
 from app.services import supabase_client as db
 from app.services import auth_service
 from app.services import neon_storage
@@ -95,8 +96,17 @@ def dashboard():
         db.get_client().table('medicos').select('id, nome')
         .eq('ativo', True).eq('autorizado', False).order('nome').execute().data
     )
+    # v121: aviso em vermelho dos médicos que entraram nos últimos 30 dias
+    from datetime import datetime, timedelta
+    corte = datetime.utcnow() - timedelta(days=30)
+    novos_30 = []
+    for m in medicos:
+        d = _como_data(m.get('criado_em'))
+        if d and d >= corte:
+            novos_30.append({'id': m['id'], 'nome': m.get('nome'), 'entrou_em': d})
+    novos_30.sort(key=lambda x: x['entrou_em'], reverse=True)
     return render_template('admin_dashboard.html', consultorios=consultorios, medicos=medicos, reservas=reservas,
-                            medicos_pendentes=medicos_pendentes)
+                            medicos_pendentes=medicos_pendentes, novos_30=novos_30)
 
 
 _NOMES_MESES = [
@@ -163,6 +173,15 @@ def atualizar_endereco_padrao():
     )
     flash('Endereço padrão atualizado.', 'ok')
     return redirect(url_for('admin.horas'))
+
+
+def _voltar_clientes() -> str:
+    """v119: volta para a lista de clientes mantendo os filtros e a busca que estavam na tela (campo `volta` = query string)."""
+    volta = (request.form.get('volta') or '')[:300]
+    if not volta and request.form.get('busca'):
+        from urllib.parse import urlencode
+        volta = urlencode({'busca': request.form.get('busca')})
+    return url_for('admin.clientes') + ('?' + volta if volta else '')
 
 
 def _como_data(v):
@@ -243,38 +262,49 @@ def clientes():
     # calcula o saldo em horas direto dos dados que já vieram no
     # select("*"), sem nenhuma consulta extra por médico.
     pacotes_horas = creditos_db.listar_pacotes_horas()
-    # v113: filtros por atividade (pendentes de liberação / sem compra há +30 dias / sem reserva há +30 dias)
+    # v119: filtros combináveis -- aguardando liberação / sem comprar há N dias / sem reservar há N dias / com ou sem saldo.
+    # Os dias são digitados pelo admin (v113 tinha só 30 fixo). Quem nunca comprou/reservou conta desde o cadastro.
     from datetime import datetime, timedelta
-    filtro = (request.args.get('filtro') or '').strip()
+    filtro = 'pendentes' if (request.args.get('filtro') or '').strip() == 'pendentes' else ''
+
+    def _dias(nome, antigo=None):
+        v = (request.args.get(nome) or '').strip()
+        if not v and antigo and (request.args.get('filtro') or '') == antigo:
+            return 30  # links antigos (v113)
+        return int(v) if v.isdigit() and 0 < int(v) <= 3650 else None
+    sem_compra = _dias('sem_compra', 'sem_compra_30')
+    sem_reserva = _dias('sem_reserva', 'sem_reserva_30')
+    novos = _dias('novos')
+    saldo = (request.args.get('saldo') or '').strip()
+    saldo = saldo if saldo in ('com', 'sem') else ''
     atividades = _ultimas_atividades()
-    limite = datetime.utcnow() - timedelta(days=30)
+    agora = datetime.utcnow()
     for m in lista:
         a = atividades.get(m['id'], {})
         m['ultima_compra'], m['ultima_reserva'] = a.get('compra'), a.get('reserva')
-    totais = {'pendentes': 0, 'sem_compra': 0, 'sem_reserva': 0}
+        m['saldo_horas'] = creditos_db.estimar_horas_compraveis(m.get('saldo_creditos') or 0, pacotes_horas)
 
-    def _parado(m, chave):
+    def _parado(m, chave, dias):
         # quem nunca teve a atividade conta desde o cadastro (cliente novo de poucos dias não entra)
         ref = m.get(chave) or _como_data(m.get('criado_em'))
-        return bool(m.get('ativo')) and ref is not None and ref < limite
-    for m in lista:
-        if m.get('ativo') and not m.get('autorizado'):
-            totais['pendentes'] += 1
-        if _parado(m, 'ultima_compra'):
-            totais['sem_compra'] += 1
-        if _parado(m, 'ultima_reserva'):
-            totais['sem_reserva'] += 1
+        return bool(m.get('ativo')) and ref is not None and ref < agora - timedelta(days=dias)
     if filtro == 'pendentes':
         lista = [m for m in lista if m.get('ativo') and not m.get('autorizado')]
-    elif filtro == 'sem_compra_30':
-        lista = [m for m in lista if _parado(m, 'ultima_compra')]
-    elif filtro == 'sem_reserva_30':
-        lista = [m for m in lista if _parado(m, 'ultima_reserva')]
-    else:
-        filtro = ''
+    if novos:  # v121: entraram no sistema nos últimos N dias
+        lista = [m for m in lista if m.get('ativo') and (_como_data(m.get('criado_em')) or datetime.min) >= agora - timedelta(days=novos)]
+    if sem_compra:
+        lista = [m for m in lista if _parado(m, 'ultima_compra', sem_compra)]
+    if sem_reserva:
+        lista = [m for m in lista if _parado(m, 'ultima_reserva', sem_reserva)]
+    if saldo == 'com':
+        lista = [m for m in lista if (m.get('saldo_horas') or 0) > 0]
+    elif saldo == 'sem':
+        lista = [m for m in lista if not (m.get('saldo_horas') or 0) > 0]
     for m in lista:
-        m['saldo_horas'] = creditos_db.estimar_horas_compraveis(m.get('saldo_creditos') or 0, pacotes_horas)
         db.ajustar_contrato_sandbox(m)
+    filtros_ativos = {'filtro': filtro, 'sem_compra': sem_compra, 'sem_reserva': sem_reserva, 'saldo': saldo, 'novos': novos}
+    from urllib.parse import urlencode
+    volta = urlencode({k: v for k, v in {**filtros_ativos, 'busca': busca}.items() if v})
     from app.services import documentos_medico_service as docs_medico
     from app.services import autentique_service
     from app.config import Config
@@ -285,7 +315,7 @@ def clientes():
         print(f'[clientes] vagas do mês indisponíveis: {e}')
         vagas = None
     return render_template('admin_clientes.html', medicos=lista, busca=request.args.get('busca') or '', vagas=vagas,
-                           filtro=filtro, totais=totais,
+                           filtro=filtro, f=filtros_ativos, volta=volta,
                            docs=docs_medico.info_de_todos(),
                            autentique_teste=autentique_service.configurado() and Config.AUTENTIQUE_SANDBOX)
 
@@ -323,7 +353,7 @@ def autorizacao_cliente(medico_id):
             email_service.notificar_acesso_liberado(medico['nome'], medico['email'])
     else:
         flash(f'Acesso de {medico["nome"]} bloqueado -- não vai conseguir reservar consultório até ser liberado de novo.', 'ok')
-    return redirect(url_for('admin.clientes', busca=request.form.get('busca') or '', filtro=request.form.get('filtro') or ''))
+    return redirect(_voltar_clientes())
 
 
 @admin_bp.route('/clientes/<medico_id>/enviar-link', methods=['POST'])
@@ -351,14 +381,14 @@ def enviar_link_cliente(medico_id):
         resultado = rec_senha.enviar_link_primeiro_acesso(medico_id, email)
     except ValueError as e:
         flash(str(e), 'erro')
-        return redirect(url_for('admin.clientes', busca=request.form.get('busca') or ''))
+        return redirect(_voltar_clientes())
     except Exception as e:
         flash(
             f'Não consegui enviar o e-mail agora (erro técnico: {type(e).__name__}). '
             'Confira se o envio de e-mail (SMTP_*/EMAIL_FROM) está configurado no sistema.',
             'erro',
         )
-        return redirect(url_for('admin.clientes', busca=request.form.get('busca') or ''))
+        return redirect(_voltar_clientes())
 
     if resultado['enviado']:
         flash(f'Link de acesso enviado para {email} ({medico["nome"]}) -- o link não expira.', 'ok')
@@ -372,7 +402,7 @@ def enviar_link_cliente(medico_id):
             f'O link já foi gerado mesmo assim (não expira), copie e mande na mão: {resultado["link"]}',
             'erro',
         )
-    return redirect(url_for('admin.clientes', busca=request.form.get('busca') or ''))
+    return redirect(_voltar_clientes())
 
 
 @admin_bp.route('/clientes/<medico_id>/ajustar-saldo', methods=['POST'])
@@ -725,6 +755,132 @@ def definir_genero_cliente(medico_id):
         else:
             raise
     return redirect(url_for('admin.especialidades') + '#m' + medico_id)
+
+
+# ---------- v121: aba "Mensagens" (e-mail do sistema para os clientes) ----------
+_GRUPOS_MENSAGEM = [
+    ('todos', 'Todos os clientes ativos'),
+    ('com_saldo', 'Clientes com saldo de horas'),
+    ('sem_saldo', 'Clientes sem saldo de horas'),
+    ('pendentes', 'Aguardando liberação de acesso'),
+    ('novos', 'Entraram nos últimos N dias'),
+    ('sem_compra', 'Sem comprar há N dias'),
+    ('sem_reserva', 'Sem reservar há N dias'),
+    ('manual', 'Escolher clientes manualmente'),
+]
+
+
+def _clientes_para_mensagem(grupo: str, dias: int | None = None, ids: list[str] | None = None) -> list[dict]:
+    """v121: médicos ativos que se encaixam no grupo escolhido em Admin > Mensagens (mesmas regras dos filtros da lista)."""
+    from datetime import datetime, timedelta
+    lista = [m for m in db.get_client().table('medicos').select('*').order('nome').execute().data if m.get('ativo')]
+    agora = datetime.utcnow()
+    if grupo == 'manual':
+        escolhidos = set(ids or [])
+        return [m for m in lista if m['id'] in escolhidos]
+    if grupo == 'pendentes':
+        return [m for m in lista if not m.get('autorizado')]
+    if grupo in ('com_saldo', 'sem_saldo'):
+        pacotes = creditos_db.listar_pacotes_horas()
+        com = {m['id'] for m in lista if (creditos_db.estimar_horas_compraveis(m.get('saldo_creditos') or 0, pacotes) or 0) > 0}
+        return [m for m in lista if (m['id'] in com) == (grupo == 'com_saldo')]
+    if grupo == 'novos':
+        corte = agora - timedelta(days=dias or 30)
+        return [m for m in lista if (_como_data(m.get('criado_em')) or datetime.min) >= corte]
+    if grupo in ('sem_compra', 'sem_reserva'):
+        if not dias:
+            return []
+        chave = 'compra' if grupo == 'sem_compra' else 'reserva'
+        atividades = _ultimas_atividades()
+        corte = agora - timedelta(days=dias)
+        saida = []
+        for m in lista:
+            ref = atividades.get(m['id'], {}).get(chave) or _como_data(m.get('criado_em'))
+            if ref is not None and ref < corte:
+                saida.append(m)
+        return saida
+    return lista  # 'todos'
+
+
+def _smtp_configurado() -> bool:
+    return all([Config.SMTP_HOST, Config.SMTP_USER, Config.SMTP_PASSWORD, Config.EMAIL_FROM])
+
+
+@admin_bp.route('/mensagens')
+@_admin
+def mensagens():
+    """v121: aba Mensagens -- escreve um e-mail e envia (um a um) para um grupo de clientes, pelo e-mail da Lifemax."""
+    try:
+        historico = db.get_client().table('emails_enviados').select('*').order('criado_em', desc=True).limit(40).execute().data
+        historico_ok = True
+    except Exception as e:
+        print(f'[mensagens] histórico indisponível: {e}')
+        historico, historico_ok = [], False
+    clientes = [{'id': m['id'], 'nome': m.get('nome'), 'email': m.get('email') or ''}
+                for m in db.get_client().table('medicos').select('id,nome,email,ativo').order('nome').execute().data if m.get('ativo')]
+    return render_template('admin_mensagens.html', grupos=_GRUPOS_MENSAGEM, clientes=clientes, historico=historico,
+                           historico_ok=historico_ok, smtp_ok=_smtp_configurado(), remetente=Config.EMAIL_FROM,
+                           resposta=Config.EMAIL_RESPOSTA)
+
+
+@admin_bp.route('/mensagens/previa')
+@_admin
+def mensagens_previa():
+    grupo = request.args.get('grupo') or 'todos'
+    dias = request.args.get('dias') or ''
+    dias = int(dias) if dias.isdigit() and 0 < int(dias) <= 3650 else None
+    sel = _clientes_para_mensagem(grupo, dias, request.args.getlist('ids'))
+    com_email = [m for m in sel if (m.get('email') or '').strip()]
+    return jsonify({'total': len(sel), 'com_email': len(com_email), 'sem_email': [m['nome'] for m in sel if not (m.get('email') or '').strip()][:30],
+                    'ids': [m['id'] for m in com_email], 'precisa_dias': grupo in ('sem_compra', 'sem_reserva') and not dias})
+
+
+@admin_bp.route('/mensagens/enviar', methods=['POST'])
+@_admin
+def mensagens_enviar():
+    """Envia a mensagem para um LOTE pequeno de clientes (a tela manda vários lotes seguidos, para não estourar o tempo
+    do servidor). Um e-mail por cliente, para não expor o endereço de um aos outros (LGPD)."""
+    from app.services import email_service
+    if not _smtp_configurado():
+        return jsonify({'erro': 'O envio de e-mails ainda não está configurado no Render (SMTP).'}), 400
+    ids = request.form.getlist('ids')[:20]
+    assunto = (request.form.get('assunto') or '').strip()
+    mensagem = (request.form.get('mensagem') or '').strip()
+    if not assunto or not mensagem:
+        return jsonify({'erro': 'Preencha o assunto e a mensagem.'}), 400
+    foto = request.files.get('imagem')
+    imagens = None
+    if foto and foto.filename:
+        if not (foto.mimetype or '').startswith('image/'):
+            return jsonify({'erro': 'O arquivo anexado precisa ser uma imagem.'}), 400
+        dados = foto.read()
+        if len(dados) > 3 * 1024 * 1024:
+            return jsonify({'erro': 'A imagem passa de 3 MB.'}), 400
+        imagens = [('msg0', dados, foto.mimetype)]
+    esc = email_service._esc
+    paragrafos = ''.join(f'<p style="margin:0 0 12px">{esc(l)}</p>' for l in mensagem.splitlines() if l.strip())
+    img_html = '<p><img src="cid:msg0" style="max-width:100%;border-radius:8px"></p>' if imagens else ''
+    enviados, falhas, sem_email = [], [], []
+    for mid in ids:
+        m = db.get_medico_by_id(mid)
+        if not m:
+            continue
+        email = (m.get('email') or '').strip()
+        if not email:
+            sem_email.append(m['nome'])
+            continue
+        primeiro = (m.get('nome') or '').replace('Dra.', '').replace('Dr.', '').strip().split(' ')[0]
+        corpo = (f'<div style="font-family:Arial,sans-serif;color:#102A43;max-width:560px;font-size:15px;line-height:1.55">'
+                 f'<p style="margin:0 0 12px">Olá{", " + esc(primeiro) if primeiro else ""}!</p>{img_html}{paragrafos}'
+                 f'<p style="margin:22px 0 0;color:#33566a">Equipe Lifemax Consultórios<br>'
+                 f'<span style="color:#62788A;font-size:13px">Para falar conosco, basta responder este e-mail ({esc(Config.EMAIL_RESPOSTA or "")}).</span></p></div>')
+        try:
+            ok = email_service.enviar_email([email], assunto, corpo, imagens_inline=imagens, rodape_automatico=False,
+                                            responder_para=Config.EMAIL_RESPOSTA)
+        except Exception:
+            ok = False
+        (enviados if ok else falhas).append(m['nome'])
+    return jsonify({'enviados': enviados, 'falhas': falhas, 'sem_email': sem_email})
 
 
 @admin_bp.route('/clientes/<medico_id>/contrato/pdf')
@@ -1087,7 +1243,17 @@ def consultorios():
     lista = db.ordenar_consultorios(db.get_client().table('consultorios').select('*').order('nome').execute().data)
     if filtro_unidade:
         lista = [c for c in lista if c.get('unidade_id') == filtro_unidade]
-    return render_template('admin_consultorios.html', consultorios=lista, erro=erro,
+    # v120: agrupa por unidade (endereço) para o admin não confundir salas de endereços diferentes
+    grupos = []
+    for u in unidades:
+        itens = [c for c in lista if c.get('unidade_id') == u['id']]
+        if itens:
+            grupos.append({'unidade': u, 'itens': itens})
+    ids_unidades = {u['id'] for u in unidades}
+    sem_unidade = [c for c in lista if c.get('unidade_id') not in ids_unidades]
+    if sem_unidade:
+        grupos.append({'unidade': None, 'itens': sem_unidade})
+    return render_template('admin_consultorios.html', consultorios=lista, grupos=grupos, erro=erro,
                            unidades=unidades, filtro_unidade=filtro_unidade,
                            nome_unidade={u['id']: u['nome'] for u in unidades})
 

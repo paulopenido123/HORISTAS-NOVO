@@ -433,6 +433,39 @@ def listar_receitas(data_inicio: str, data_fim: str, medico_id: str | None = Non
     return linhas, resumo, round(sum(l["valor"] for l in linhas), 2)
 
 
+def meses_do_periodo(de: str, ate: str) -> list[str]:
+    """['AAAA-MM', ...] de `de` até `ate`, inclusive. Levanta ValueError se o formato for inválido ou de > ate."""
+    def _ym(t):
+        t = (t or "").strip()
+        if len(t) != 7 or t[4] != "-":
+            raise ValueError("use o formato AAAA-MM")
+        a, m = int(t[:4]), int(t[5:])
+        date(a, m, 1)
+        return a, m
+    (a1, m1), (a2, m2) = _ym(de), _ym(ate)
+    if (a1, m1) > (a2, m2):
+        raise ValueError("'de' não pode ser depois de 'ate'")
+    saida, a, m = [], a1, m1
+    while (a, m) <= (a2, m2):
+        saida.append(f"{a:04d}-{m:02d}")
+        a, m = a + (m == 12), m % 12 + 1
+    return saida
+
+
+def receitas_mensais(de: str, ate: str) -> list[dict]:
+    """Receita por mês, de `de` a `ate` ('AAAA-MM'), SOMENTE LEITURA. Usa a MESMA consulta e os MESMOS critérios do relatório
+    de Receitas do admin (listar_receitas: pagamentos_pix com status 'pago', mês pela data local do pagamento), então o total
+    de cada mês é o mesmo número que aparece lá. Todo mês do período entra, mesmo com receita 0. Só totais (sem dados de clientes)."""
+    meses = meses_do_periodo(de, ate)
+    ini, _ = periodo_receitas("", "", meses[0])
+    _, fim = periodo_receitas("", "", meses[-1])
+    linhas, _resumo, _total = listar_receitas(ini, fim)
+    por_mes = {m: [] for m in meses}
+    for l in linhas:
+        por_mes.setdefault(l["data"][:7], []).append(l["valor"])
+    return [{"mes": m, "receita": round(float(sum(por_mes[m])), 2), "quantidade": len(por_mes[m])} for m in meses]
+
+
 def ranking_profissionais(linhas: list[dict]) -> list[dict]:
     """Profissionais que compraram no período, do maior para o menor valor
     (desempate: mais compras, depois nome). Recebe as linhas de listar_receitas."""

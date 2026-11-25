@@ -13,6 +13,7 @@ from app.routes.webhooks_asaas import webhooks_asaas_bp
 from app.routes.admin import admin_bp
 from app.routes.termos import termos_bp
 from app.routes.api_dora import api_dora_bp
+from app.routes.api_financeiro import api_financeiro_bp
 
 
 def create_app():
@@ -62,6 +63,7 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(termos_bp)
     app.register_blueprint(api_dora_bp)
+    app.register_blueprint(api_financeiro_bp)
 
     socketio.init_app(app)
     limiter.init_app(app)

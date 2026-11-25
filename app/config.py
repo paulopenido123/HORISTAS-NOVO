@@ -39,6 +39,8 @@ class Config:
     # com essa variável -- sem ela configurada, os endpoints recusam
     # QUALQUER chamada (ver app/routes/api_dora.py _exigir_api_key).
     DORA_API_KEY = os.getenv("DORA_API_KEY")
+    # v127: chave da API somente leitura de receitas mensais (sistema financeiro). Sem ela, a rota fica desligada (503).
+    FINANCEIRO_API_TOKEN = os.getenv("FINANCEIRO_API_TOKEN")
 
     # (Chaves/modelos de IA -- Claude, OpenAI, Gemini -- removidos em 19/10/2026:
     # todo o recurso de IA saiu do sistema a pedido do Paulo.)

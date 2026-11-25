@@ -480,6 +480,19 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v127 — API somente leitura de receitas mensais (para o sistema financeiro)
+- Nova rota `GET /api/financeiro/receitas-mensais?de=AAAA-MM&ate=AAAA-MM` (sem parâmetros: últimos 12 meses, incluindo o atual; máximo 60 meses; formato errado ou 'de' > 'ate' = 400).
+- Proteção: variável `FINANCEIRO_API_TOKEN` no Render + cabeçalho `Authorization: Bearer <chave>` (comparação em tempo constante). Sem a variável no servidor: 503 (rota desligada; chave vazia nunca é aceita). Sem cabeçalho/chave errada/chave na URL/sessão de admin sem chave: 401 `{"erro":"não autorizado"}`. Sem CORS. Limite de 60 chamadas por minuto.
+- Resposta: `{"empresa":"Biomax","moeda":"BRL","geradoEm":"...-03:00","meses":[{"mes":"2026-10","receita":12345.67,"quantidade":42}, ...]}`. Todo mês do período aparece (receita 0.0 se não houve). Só totais: nenhum dado de cliente.
+- Mesmos números do relatório Receitas do admin: usa a mesma consulta (`relatorios_service.listar_receitas`: pagamentos com status 'pago', mês pela data local de pagamento, fuso de São Paulo). Novas funções: `relatorios_service.receitas_mensais` e `meses_do_periodo`. Rota em `app/routes/api_financeiro.py`. Somente leitura (só SELECT; POST/PUT/DELETE = 405). Sem mudança de banco.
+- Teste (teste_v127): 503/401 (7 casos), centavos (0,10+0,20+100,10 = 100,40), pagamento de 31/10 23:30 conta em outubro, pendente/cancelado/expirado fora, nenhum dado pessoal, e os totais de 4 meses batem com o HTML de /admin/relatorios?tipo=receitas&mes=...
+- Para ligar: Render > Environment > `FINANCEIRO_API_TOKEN` = uma chave longa e aleatória (guardar também no sistema financeiro).
+
+## v126 — Dashboard do admin sem os botões repetidos
+- Removido do Dashboard o bloco "Operação" (atalhos Gerar Matriz, Visualizar agenda, Consultórios, Clientes, Especialidades, Horas, Alterar valores, Relatórios, Usuários, Backup), que repetia o menu do topo. Ficam: menu do topo, avisos (clientes aguardando liberação / médicos novos), números do painel e Reservas recentes. Limpo também o CSS desses atalhos.
+- O único atalho que fica é uma linha "Especialidades e gênero dos profissionais — Ver →" (a Especialidades não faz parte do menu do topo).
+- Testes: Dashboard abre (390 e 1280 px), sem rolagem lateral; regressão v118, v119 e v121 OK. Sem mudança de banco.
+
 ## v125 — Menu do topo do admin padronizado (11 botões iguais, sem corte)
 - Os 11 botões (Dashboard, Gerar Matriz, Consultórios, Clientes, Mensagens, Horas, Alterar valores, Relatórios, Usuários, Backup, Visualizar agenda) agora têm UM só desenho para todas as telas: mesmo tamanho, mesma cor (branco com letra azul) e o botão da tela atual em verde-água. Antes era uma faixa com rolagem lateral (botões cortados no celular) e a tela de Relatórios tinha um menu próprio com só 8 botões.
 - Sem rolagem lateral: no celular os botões ficam em grade de 3 colunas; no tablet em 6 colunas; no computador, todos em uma única linha. A secretária vê só os botões que pode usar (5), com o mesmo formato.

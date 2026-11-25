@@ -26,14 +26,6 @@
   .stat .rot { font-size:13px; color:var(--muted); margin-top:3px; line-height:1.2; }
   .secao { display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:19px; font-weight:800; font-family:var(--display); }
   .secao .ic { font-size:24px; color:var(--teal); }
-  .atalhos { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-  .atalho { display:flex; align-items:center; gap:10px; min-height:72px; padding:12px; border-radius:18px; text-decoration:none; font-family:var(--display); font-weight:800; font-size:15.5px; line-height:1.2; background:#EAF4F3; color:#0B3A57; }
-  .atalho .ico { width:42px; height:42px; border-radius:13px; background:#fff; color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:23px; flex-shrink:0; }
-  .atalho.navy { background:var(--navy-card); color:#fff; }
-  .atalho.navy .ico { background:rgba(255,255,255,.14); color:#fff; }
-  .atalho:last-child:nth-child(odd) { grid-column: 1 / -1; }
-  @media (min-width:641px) { .atalho:last-child:nth-child(odd) { grid-column: auto; } }
-  .atalho:hover { filter:brightness(.97); }
   .res-lista { display:flex; flex-direction:column; gap:10px; }
   .res { display:grid; grid-template-columns:auto 1px 1fr auto; align-items:center; gap:12px; padding:12px 14px; border-radius:16px; border:1px solid #CFE9DC; background:#EEF8F2; }
   .res.cancelada { background:#FDEDEC; border-color:#F5C9C4; }
@@ -51,7 +43,6 @@
     .hero-topo { padding:18px 14px 0; gap:10px; } .brand-logo { height:46px; padding:8px 10px; }
     .stats { grid-template-columns:1fr; gap:6px; }
     .stat { border-bottom:1px solid var(--line); padding:6px 4px; } .stat:last-child { border-bottom:0; }
-    .atalhos { grid-template-columns:1fr 1fr; }
     .res { grid-template-columns:auto 1px 1fr; } .res .st { grid-column:1 / -1; }
     .res .dt b { font-size:25px; }
   }
@@ -96,21 +87,7 @@
   </div>
 
   <div class="caixa">
-    <div class="secao"><svg class="ic"><use href="#i-check"/></svg> Operação</div>
-    <div class="atalhos">
-      {% if admin_total %}<a class="atalho navy" href="{{ url_for('admin.matriz') }}"><span class="ico"><svg class="ic"><use href="#i-calplus"/></svg></span>Gerar Matriz</a>{% endif %}
-      <a class="atalho navy" href="{{ url_for('admin.matriz_visualizar_agenda') }}"><span class="ico"><svg class="ic"><use href="#i-calplus"/></svg></span>Visualizar agenda</a>
-      <a class="atalho navy" href="{{ url_for('admin.consultorios') }}"><span class="ico"><svg class="ic"><use href="#i-bld"/></svg></span>Consultórios</a>
-      <a class="atalho navy" href="{{ url_for('admin.clientes') }}"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span>Clientes</a>
-      <a class="atalho navy" href="{{ url_for('admin.especialidades') }}"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span>Especialidades</a>
-      {% if admin_total %}
-      <a class="atalho" href="{{ url_for('admin.horas') }}"><span class="ico"><svg class="ic"><use href="#i-clock"/></svg></span>Horas</a>
-      <a class="atalho" href="{{ url_for('admin.valores') }}"><span class="ico"><svg class="ic"><use href="#i-chart"/></svg></span>Alterar valores</a>
-      <a class="atalho" href="{{ url_for('admin.relatorios') }}"><span class="ico"><svg class="ic"><use href="#i-chart"/></svg></span>Relatórios</a>
-      <a class="atalho" href="{{ url_for('admin.usuarios') }}"><span class="ico"><svg class="ic"><use href="#i-users"/></svg></span>Usuários</a>
-      <a class="atalho" href="{{ url_for('admin.backup') }}"><span class="ico"><svg class="ic"><use href="#i-check"/></svg></span>Backup</a>
-      {% endif %}
-    </div>
+    <a href="{{ url_for('admin.especialidades') }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;text-decoration:none;color:#0B3A57;font-family:var(--display);font-weight:800;font-size:15.5px"><span style="display:flex;align-items:center;gap:10px"><svg class="ic"><use href="#i-users"/></svg> Especialidades e gênero dos profissionais</span><span style="color:var(--teal)">Ver →</span></a>
   </div>
 
   <div class="caixa">

@@ -480,6 +480,13 @@ Dora API; tryout · 23–24/09: cadastro obrigatório em vez de liberação manu
 - Menu do admin: novo item "Visualizar agenda" à direita de "Usuários" (também no dashboard). A secretária o acessa (e só o que ele precisa: grade, intervalo, bloquear/nomear horário, ocultar dia); "Gerar Matriz" e suas APIs (template, replicar, relatório, replicações, desfazer) passaram a ser só do Administrador.
 - Página inicial: Consultórios, Entrar, Primeiro acesso e Acesso administrativo com o mesmo tamanho e cor (2x2 no celular).
 
+## v125 — Menu do topo do admin padronizado (11 botões iguais, sem corte)
+- Os 11 botões (Dashboard, Gerar Matriz, Consultórios, Clientes, Mensagens, Horas, Alterar valores, Relatórios, Usuários, Backup, Visualizar agenda) agora têm UM só desenho para todas as telas: mesmo tamanho, mesma cor (branco com letra azul) e o botão da tela atual em verde-água. Antes era uma faixa com rolagem lateral (botões cortados no celular) e a tela de Relatórios tinha um menu próprio com só 8 botões.
+- Sem rolagem lateral: no celular os botões ficam em grade de 3 colunas; no tablet em 6 colunas; no computador, todos em uma única linha. A secretária vê só os botões que pode usar (5), com o mesmo formato.
+- O Dashboard passou a mostrar o mesmo menu (os atalhos coloridos continuam abaixo). Relatórios passou a usar o topo padrão.
+- Código: novo templates/_admin_menu.html (estilo e lista de botões num lugar só, usado por _admin_topo.html e pelo Dashboard); removidas as regras antigas de admin-padrao.css e do admin_relatorios.html. Sem mudança de banco.
+- Testes: 12 telas x 3 larguras (390, 768, 1280 px): 11 botões, mesma altura/largura/cor, nada cortado e sem rolagem lateral; regressão v114, v118, v119, v121 e v124 OK. Não testado: a visão da secretária no navegador (só a lista de botões, por renderização).
+
 ## v124 — "Testar o envio de e-mail" (Admin > Mensagens)
 - Novo cartão no topo de Admin > Mensagens: digite seu e-mail e clique em "Enviar teste". O sistema tenta conectar, entrar e enviar, e mostra na tela a ETAPA que falhou, o erro exato, uma dica do que conferir e o servidor/remetente em uso (a senha nunca aparece). Rota: POST /admin/mensagens/testar-smtp; função email_service.testar_smtp.
 - Motivo: no log do Render só aparecia erro de e-mail em caso de falha e a saída podia ficar retida; agora o erro é visível na tela. O print de erro do envio também passou a usar flush e mostra o tipo do erro.

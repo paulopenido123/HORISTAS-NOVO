@@ -5,18 +5,4 @@
   <div class="hero-titulo"><div class="eyebrow">Administrador</div><h1>{{ titulo }}</h1>{% if subtitulo %}<p>{{ subtitulo }}</p>{% endif %}</div>
   <a class="sair" href="{{ url_for('admin.admin_logout') }}"><span class="circ"><svg class="ic"><use href="#i-logout"/></svg></span>Sair</a>
 </div></header>
-<nav class="menu-admin">
-  <a href="{{ url_for('admin.dashboard') }}" class="{{ 'on' if ativo == 'dashboard' else '' }}">Dashboard</a>
-  {% if admin_total %}<a href="{{ url_for('admin.matriz') }}" class="{{ 'on' if ativo == 'matriz' else '' }}">Gerar Matriz</a>{% endif %}
-  <a href="{{ url_for('admin.consultorios') }}" class="{{ 'on' if ativo == 'consultorios' else '' }}">Consultórios</a>
-  <a href="{{ url_for('admin.clientes') }}" class="{{ 'on' if ativo == 'clientes' else '' }}">Clientes</a>
-  <a href="{{ url_for('admin.mensagens') }}" class="{{ 'on' if ativo == 'mensagens' else '' }}">Mensagens</a>
-  {% if admin_total %}
-  <a href="{{ url_for('admin.horas') }}" class="{{ 'on' if ativo == 'horas' else '' }}">Horas</a>
-  <a href="{{ url_for('admin.valores') }}" class="{{ 'on' if ativo == 'valores' else '' }}">Alterar valores</a>
-  <a href="{{ url_for('admin.relatorios') }}" class="{{ 'on' if ativo == 'relatorios' else '' }}">Relatórios</a>
-  <a href="{{ url_for('admin.usuarios') }}" class="{{ 'on' if ativo == 'usuarios' else '' }}">Usuários</a>
-  <a href="{{ url_for('admin.backup') }}" class="{{ 'on' if ativo == 'backup' else '' }}">Backup</a>
-  {% endif %}
-  <a href="{{ url_for('admin.matriz_visualizar_agenda') }}" class="{{ 'on' if ativo == 'agenda' else '' }}">Visualizar agenda</a>
-</nav>
+{% include '_admin_menu.html' %}

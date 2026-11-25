@@ -12,9 +12,7 @@ h1,h2,h3 { font-family:var(--display); }
 .hero-titulo p { margin:8px 0 0; font-size:clamp(13px,3.3vw,15.5px); line-height:1.45; color:rgba(234,242,245,.9); }
 .hero .sair { display:flex; flex-direction:column; align-items:center; gap:5px; color:#fff; text-decoration:none; font-weight:800; font-size:13px; }
 .hero .sair .circ { width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:24px; }
-.menu-admin { display:flex; gap:8px; overflow-x:auto; max-width:1180px; margin:-50px auto 12px; padding:2px 12px 4px; position:relative; }
-.menu-admin a { flex-shrink:0; padding:10px 16px; border-radius:14px; background:#fff; color:var(--navy); text-decoration:none; font-family:var(--display); font-weight:800; font-size:14px; box-shadow:0 2px 8px rgba(11,58,87,.12); }
-.menu-admin a.on { background:var(--navy); color:#fff; }
+/* menu do admin: ver templates/_admin_menu.html (v125) */
 .wrap, .container { max-width:1180px !important; margin:0 auto !important; padding:0 12px 50px !important; }
 .card, .painel, .bloco { background:#fff !important; border:0 !important; border-radius:22px !important; box-shadow:0 6px 22px rgba(11,58,87,.10); }
 .card { padding:16px; }

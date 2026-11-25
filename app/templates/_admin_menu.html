@@ -1,0 +1,15 @@
+{# Menu padrão do admin (v125): os mesmos botões, formato e cores em TODAS as telas, sem rolagem lateral nem corte.
+   Variável: ativo ('dashboard'|'matriz'|'consultorios'|'clientes'|'mensagens'|'horas'|'valores'|'relatorios'|'usuarios'|'backup'|'agenda') #}
+{% set _itens = [('dashboard','Dashboard','admin.dashboard',False),('matriz','Gerar Matriz','admin.matriz',True),('consultorios','Consultórios','admin.consultorios',False),('clientes','Clientes','admin.clientes',False),('mensagens','Mensagens','admin.mensagens',False),('horas','Horas','admin.horas',True),('valores','Alterar valores','admin.valores',True),('relatorios','Relatórios','admin.relatorios',True),('usuarios','Usuários','admin.usuarios',True),('backup','Backup','admin.backup',True),('agenda','Visualizar agenda','admin.matriz_visualizar_agenda',False)] %}
+{% set _vis = _itens|selectattr(3,'equalto',False)|list if not admin_total else _itens %}
+<style>
+.menu-admin{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;grid-auto-rows:48px;max-width:1180px;margin:-50px auto 14px;padding:2px 12px 4px;position:relative;box-sizing:border-box}
+.menu-admin a{display:flex;align-items:center;justify-content:center;text-align:center;height:48px;padding:4px 6px;border-radius:14px;background:#fff;color:#0B3A57;text-decoration:none;font-family:'Manrope',sans-serif;font-weight:800;font-size:13.5px;line-height:1.15;box-shadow:0 2px 8px rgba(11,58,87,.12);box-sizing:border-box;overflow-wrap:anywhere}
+.menu-admin a.on{background:#0EA5A0;color:#fff}
+.menu-admin a:hover{filter:brightness(.97)}
+@media (min-width:720px){.menu-admin{grid-template-columns:repeat(var(--col-med,6),minmax(0,1fr))}}
+@media (min-width:1100px){.menu-admin{grid-template-columns:repeat(var(--col-lg,11),minmax(0,1fr))}.menu-admin a{font-size:13px}}
+</style>
+<nav class="menu-admin" style="--col-med:{{ ((_vis|length)+1)//2 }};--col-lg:{{ _vis|length }}">
+{% for chave, rotulo, rota, so_total in _vis %}  <a href="{{ url_for(rota) }}" class="{{ 'on' if ativo == chave else '' }}">{{ rotulo }}</a>
+{% endfor %}</nav>

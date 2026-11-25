@@ -11,10 +11,7 @@
   .hero-titulo p{margin:8px 0 0;font-size:clamp(13px,3.3vw,15.5px);line-height:1.45;color:rgba(234,242,245,.9)}
   .sair{display:flex;flex-direction:column;align-items:center;gap:5px;color:#fff;text-decoration:none;font-weight:800;font-size:13px}
   .sair .circ{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:24px}
-  .wrap{max-width:1180px;margin:-40px auto 0;padding:0 12px 50px;position:relative}
-  .menu{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding:2px 0 4px}
-  .menu a{flex-shrink:0;padding:10px 16px;border-radius:14px;background:#fff;color:var(--navy);text-decoration:none;font-family:var(--display);font-weight:800;font-size:14px;box-shadow:0 2px 8px rgba(11,58,87,.10)}
-  .menu a.active{background:var(--navy);color:#fff}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 12px 50px;position:relative}
   .card{background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(11,58,87,.12);padding:16px;margin-bottom:14px}
   .subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .subtabs a{padding:11px 16px;border-radius:14px;background:#fff;border:1.5px solid #CFE3E1;color:var(--navy);text-decoration:none;font-family:var(--display);font-weight:800;font-size:14px}
@@ -73,23 +70,8 @@
   }
 </style>
 <link rel="stylesheet" href="/static/css/base-mobile.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/static/css/botoes-lifemax.css"></head><body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M16 8l4 4-4 4M20 12H9"/></symbol></defs></svg>
-<header class="hero"><div class="hero-topo">
-  <div><img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Lifemax" class="brand-logo"></div>
-  <div class="hero-titulo"><div class="eyebrow">Administrador</div><h1>Relatórios</h1><p>Agendamentos, transações, faturamento e receitas.</p></div>
-  <a class="sair" href="{{ url_for('admin.admin_logout') }}"><span class="circ"><svg class="ic"><use href="#i-logout"/></svg></span>Sair</a>
-</div></header>
+{% with titulo='Relatórios', subtitulo='Agendamentos, transações, faturamento e receitas.', ativo='relatorios' %}{% include '_admin_topo.html' %}{% endwith %}
 <div class="wrap">
-  <nav class="menu">
-    <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-    <a href="{{ url_for('admin.matriz') }}">Gerar Matriz</a>
-    <a href="{{ url_for('admin.consultorios') }}">Consultórios</a>
-    <a href="{{ url_for('admin.clientes') }}">Clientes</a>
-    <a href="{{ url_for('admin.horas') }}">Horas</a>
-    <a href="{{ url_for('admin.relatorios') }}" class="active">Relatórios</a>
-    <a href="{{ url_for('admin.usuarios') }}">Usuários</a>
-    <a href="{{ url_for('admin.matriz_visualizar_agenda') }}">Visualizar agenda</a>
-  </nav>
 
   {% with mensagens = get_flashed_messages(with_categories=true) %}
     {% for categoria, texto in mensagens %}

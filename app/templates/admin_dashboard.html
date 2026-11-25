@@ -15,7 +15,7 @@
   .hero-titulo p { margin:8px 0 0; font-size:clamp(13.5px,3.4vw,16px); line-height:1.45; color:rgba(234,242,245,.9); max-width:520px; }
   .sair { display:flex; flex-direction:column; align-items:center; gap:5px; color:#fff; text-decoration:none; font-weight:800; font-size:13px; }
   .sair .circ { width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:24px; }
-  .wrap { max-width:1004px; margin:-52px auto 0; padding:0 12px 40px; position:relative; }
+  .wrap { max-width:1004px; margin:0 auto; padding:0 12px 40px; position:relative; }
   .caixa { background:#fff; border-radius:22px; box-shadow:0 8px 26px rgba(11,58,87,.12); padding:14px; margin-bottom:14px; }
   .aviso-pendente { display:flex; justify-content:space-between; align-items:center; gap:10px 14px; flex-wrap:wrap; background:#FDECEA; color:#B3261E; border-radius:18px; padding:14px 16px; margin-bottom:14px; font-size:14px; font-weight:700; line-height:1.4; box-shadow:0 4px 16px rgba(11,58,87,.08); }
   .aviso-pendente a { display:inline-flex; align-items:center; justify-content:center; height:42px; padding:0 18px; border-radius:12px; background:#D42E1B; color:#fff; text-decoration:none; font-weight:800; white-space:nowrap; }
@@ -80,6 +80,7 @@
     <a class="sair" href="{{ url_for('admin.admin_logout') }}"><span class="circ"><svg class="ic"><use href="#i-logout"/></svg></span>Sair</a>
   </div>
 </header>
+{% with ativo='dashboard' %}{% include '_admin_menu.html' %}{% endwith %}
 
 <div class="wrap">
   {% if medicos_pendentes %}<div class="aviso-pendente"><span>⚠ {{ medicos_pendentes|length }} cliente{{ 's' if medicos_pendentes|length != 1 else '' }} aguardando liberação de acesso: {{ medicos_pendentes[:4]|map(attribute='nome')|join(', ') }}{% if medicos_pendentes|length > 4 %} e mais {{ medicos_pendentes|length - 4 }}{% endif %}.</span><a href="{{ url_for('admin.clientes', filtro='pendentes') }}">Ver lista para liberar →</a></div>{% endif %}

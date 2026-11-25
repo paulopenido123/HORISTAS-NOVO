@@ -36,8 +36,29 @@ import psycopg2
 import psycopg2.extras
 import psycopg2.pool
 
+class OperacaoPerigosaBloqueada(RuntimeError):
+    """v128: gravação barrada pela trava de segurança (apagar/alterar sem filtro, ou apagar muitos registros de uma vez
+    em tabela importante). Nada foi alterado no banco."""
+
+
+# Tabelas cujo conteúdo é "o negócio": apagar mais que _MAX_APAGAR_CRITICO linhas de uma vez nelas é barrado.
+TABELAS_CRITICAS = {"medicos", "reservas", "pagamentos_pix", "creditos_transacoes", "consultorios",
+                    "usuarios_admin", "pacotes_horas_avulsas", "precos", "unidades", "termos_aceite"}
+_MAX_APAGAR_CRITICO = 20
+
 _pool: "psycopg2.pool.ThreadedConnectionPool | None" = None
 _pool_lock = threading.Lock()
+
+
+def _checar_banco_de_teste(url: str) -> None:
+    """v128: se o processo foi marcado como TESTE (LIFEMAX_TESTE=1), recusa conectar em banco que não seja local
+    (ex.: o Neon de produção). Evita que um teste apague/altere dados reais por engano."""
+    import os
+    if os.getenv("LIFEMAX_TESTE") == "1":
+        u = (url or "").lower()
+        local = ("host=/tmp" in u or "localhost" in u or "127.0.0.1" in u or "@/" in u)
+        if not local or "neon.tech" in u:
+            raise RuntimeError("LIFEMAX_TESTE=1: recusado conectar em banco que não é local (proteção contra testes em produção).")
 
 
 def _get_pool():
@@ -51,6 +72,7 @@ def _get_pool():
                         "DATABASE_URL não configurada -- veja .env.example. "
                         "É a connection string do seu banco Neon."
                     )
+                _checar_banco_de_teste(Config.DATABASE_URL)
                 _pool = psycopg2.pool.ThreadedConnectionPool(
                     minconn=2, maxconn=25, dsn=Config.DATABASE_URL,
                     keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=3,
@@ -433,6 +455,14 @@ class QueryBuilder:
         else:
             raise RuntimeError(f"Operação desconhecida: {op}")
 
+        # v128 -- TRAVAS CONTRA PERDA DE DADOS (no servidor, valem para o sistema inteiro):
+        # 1) UPDATE/DELETE sem nenhum filtro (afetaria a tabela inteira) nunca é executado.
+        if op in ("update", "delete") and not self._filters:
+            raise OperacaoPerigosaBloqueada(
+                f"Bloqueado: {op.upper()} sem filtro em '{self._table}' (afetaria a tabela inteira). Nada foi alterado.")
+        # 2) DELETE de muitos registros de uma vez em tabela importante (conta antes de apagar).
+        verificar_massa = op == "delete" and self._table in TABELAS_CRITICAS
+
         # O Neon pode suspender o compute por inatividade e derrubar
         # conexões que ficaram esperando no pool -- a próxima tentativa de
         # usar uma delas dá "SSL connection has been closed unexpectedly"
@@ -447,6 +477,15 @@ class QueryBuilder:
             try:
                 with _ConnCtx() as conn:
                     with conn.cursor() as cur:
+                        if verificar_massa:
+                            _w, _p = self._where_clause()
+                            cur.execute(f'SELECT count(*) AS n FROM "{self._table}"{_w}', _p)
+                            _n = cur.fetchone()["n"]
+                            if _n > _MAX_APAGAR_CRITICO:
+                                conn.rollback()
+                                raise OperacaoPerigosaBloqueada(
+                                    f"Bloqueado: apagaria {_n} registros de '{self._table}' de uma vez "
+                                    f"(limite {_MAX_APAGAR_CRITICO}). Nada foi apagado.")
                         cur.execute(sql, params)
                         if cur.description is not None:
                             rows = [dict(r) for r in cur.fetchall()]

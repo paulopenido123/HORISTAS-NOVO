@@ -37,31 +37,16 @@ def confirmar_pagamento_e_creditar(asaas_payment_id: str) -> bool:
     medico_id = pagamento["medico_id"]
     era_primeiro_pagamento = not creditos_db.medico_tem_pagamento_confirmado(medico_id)
 
-    creditos_db.marcar_pagamento_pago(pagamento["id"])
-
-    # Credita as horas compradas (ver medico_painel.comprar_creditos) --
-    # pagamento antigo, sem valor_salas preenchido, credita o valor todo.
-    valor_salas = float(pagamento.get("valor_salas") or pagamento["valor"])
+    # v128: "reivindica" o pagamento de forma atômica -- se dois avisos chegarem juntos, só um credita.
+    if not creditos_db.reivindicar_pagamento_pago(pagamento["id"]):
+        return True
+    try:
+        _creditar_compra(pagamento, medico_id)
+    except Exception:
+        # não deixa o pagamento "pago" sem crédito: volta para pendente para o Asaas avisar de novo
+        creditos_db.desfazer_pagamento_pago(pagamento["id"])
+        raise
     horas_pacote = pagamento.get("horas_pacote")
-
-    if valor_salas > 0:
-        descricao = "Recarga via PIX (Asaas) — reserva de salas"
-        if horas_pacote:
-            # o saldo é em R$ e vira horas pelo preço da hora avulsa: credita
-            # horas x preço avulso (e não só o valor pago, que tem desconto
-            # por volume) para o médico receber exatamente as horas compradas.
-            valor_salas = creditos_db.valor_credito_pacote(horas_pacote, valor_salas)
-            # compra de um pacote fechado (6h/12h/24h/48h) -- grava a
-            # quantidade EXATA de horas na transação, em vez de deixar
-            # pra estimar depois a partir do valor pago (ver
-            # creditos_service.horas_compradas_medico).
-            descricao = f"Recarga via {pagamento.get('forma_pagamento', 'PIX')} (Asaas) — pacote de {horas_pacote}h"
-        creditos_db.registrar_transacao(
-            medico_id=medico_id, tipo="compra", valor=valor_salas,
-            descricao=descricao,
-            pagamento_id=pagamento["id"], carteira="salas",
-            quantidade_horas=horas_pacote,
-        )
 
     # Item 4 (pedido do Paulo em 11/09/2026): recibo por e-mail da compra
     # de horas -- não pode quebrar o crédito já dado se o e-mail falhar
@@ -85,6 +70,33 @@ def confirmar_pagamento_e_creditar(asaas_payment_id: str) -> bool:
         _liberar_assistente_pelo_primeiro_pagamento(medico_id)
 
     return True
+
+
+def _creditar_compra(pagamento: dict, medico_id: str) -> None:
+    asaas_payment_id = pagamento.get('asaas_payment_id')
+    # Credita as horas compradas (ver medico_painel.comprar_creditos) --
+    # pagamento antigo, sem valor_salas preenchido, credita o valor todo.
+    valor_salas = float(pagamento.get("valor_salas") or pagamento["valor"])
+    horas_pacote = pagamento.get("horas_pacote")
+
+    if valor_salas > 0:
+        descricao = "Recarga via PIX (Asaas) — reserva de salas"
+        if horas_pacote:
+            # o saldo é em R$ e vira horas pelo preço da hora avulsa: credita
+            # horas x preço avulso (e não só o valor pago, que tem desconto
+            # por volume) para o médico receber exatamente as horas compradas.
+            valor_salas = creditos_db.valor_credito_pacote(horas_pacote, valor_salas)
+            # compra de um pacote fechado (6h/12h/24h/48h) -- grava a
+            # quantidade EXATA de horas na transação, em vez de deixar
+            # pra estimar depois a partir do valor pago (ver
+            # creditos_service.horas_compradas_medico).
+            descricao = f"Recarga via {pagamento.get('forma_pagamento', 'PIX')} (Asaas) — pacote de {horas_pacote}h"
+        creditos_db.registrar_transacao(
+            medico_id=medico_id, tipo="compra", valor=valor_salas,
+            descricao=descricao,
+            pagamento_id=pagamento["id"], carteira="salas",
+            quantidade_horas=horas_pacote,
+        )
 
 
 def _liberar_assistente_pelo_primeiro_pagamento(medico_id: str):

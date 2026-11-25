@@ -141,18 +141,28 @@ def login():
         senha = request.form.get("senha", "")
 
         medico = None
-        if "@" in identificador:
-            for candidato in db.listar_medicos_por_email(identificador):
-                if auth_service.verificar_senha(senha, candidato.get("senha_hash")):
+        falha_banco = False
+        try:
+            if "@" in identificador:
+                for candidato in db.listar_medicos_por_email(identificador):
+                    if auth_service.verificar_senha(senha, candidato.get("senha_hash")):
+                        medico = candidato
+                        break
+            else:
+                telefone = telefone_utils.normalizar_telefone(identificador)
+                candidato = db.get_medico_by_telefone(telefone) if telefone else None
+                if candidato is not None and auth_service.verificar_senha(senha, candidato.get("senha_hash")):
                     medico = candidato
-                    break
-        else:
-            telefone = telefone_utils.normalizar_telefone(identificador)
-            candidato = db.get_medico_by_telefone(telefone) if telefone else None
-            if candidato is not None and auth_service.verificar_senha(senha, candidato.get("senha_hash")):
-                medico = candidato
+        except Exception as e:
+            # v128: se o banco falhou, NÃO diz "senha incorreta": mostra o problema de conexão (dados intactos).
+            if not auth_service.eh_erro_de_banco(e):
+                raise
+            print(f"[login] falha de banco no login: {type(e).__name__}: {e}", flush=True)
+            falha_banco = True
 
-        if medico is None:
+        if falha_banco:
+            erro = auth_service.MSG_PROBLEMA_CONEXAO
+        elif medico is None:
             erro = "E-mail/telefone ou senha incorretos."
         else:
             auth_service.login_medico(medico["id"])

@@ -272,16 +272,23 @@ def registrar_transacao(medico_id: str, tipo: str, valor: float, descricao: str,
     campo_alerta = "alerta_saldo_baixo_enviado"
 
     client = get_client()
-    saldo_atual = obter_saldo(medico_id)
-    novo_saldo = round(saldo_atual + valor, 2)
-
-    update_medico = {campo_saldo: novo_saldo}
-    if valor > 0:
-        # sempre que o saldo sobe (compra ou ajuste positivo), destrava o
-        # alerta de saldo baixo, pra poder ser enviado de
-        # novo no futuro se o saldo cair de novo
-        update_medico[campo_alerta] = False
-    client.table("medicos").update(update_medico).eq("id", medico_id).execute()
+    # v128: soma ATÔMICA dentro do banco (antes: lia o saldo, somava aqui e gravava o resultado -- duas operações ao mesmo
+    # tempo, ex.: Pix confirmado + reserva, uma apagava a outra e o cliente ganhava ou perdia horas). Agora cada operação
+    # soma sobre o saldo que está no banco naquele instante, e o saldo_apos é o valor que o próprio banco devolveu.
+    from app.services.pg_query import _ConnCtx
+    with _ConnCtx() as conn:
+        with conn.cursor() as cur:
+            if valor > 0:
+                cur.execute(f'UPDATE medicos SET "{campo_saldo}" = round("{campo_saldo}" + %s, 2), "{campo_alerta}" = false '
+                            f'WHERE id = %s RETURNING "{campo_saldo}" AS saldo', (valor, medico_id))
+            else:
+                cur.execute(f'UPDATE medicos SET "{campo_saldo}" = round("{campo_saldo}" + %s, 2) '
+                            f'WHERE id = %s RETURNING "{campo_saldo}" AS saldo', (valor, medico_id))
+            linha_saldo = cur.fetchone()
+        conn.commit()
+    if linha_saldo is None:
+        raise ValueError("Cliente não encontrado para registrar a transação.")
+    novo_saldo = float(linha_saldo["saldo"])
 
     linha = {
         "medico_id": medico_id,
@@ -537,6 +544,20 @@ def obter_pagamento_por_asaas_id(asaas_payment_id: str) -> dict | None:
 def obter_pagamento_por_id(pagamento_id: str) -> dict | None:
     resp = get_client().table("pagamentos_pix").select("*").eq("id", pagamento_id).execute()
     return resp.data[0] if resp.data else None
+
+
+def reivindicar_pagamento_pago(pagamento_id: str) -> bool:
+    """v128: marca o pagamento como pago SÓ se ele ainda não estava (um único UPDATE atômico). Devolve True se esta
+    chamada foi a que marcou (e portanto deve creditar), False se outra chamada simultânea (webhook duplicado, consulta
+    manual) já marcou. Evita creditar o mesmo pagamento duas vezes."""
+    resp = (get_client().table("pagamentos_pix").update({"status": "pago", "pago_em": agora_iso()})
+            .eq("id", pagamento_id).neq("status", "pago").execute())
+    return bool(resp.data)
+
+
+def desfazer_pagamento_pago(pagamento_id: str) -> None:
+    """Se o crédito falhar depois de marcar como pago, volta para 'pendente' para o Asaas/consulta tentar de novo."""
+    get_client().table("pagamentos_pix").update({"status": "pendente", "pago_em": None}).eq("id", pagamento_id).execute()
 
 
 def marcar_pagamento_pago(pagamento_id: str) -> dict:

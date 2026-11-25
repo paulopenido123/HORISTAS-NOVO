@@ -23,6 +23,8 @@ os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
 
 class Config:
+    # v128: versão publicada (atualizar a cada versão nova; /versao.json mostra isso e o navegador avisa quem está com aba velha)
+    VERSAO_SISTEMA = os.getenv("VERSAO_SISTEMA", "v128")
     # --- WhatsApp Cloud API (Meta oficial) ---
     WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
     WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")

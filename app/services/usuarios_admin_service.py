@@ -23,26 +23,39 @@ def _normalizar_tel(tel: str) -> str:
 _AVISO_TABELA = "Tabela de usuários do admin não encontrada no banco. Rode sql/migration_usuarios_admin.sql no Neon."
 
 
+def _tabela_inexistente(e: Exception) -> bool:
+    """v128: só o erro "tabela não existe" (migração ainda não rodada) vale como "sem usuários". QUALQUER outro erro
+    (banco fora do ar, conexão caída, timeout) NÃO pode ser confundido com "não há usuários": ele sobe para quem chamou,
+    que mostra "problema de conexão" (antes, a falha do banco liberava a senha antiga do admin e dava "senha incorreta")."""
+    return getattr(e, "pgcode", None) == "42P01"
+
+
 def tabela_ok() -> bool:
     try:
         get_client().table("usuarios_admin").select("id").limit(1).execute()
         return True
-    except Exception:
-        return False
+    except Exception as e:
+        if _tabela_inexistente(e):
+            return False
+        raise
 
 
 def listar() -> list[dict]:
     try:
         return get_client().table("usuarios_admin").select("*").order("nome").execute().data or []
-    except Exception:
-        return []  # tabela ainda não criada: login cai no modo de transição (senha antiga)
+    except Exception as e:
+        if _tabela_inexistente(e):
+            return []  # tabela ainda não criada: login cai no modo de transição (senha antiga)
+        raise
 
 
 def buscar_por_id(usuario_id: str) -> dict | None:
     try:
         r = get_client().table("usuarios_admin").select("*").eq("id", usuario_id).execute().data
-    except Exception:
-        return None
+    except Exception as e:
+        if _tabela_inexistente(e):
+            return None
+        raise
     return r[0] if r else None
 
 
@@ -51,8 +64,10 @@ def contar_ativos() -> int:
     antiga do admin continua valendo -- assim ninguém fica trancado antes do 1º usuário ter senha."""
     try:
         r = get_client().table("usuarios_admin").select("id,senha_hash").eq("ativo", True).execute().data
-    except Exception:
-        return 0  # tabela inexistente = nenhum usuário cadastrado
+    except Exception as e:
+        if _tabela_inexistente(e):
+            return 0  # tabela inexistente = nenhum usuário cadastrado
+        raise  # banco fora do ar NÃO é "zero usuários"
     return len([u for u in (r or []) if u.get("senha_hash")])
 
 

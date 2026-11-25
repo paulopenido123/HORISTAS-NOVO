@@ -20,6 +20,27 @@
       <button type="submit" class="perigo">Restaurar backup</button>
     </form>
   </div>
+  <div class="card">
+    <h2>3. Histórico automático (últimas 48 horas)</h2>
+    <p class="muted">O sistema guarda sozinho uma cópia completa <strong>a cada hora</strong> e mantém as últimas 48 horas. Se os dados atuais ficarem com menos da metade das linhas da última cópia, a cópia nova <strong>não é guardada</strong> (para não espalhar um apagão) e os administradores são avisados. Restaurar nunca apaga: mescla os registros da versão escolhida, e <strong>antes</strong> disso a versão atual é guardada aqui também.</p>
+    {% if not hist_ok %}<div class="aviso">O histórico ainda não está ativo: rode o arquivo <strong>sql/migration_historico_dados.sql</strong> no Neon.{% if hist_erro %} ({{ hist_erro }}){% endif %}</div>
+    {% else %}
+    <form method="post" action="{{ url_for('admin.backup_historico_guardar') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Guardar cópia agora</button></form>
+    <div style="overflow-x:auto;margin-top:14px"><table style="width:100%;border-collapse:collapse;font-size:13px">
+      <tr style="text-align:left;color:#62788A"><th>Data / hora</th><th>Origem</th><th>Linhas</th><th>Tamanho</th><th></th></tr>
+      {% for h in historico %}<tr style="border-top:1px solid #e3ebef">
+        <td>{{ h.criado_em.astimezone(fuso_br).strftime('%d/%m/%Y %H:%M') if fuso_br else h.criado_em }}</td>
+        <td>{{ {'automatico':'Automática','manual':'Manual','antes_restaurar':'Antes de restaurar','bloqueado':'BLOQUEADA (dados encolheram)'}.get(h.origem, h.origem) }}</td>
+        <td>{{ h.total_linhas }}</td><td>{{ (h.tamanho_bytes/1024)|round|int }} KB</td>
+        <td>{% if h.origem != 'bloqueado' %}
+          <form method="post" action="{{ url_for('admin.backup_historico_baixar', versao_id=h.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" style="padding:6px 12px;font-size:12px">Baixar</button></form>
+          <form method="post" action="{{ url_for('admin.backup_historico_restaurar', versao_id=h.id) }}" class="f-hist" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="confirmacao" value=""><button type="submit" class="perigo" style="padding:6px 12px;font-size:12px">Restaurar</button></form>
+        {% else %}<span class="muted">{{ h.observacao }}</span>{% endif %}</td></tr>
+      {% else %}<tr><td colspan="5" class="muted">Ainda não há cópias. A primeira é feita automaticamente em poucos minutos.</td></tr>{% endfor %}
+    </table></div>
+    {% endif %}
+  </div>
 </div>
+<script>document.querySelectorAll('.f-hist').forEach(function(f){f.addEventListener('submit',function(e){var r=prompt('Para restaurar esta versão, digite RESTAURAR (a versão atual será guardada antes):');if(!r||r.trim().toUpperCase()!=='RESTAURAR'){e.preventDefault();return;}f.querySelector('[name=confirmacao]').value=r;});});</script>
 <script>document.getElementById('form-restaurar').addEventListener('submit',function(e){if(!confirm('Restaurar este backup? Registros existentes serão substituídos pelos valores do arquivo.'))e.preventDefault();});</script>
 </body></html>

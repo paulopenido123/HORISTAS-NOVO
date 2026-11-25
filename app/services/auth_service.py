@@ -13,6 +13,17 @@ def gerar_hash_senha(senha_texto_puro: str) -> str:
     return generate_password_hash(senha_texto_puro)
 
 
+MSG_PROBLEMA_CONEXAO = ("Não consegui conectar ao banco de dados agora (problema de conexão). "
+                        "Seus dados estão seguros e nada foi alterado. Aguarde alguns segundos e tente de novo.")
+
+
+def eh_erro_de_banco(e: Exception) -> bool:
+    """True para falha de conexão/banco (psycopg2) e para as travas de segurança — nunca para "senha errada"."""
+    import psycopg2
+    from app.services.pg_query import OperacaoPerigosaBloqueada
+    return isinstance(e, (psycopg2.Error, OperacaoPerigosaBloqueada))
+
+
 def verificar_senha(senha_texto_puro: str, hash_salvo: str) -> bool:
     if not hash_salvo:
         return False

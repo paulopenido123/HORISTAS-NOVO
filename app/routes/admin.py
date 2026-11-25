@@ -48,21 +48,36 @@ def _perfil_admin_nos_templates():
 @limiter.limit("10 per minute", methods=["POST"])
 def admin_login():
     erro = None
+    transicao = False
     if request.method == 'POST':
         ident = request.form.get('identificador', '').strip()
         senha = request.form.get('senha', '')
-        usuario = usuarios_admin.autenticar(ident, senha) if ident else None
-        if usuario:
-            auth_service.login_admin(usuario['id'])
-            return redirect(request.args.get('next') or url_for('admin.dashboard'))
-        # Transição: senha única antiga (ADMIN_PASSWORD) só vale enquanto não há usuário ativo cadastrado.
-        from app.config import Config
-        if (not ident and senha and Config.ADMIN_PASSWORD and secrets.compare_digest(senha, Config.ADMIN_PASSWORD)
-                and usuarios_admin.contar_ativos() == 0):
-            auth_service.login_admin()
-            return redirect(request.args.get('next') or url_for('admin.dashboard'))
-        erro = 'E-mail/telefone ou senha incorretos, ou usuário bloqueado.'
-    return render_template('admin_login.html', erro=erro, transicao=usuarios_admin.contar_ativos() == 0)
+        try:
+            usuario = usuarios_admin.autenticar(ident, senha) if ident else None
+            if usuario:
+                auth_service.login_admin(usuario['id'])
+                return redirect(request.args.get('next') or url_for('admin.dashboard'))
+            # Transição: senha única antiga (ADMIN_PASSWORD) só vale enquanto não há usuário ativo cadastrado.
+            from app.config import Config
+            if (not ident and senha and Config.ADMIN_PASSWORD and secrets.compare_digest(senha, Config.ADMIN_PASSWORD)
+                    and usuarios_admin.contar_ativos() == 0):
+                auth_service.login_admin()
+                return redirect(request.args.get('next') or url_for('admin.dashboard'))
+            erro = 'E-mail/telefone ou senha incorretos, ou usuário bloqueado.'
+        except Exception as e:
+            # v128: falha de banco NUNCA vira "senha incorreta" (nem libera a senha antiga): mostra o problema real.
+            if not auth_service.eh_erro_de_banco(e):
+                raise
+            print(f'[admin_login] falha de banco no login: {type(e).__name__}: {e}', flush=True)
+            erro = auth_service.MSG_PROBLEMA_CONEXAO
+    try:
+        transicao = usuarios_admin.contar_ativos() == 0
+    except Exception as e:
+        if not auth_service.eh_erro_de_banco(e):
+            raise
+        transicao = False
+        erro = erro or auth_service.MSG_PROBLEMA_CONEXAO
+    return render_template('admin_login.html', erro=erro, transicao=transicao)
 
 
 @admin_bp.route('/esqueci-senha', methods=['GET', 'POST'])
@@ -2171,7 +2186,67 @@ def backup():
     gate = _gate_master('Backup')
     if gate is not None:
         return gate
-    return render_template('admin_backup.html')
+    from app.services import historico_service
+    historico, hist_ok, hist_erro = [], True, None
+    try:
+        hist_ok = historico_service.tabela_ok()
+        if hist_ok:
+            historico = historico_service.listar()
+    except Exception as e:
+        hist_ok, hist_erro = False, str(e)[:200]
+    return render_template('admin_backup.html', historico=historico, hist_ok=hist_ok, hist_erro=hist_erro, fuso_br=timezone(timedelta(hours=-3)))
+
+
+@admin_bp.route('/backup/historico/guardar', methods=['POST'])
+@_admin_total
+@limiter.limit("6 per minute")
+def backup_historico_guardar():
+    from app.services import historico_service
+    if not _master_liberado():
+        return redirect(url_for('admin.backup'))
+    try:
+        r = historico_service.guardar_copia('manual', ignorar_trava=True)
+        flash('Cópia guardada no histórico.' if r.get('ok') else f"Não guardou: {r.get('motivo')}", 'ok' if r.get('ok') else 'erro')
+    except Exception as e:
+        flash(f'Não foi possível guardar a cópia: {e}', 'erro')
+    return redirect(url_for('admin.backup'))
+
+
+@admin_bp.route('/backup/historico/<int:versao_id>/baixar', methods=['POST'])
+@_admin_total
+@limiter.limit("12 per minute")
+def backup_historico_baixar(versao_id):
+    from app.services import historico_service
+    from flask import Response
+    if not _master_liberado():
+        return redirect(url_for('admin.backup'))
+    achado = historico_service.obter_arquivo(versao_id)
+    if not achado:
+        flash('Versão não encontrada.', 'erro')
+        return redirect(url_for('admin.backup'))
+    arquivo, meta = achado
+    nome = f"historico_lifemax_{meta['criado_em'].astimezone(timezone(timedelta(hours=-3))).strftime('%Y-%m-%d_%H-%M')}.json.gz"
+    return Response(arquivo, mimetype='application/gzip', headers={'Content-Disposition': f'attachment; filename={nome}'})
+
+
+@admin_bp.route('/backup/historico/<int:versao_id>/restaurar', methods=['POST'])
+@_admin_total
+@limiter.limit("3 per minute")
+def backup_historico_restaurar(versao_id):
+    from app.services import historico_service
+    if not _master_liberado():
+        return redirect(url_for('admin.backup'))
+    if (request.form.get('confirmacao') or '').strip().upper() != 'RESTAURAR':
+        flash('Para restaurar, digite RESTAURAR no campo de confirmação.', 'erro')
+        return redirect(url_for('admin.backup'))
+    try:
+        r = historico_service.restaurar_versao(versao_id)
+        print(f"[admin] histórico #{versao_id} RESTAURADO por admin_usuario_id={session.get('admin_usuario_id')}", flush=True)
+        flash(f"Versão restaurada: {sum(r['gravadas'].values())} registros. Antes disso, a versão que estava no ar foi guardada "
+              f"no histórico (#{r['copia_de_seguranca_id']}, origem 'antes_restaurar').", 'ok')
+    except ValueError as e:
+        flash(str(e), 'erro')
+    return redirect(url_for('admin.backup'))
 
 
 @admin_bp.route('/backup/baixar', methods=['POST'])
@@ -2209,6 +2284,12 @@ def backup_restaurar():
         return redirect(url_for('admin.backup'))
     try:
         pacote = backup_service.ler_arquivo(arq.read())
+        try:  # v128: guarda a versão atual antes de substituir (se o histórico existir)
+            from app.services import historico_service
+            if historico_service.tabela_ok():
+                historico_service.guardar_copia('antes_restaurar', ignorar_trava=True)
+        except Exception as e:
+            print(f"[admin] cópia antes de restaurar falhou: {e}", flush=True)
         gravadas = backup_service.restaurar_backup(pacote)
         print(f"[admin] backup RESTAURADO por admin_usuario_id={session.get('admin_usuario_id')}: {sum(gravadas.values())} linhas")
         flash(f"Backup restaurado: {sum(gravadas.values())} registros em {len([t for t, n in gravadas.items() if n])} tabelas "

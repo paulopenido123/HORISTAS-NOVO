@@ -14,6 +14,7 @@ from app.routes.admin import admin_bp
 from app.routes.termos import termos_bp
 from app.routes.api_dora import api_dora_bp
 from app.routes.api_financeiro import api_financeiro_bp
+from app.routes.recuperacao import recuperacao_bp
 
 
 def create_app():
@@ -39,6 +40,15 @@ def create_app():
         if isinstance(e, HTTPException):
             return e
         traceback.print_exc()
+        # v128: falha de banco/conexão (ou trava de segurança) mostra o motivo real e deixa claro que nada foi perdido.
+        from app.services import auth_service as _auth
+        if _auth.eh_erro_de_banco(e):
+            if request.path.startswith("/api/"):
+                return jsonify({"erro": _auth.MSG_PROBLEMA_CONEXAO}), 503
+            return ("<!doctype html><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+                    "<body style='font-family:Arial;max-width:520px;margin:12vh auto;padding:0 18px;color:#10222E'>"
+                    "<h2>Problema de conexão</h2><p>" + _auth.MSG_PROBLEMA_CONEXAO + "</p>"
+                    "<p><a href='javascript:location.reload()'>Tentar de novo</a></p></body>"), 503
         if request.path.startswith("/api/"):
             return jsonify({
                 "erro": "Ocorreu um erro interno no servidor. Tente de novo em instantes; "
@@ -64,6 +74,7 @@ def create_app():
     app.register_blueprint(termos_bp)
     app.register_blueprint(api_dora_bp)
     app.register_blueprint(api_financeiro_bp)
+    app.register_blueprint(recuperacao_bp)
 
     socketio.init_app(app)
     limiter.init_app(app)
@@ -122,5 +133,27 @@ def create_app():
     @app.route("/health")
     def health():
         return {"status": "ok"}
+
+    # v128: aviso de versão nova -- injeta static/js/versao.js em toda página HTML (some em /recuperar)
+    @app.after_request
+    def _injetar_versao_js(resp):
+        try:
+            if (resp.status_code == 200 and resp.mimetype == "text/html" and not resp.direct_passthrough
+                    and not request.path.startswith(("/recuperar", "/static"))):
+                corpo = resp.get_data(as_text=True)
+                if "</body>" in corpo and "versao.js" not in corpo:
+                    tag = f'<script src="/static/js/versao.js?v={Config.VERSAO_SISTEMA}" data-versao="{Config.VERSAO_SISTEMA}" defer></script></body>'
+                    resp.set_data(corpo.replace("</body>", tag, 1))
+        except Exception:
+            pass
+        return resp
+
+    # v128: histórico automático (cópia a cada hora). Desligado em teste (LIFEMAX_SEM_HISTORICO=1).
+    if os.getenv("LIFEMAX_SEM_HISTORICO") != "1" and not os.getenv("PYTEST_CURRENT_TEST"):
+        try:
+            from app.services import historico_service
+            historico_service.iniciar_agendador()
+        except Exception as e:
+            print(f"[historico] não iniciou: {e}", flush=True)
 
     return app

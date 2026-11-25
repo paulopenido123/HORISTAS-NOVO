@@ -26,7 +26,7 @@ from app.services.pg_query import _ConnCtx
 VERSAO_FORMATO = 1
 _MARCA_B64 = "__b64__"
 # Dados sensíveis/pesados que não entram no arquivo de backup (v100: documentos de identidade dos médicos).
-_TABELAS_FORA_DO_BACKUP = {"documentos_medico"}
+_TABELAS_FORA_DO_BACKUP = {"documentos_medico", "historico_dados"}  # v128: o histórico não entra nas cópias (cresceria sem parar)
 
 
 def _tabelas(cur) -> list[str]:
@@ -155,7 +155,7 @@ def restaurar_backup(pacote: dict) -> dict:
         try:
             with conn.cursor() as cur:
                 existentes = _tabelas(cur)
-                no_arquivo = [t for t in pacote["tabelas"] if t in existentes]
+                no_arquivo = [t for t in pacote["tabelas"] if t in existentes and t not in _TABELAS_FORA_DO_BACKUP]
                 for t in _ordem_por_dependencia(cur, no_arquivo):
                     linhas = pacote["tabelas"][t]
                     if not linhas:
